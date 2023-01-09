@@ -35,7 +35,7 @@ if __name__ == '__main__':
     # configurations initialization
     config = Config(
         dataset=args.dataset,
-        config_file_list=['environment.yaml', args.model + '.yaml']
+        config_file_list=[f'config/environment.yaml', os.path.join('config', args.model + '.yaml')]
     )
 
     # # init random seed
