@@ -20,3 +20,4 @@ stopping_step: 5
 # clip_grad_norm: 0.1
 loss_decimal_place: 5
 # weight_dacay: 0.1
+reg_weight: 300

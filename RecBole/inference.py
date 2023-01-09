@@ -16,7 +16,7 @@ from tqdm import tqdm
 
 def get_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_path', type=str)
+    parser.add_argument('--model_path', type=str, required=True)
     parser.add_argument('--topk', default=10, type=int)
 
     args = parser.parse_args()

@@ -7,9 +7,9 @@ show_progress: True
 
 # Data Settings
 # dataset: ml-1m
-data_path: /opt/ml/level3_productserving-level3-recsys-11/dataset/
+data_path: /opt/ml/final-project-level2-recsys-11/dataset/
 
-filed_separator: "\t"
+field_separator: "\t"
 seq_separator: " "
 
 USER_ID_FIELD: user_id

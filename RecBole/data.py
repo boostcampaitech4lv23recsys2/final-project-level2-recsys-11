@@ -59,7 +59,7 @@ config = Config(
 )
 
 # 타임스탬프 전처리
-dataset_path = os.path.join('/opt/ml/level3_productserving-level3-recsys-11/dataset/', config['dataset'])
+dataset_path = os.path.join('/opt/ml/final-project-level2-recsys-11/dataset/', config['dataset'])
 config['data_path'] = dataset_path
 
 if os.path.exists(dataset_path):

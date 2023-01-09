@@ -13,5 +13,5 @@ saved/
 docs/build/
 wandb/*
 /ray_log*
-dataset/
+ml-1m/
 *.csv
