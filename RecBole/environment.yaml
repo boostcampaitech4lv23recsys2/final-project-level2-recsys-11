@@ -1,0 +1,40 @@
+# Environment Setting
+gpu_id: 0
+worker: 8
+seed: 42
+state: "INFO"
+show_progress: True
+
+# Data Settings
+# dataset: ml-1m
+data_path: /opt/ml/level3_productserving-level3-recsys-11/dataset/
+
+filed_separator: "\t"
+seq_separator: " "
+
+USER_ID_FIELD: user_id
+ITEM_ID_FIELD: item_id
+RATING_FIELD: rating
+TIME_FIELD: timestamp
+
+load_col:
+    inter: [user_id, item_id, rating, timestamp]
+    user: ['user_id', 'age', 'gender', 'occupation']
+    item: ['item_id', 'release_year', 'class']
+normalize_all: True
+
+# Evaluation Settings
+eval_args:
+    split: 
+        LS: valid_and_test
+    group_by: user
+    order: TO
+    mode: full # uni200, pop100 쓰면 100개중 추천
+repeatable: False
+metrics: 
+    - Recall
+    - Hit
+    - Precision
+    - NDCG
+topk: 10
+valid_metric: Recall@10

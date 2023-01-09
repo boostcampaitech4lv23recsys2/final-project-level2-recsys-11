@@ -1,0 +1,22 @@
+model: FM
+
+# Model configs
+embedding_size: 8
+
+
+# Training Settings
+val_interval:
+    rating: "[4, inf)"
+    
+epochs: 3
+train_batch_size: 4096
+learner: adam
+learning_rate: 0.001
+train_neg_sample_args:
+    distribution: uniform
+    sample_num: 1
+
+stopping_step: 5
+# clip_grad_norm: 0.1
+loss_decimal_place: 5
+# weight_dacay: 0.1
