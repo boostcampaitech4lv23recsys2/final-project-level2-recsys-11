@@ -19,6 +19,7 @@ import argparse
 import pandas as pd
 import os
 from copy import deepcopy
+import uuid
 
 def get_parser():
     parser = argparse.ArgumentParser()
@@ -37,6 +38,8 @@ if __name__ == '__main__':
         dataset=args.dataset,
         config_file_list=[f'config/environment.yaml', os.path.join('config', args.model + '.yaml')]
     )
+    id = uuid.uuid4()
+    config['config_id'] = id
 
     # # init random seed
     init_seed(config['seed'], config['reproducibility'])
