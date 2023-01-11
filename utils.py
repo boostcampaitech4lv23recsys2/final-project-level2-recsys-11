@@ -3,27 +3,61 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from typing import List
 from typing import Dict
+from tqdm import tqdm
 
+from time import time
 
 class quantitative_indicator():
     pass
 
 class qualitative_indicator():
-    def __init__(self, train_df, user, item_df):
+    def __init__(self, train_df, user, item_df): # 현재 이 클래스는 한 유저에 대해서 계산하는 클래스이나, 차라리 모든 유저를 받도록 하는 것이 나을 것.
         self.train_df = train_df
 
         # self.user_profile = {i: train_df[train_df['user_id:token'] == i]['item_id:token'].tolist() for i in train_df['user_id:token'].unique()}
         # 유저_id : 유저의 히스토리
         # ground_truth에 해당하는 정보는 빼야 할 수도?
 
+        self.total_user = train_df['user_id:token'].nunique()
+
         self.user_profile = train_df[train_df['user_id:token'] == user]['item_id:token'].tolist()
         #user는 추천된 리스트를 받은 해당 유저
+        self.item_profiles = {item : train_df[train_df['item_id:token'] == item]['user_id:token'].tolist() for item in train_df['item_id:token'].unique()}
 
         self.genre = dict()
         for i,j in zip(item_df['item_id:token'], item_df['genre:token_seq']):
             self.genre[i] = j.split(' ')
-
         #결국 traindf는 받아야 하는 것 같기도. 그럼 상위 클래스를 만들기?
+
+        self.pop_of_each_items = self.calculate_Popularity()
+        self.fam_of_each_items = self.calculate_Famousness()
+
+    def calculate_Popularity(self):
+        '''
+
+        지표를 계산하는 역할만 하는 함수인가?
+        아니면 각 아이템의 인기도를 계산해 통째로 반환시키게 하는가?
+        -> 일단 후자라고 생각하자 why? 어차피 train_df를 받아야 각 아이템이 상호작용된 횟수를 알 수 있다.
+
+        return: 각 아이템 번호에 따른 인기도 딕트
+        '''
+        inter_count_of_items = self.train_df.groupby('item_id:token').count()['user_id:token']
+        total_len = len(self.train_df)
+
+        pop_of_each_items = dict()
+        for i, j in zip(inter_count_of_items.keys(), inter_count_of_items):
+            pop_of_each_items[i] = j / total_len
+        #차라리 total_len을 항상 들고 다니고, 여기는 그냥 상호작용된 횟수만 넣고 다니는 게 좋은가?
+        return pop_of_each_items
+
+    def calculate_Famousness(self):
+        users_of_items = train_df.groupby('item_id:token')['user_id:token'].nunique()
+
+        fam_of_each_items = dict()
+        for i, j in zip(users_of_items.keys(), users_of_items):
+            fam_of_each_items[i] = j / self.total_user
+        return fam_of_each_items
+
 
     def Diversity(self, R:List[int], mode:str='jaccard'):
         '''
@@ -55,8 +89,13 @@ class qualitative_indicator():
         serendipity = sum_pmi / len(R)
         return serendipity
 
-    def Novelty():
-        pass
+    def Novelty(self, R):
+        # p(i) = popularity
+        # 1 - p(i) or -log(p(i))
+
+        lst = np.array([*map(lambda x: self.fam_of_each_items[x], R)])
+        novelty = -np.log2(lst)
+        return novelty.mean() / np.log2(self.total_user)
 
 
     def Serendipity_foreach(self, i:int, mode:str='PMI'):
@@ -81,13 +120,11 @@ class qualitative_indicator():
 
         return: i와 j의 scaled PMI 값(0~1)
         '''
-
-        total_user = self.train_df['user_id:token'].nunique()
-        set_i = set(self.train_df[self.train_df['item_id:token'] == i]['user_id:token'])
-        set_j = set(self.train_df[self.train_df['item_id:token'] == j]['user_id:token'])
-        p_i = len(set_i) / total_user
-        p_j = len(set_j) / total_user
-        p_ij = len(set_i & set_j) / total_user
+        set_i = set(self.item_profiles[i])
+        set_j = set(self.item_profiles[j])
+        p_i = len(set_i) / self.total_user
+        p_j = len(set_j) / self.total_user
+        p_ij = len(set_i & set_j) / self.total_user
 
         #pmi 공식. -1~1 사이의 값
         pmi = np.log2(p_ij / (p_i * p_j)) / -np.log2(p_ij)
@@ -116,6 +153,13 @@ rec_df = pd.read_csv('/opt/ml/input/final-project-level2-recsys-11/RecBole/infer
 tmp = qualitative_indicator(train_df, 1, item_df)
 R = rec_df[:10]['item'].tolist()
 
+start = time()
+
 print('유저 1에 대한 추천리스트 R', R)
 print('R의 Serendipity by PMI', tmp.Serendipity(R, 'PMI'))
 print('R의 Serendipity by jaccard', tmp.Serendipity(R, 'jaccard'))
+print('R의 Novelty', tmp.Novelty(R))
+
+end = time()
+
+print('시간 소모', end - start)
