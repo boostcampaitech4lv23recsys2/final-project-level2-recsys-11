@@ -13,7 +13,7 @@ import numpy as np
 from copy import deepcopy
 
 from tqdm import tqdm
-
+import os
 
 def get_parser():
     parser = argparse.ArgumentParser()
@@ -28,7 +28,7 @@ if __name__ == '__main__':
     args = get_parser()
     config, model, dataset, train_data, valid_data, test_data = \
         load_data_and_model(model_file=args.model_path)
-    
+
     user_token2id = deepcopy(dataset.field2token_id[dataset.uid_field])
     del user_token2id['[PAD]']
     model_name = args.model_path.split('/')[6][:3]
@@ -49,7 +49,11 @@ if __name__ == '__main__':
         for item in external_item_list[0]:
             preds.append([user, item])
     
+    if not os.path.exists(f'inference/'):
+        os.makedirs('inference/')
+        print("inference folder created")
+
     pd.DataFrame(
         data=preds,
         columns=['user', 'item']
-    ).to_csv(f'{config["model"]}_topk.csv', sep='\t', index=False)
+    ).to_csv(os.path.join('inference', f'{config["model"]}_{config["config_id"]}.csv'), sep='\t', index=False)
