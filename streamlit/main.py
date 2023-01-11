@@ -9,7 +9,7 @@ from design import head, body
 
 st.set_page_config(
     page_title="Recommendation Model Evaluation",
-    page_icon="⭐",
+    page_icon="😊",
     layout="wide",
     initial_sidebar_state="expanded",
     # menu_items={
@@ -25,6 +25,7 @@ def load_data(path):
     return df
 
 df = load_data('/opt/ml/input/data/train/train_ratings.csv')[:100]
+
 head.set_title()
 
 st.markdown('<h3>compare table</h3>', unsafe_allow_html=True)

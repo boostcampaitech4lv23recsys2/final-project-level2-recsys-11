@@ -26,7 +26,7 @@ def compare_metric():
     m2_precision = 0.80
     
     a[0].metric(label="Recall", value=f"{m1_recall}", delta=f"{(m1_recall - m2_recall):.2f}")
-    a[1].metric(label="Recall", value=f"{m2_recall}", delta=f"{(m2_recall - m1_recall):.2f}")
-    a[2].metric(label="Precision", value=f"{m1_precision}", delta=f"{(m1_precision - m2_precision):.2f}")
+    a[1].metric(label="Precision", value=f"{m2_precision}", delta=f"{(m2_precision - m1_precision):.2f}")
+    a[2].metric(label="Recall", value=f"{m1_recall}", delta=f"{(m1_recall - m2_recall):.2f}")
     a[3].metric(label="Precision", value=f"{m2_precision}", delta=f"{(m2_precision - m1_precision):.2f}")
     
