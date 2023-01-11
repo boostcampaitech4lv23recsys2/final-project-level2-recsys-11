@@ -9,7 +9,7 @@ class quantitative_indicator():
     pass
 
 class qualitative_indicator():
-    def __init__(self, train_df, user, item_df):
+    def __init__(self, train_df, user, item_df, item_h_matrix):
         self.train_df = train_df
 
         # self.user_profile = {i: train_df[train_df['user_id:token'] == i]['item_id:token'].tolist() for i in train_df['user_id:token'].unique()}
@@ -25,10 +25,15 @@ class qualitative_indicator():
 
         #결국 traindf는 받아야 하는 것 같기도. 그럼 상위 클래스를 만들기?
 
+        # matrices for latent(i, j) 
+        self.item_h_matrix = item_h_matrix
+        self.item_item_matrix = self.item_h_matrix @ self.item_h_matrix.T
+
+
     def Diversity(self, R:List[int], mode:str='jaccard'):
         '''
         R: 추천된 아이템 리스트
-        mode: 사용할 방식. {'rating', 'jaccard', 'mf'}
+        mode: 사용할 방식. {'rating', 'jaccard', 'latent'}
 
         return: R의 diversity
         '''
@@ -40,6 +45,7 @@ class qualitative_indicator():
                 diversity += dist
         diversity = diversity / (len(R) * (len(R) - 1))
         return diversity
+
 
     def Serendipity(self, R:List[int], mode:str='PMI'):
         '''
@@ -53,7 +59,11 @@ class qualitative_indicator():
         for i in R:
             sum_pmi += self.Serendipity_foreach(i, mode)
         serendipity = sum_pmi / len(R)
-        return serendipity
+        return 
+
+
+    def Popularity(): 
+
 
     def Novelty():
         pass
@@ -74,6 +84,7 @@ class qualitative_indicator():
             min_seren = min(min_seren, seren)
         return min_seren
 
+
     def PMI(self, i:int, j:int):
         '''
         i: 아이템 i
@@ -93,6 +104,7 @@ class qualitative_indicator():
         pmi = np.log2(p_ij / (p_i * p_j)) / -np.log2(p_ij)
         return (1 - pmi) / 2
 
+
     def jaccard(self, i:int, j:int):
         '''
         i: 아이템 i
@@ -104,6 +116,20 @@ class qualitative_indicator():
         s2 = set(self.genre[j])
 
         return 1 - len(s1 & s2) / len(s1 | s2)
+
+
+    def latent(self, i:int, j:int):
+        '''
+        아이템 i,j latent vector들의 cosine similarity
+        '''
+        # if i == j:
+        #     raise ValueError('i and j must be different items')
+        
+        norm_i = np.sqrt(np.square(self.B[i]).sum())
+        norm_j = np.sqrt(np.square(self.B[j]).sum())
+        similarity = self.item_similarity[i][j] / (norm_i * norm_j)
+
+        return 1 - similarity
 
 
 
