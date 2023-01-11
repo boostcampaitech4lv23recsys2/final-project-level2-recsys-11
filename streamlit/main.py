@@ -6,8 +6,6 @@ import plotly.express as px
 import os
 from design import head, body
 
-df = pd.read_csv('/opt/ml/input/data/train/train_ratings.csv')[:100]
-output_path = '/opt/ml/final_project/data/rec_output'
 
 st.set_page_config(
     page_title="Recommendation Model Evaluation",
@@ -21,6 +19,12 @@ st.set_page_config(
     # }
 )
 
+@st.cache
+def load_data(path):
+    df = pd.read_csv(path)[:100]
+    return df
+
+df = load_data('/opt/ml/input/data/train/train_ratings.csv')[:100]
 head.set_title()
 
 st.markdown('<h3>compare table</h3>', unsafe_allow_html=True)
