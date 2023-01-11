@@ -4,8 +4,9 @@ import matplotlib as plt
 import viz
 import plotly.express as px
 import os
+from design import head, body
 
-df = pd.read_csv('/opt/ml/input/data/train/train_ratings.csv')
+df = pd.read_csv('/opt/ml/input/data/train/train_ratings.csv')[:100]
 output_path = '/opt/ml/final_project/data/rec_output'
 
 st.set_page_config(
@@ -20,6 +21,10 @@ st.set_page_config(
     # }
 )
 
+head.set_title()
+
+st.markdown('<h3>compare table</h3>', unsafe_allow_html=True)
+body.display_dataframe(df, container_width=True)
 
 multi_plot = st.container()
 
@@ -27,7 +32,9 @@ mcol1, mcol2, mcol3 = multi_plot.columns(3)
 '''
 임베딩 벡터 시각화 아이디어
 '''
+if 'column' not in st.session_state:
+    st.session_state.column = 'user'
 # mcol1.markdown(f"<h1 style='text-align: center; color: black;'>{option}</h1>", unsafe_allow_html=True) # 중앙 정렬 텍스트
-mcol1.selectbox(label='select value',options=df.columns, key=1)
+st.session_state.column = mcol1.selectbox(label='select value',options=df.columns, key=1)
 # mcol1.header(f'{option}+1', align='center)
-mcol1.pyplot(fig = viz.histogram(df.user))
+mcol1.pyplot(fig = viz.histogram(df[st.session_state.column]))
