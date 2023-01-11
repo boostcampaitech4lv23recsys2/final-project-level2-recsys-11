@@ -25,8 +25,21 @@ class qualitative_indicator():
 
         #결국 traindf는 받아야 하는 것 같기도. 그럼 상위 클래스를 만들기?
 
-    def Diversity():
-        pass
+    def Diversity(self, R:List[int], mode:str='jaccard'):
+        '''
+        R: 추천된 아이템 리스트
+        mode: 사용할 방식. {'rating', 'jaccard', 'mf'}
+
+        return: R의 diversity
+        '''
+        diversity = 0
+        for i in R:
+            for j in R:
+                if i == j: continue
+                dist = eval('self.'+ mode)(i,j)
+                diversity += dist
+        diversity = diversity / (len(R) * (len(R) - 1))
+        return diversity
 
     def Serendipity(self, R:List[int], mode:str='PMI'):
         '''
