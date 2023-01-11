@@ -32,21 +32,39 @@ class qualitative_indicator():
 
         #결국 traindf는 받아야 하는 것 같기도. 그럼 상위 클래스를 만들기?
 
-    def Diversity(self, R:List[int], mode:str='rating'):
-        dist_dict = defaultdict(defaultdict)
-        DoU = 0   # Diversity of User의 약자
-        for i,j in combinations(R, 2):
-            i,j = min(i,j), max(i,j)
-            if i in dist_dict and j in dist_dict[i]:
-                DoU += dist_dict[i][j]
-            else:
-                if mode == 'rating':             # mode 별로 하나씩 추가하면 될 듯
-                    d = self.rating_dist(i,j)    # rating_dist 함수로 측정한 dist(i,j)
-                dist_dict[i][j] = d
-                DoU += d
-        DoU /= ((len(R) * (len(R)-1)) / 2)
-        
-        return DoU
+    def Diversity(self, R:List[int], mode:str='jaccard'):
+        '''
+        R: 추천된 아이템 리스트
+        mode: 사용할 방식. {'rating', 'jaccard', 'mf'}
+
+        return: R의 diversity
+        '''
+        if mode == 'rating':
+            dist_dict = defaultdict(defaultdict)
+            DoU = 0   # Diversity of User의 약자
+            for i,j in combinations(R, 2):
+                i,j = min(i,j), max(i,j)
+                if i in dist_dict and j in dist_dict[i]:
+                    DoU += dist_dict[i][j]
+                else:
+                    if mode == 'rating':             # mode 별로 하나씩 추가하면 될 듯
+                        d = self.rating_dist(i,j)    # rating_dist 함수로 측정한 dist(i,j)
+                    dist_dict[i][j] = d
+                    DoU += d
+            DoU /= ((len(R) * (len(R)-1)) / 2)
+            
+            return DoU
+            
+        elif mode == 'jaccard':
+            diversity = 0
+            for i in R:
+                for j in R:
+                    if i == j: continue
+                    dist = eval('self.'+ mode)(i,j)
+                    diversity += dist
+            diversity = diversity / (len(R) * (len(R) - 1))
+            return diversity
+
 
     def Serendipity(self, R:List[int], mode:str='PMI'):
         '''
