@@ -9,6 +9,7 @@ from recbole.utils.case_study import full_sort_topk
 
 import argparse
 import pandas as pd
+import numpy as np
 from copy import deepcopy
 
 from tqdm import tqdm
@@ -16,7 +17,7 @@ from tqdm import tqdm
 
 def get_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_path', type=str, required=True)
+    parser.add_argument('--model_path', default='/opt/ml/final-project-level2-recsys-11/RecBole/saved/BPR-Jan-10-2023_02-24-30.pth', type=str) #, required=True
     parser.add_argument('--topk', default=10, type=int)
 
     args = parser.parse_args()
@@ -30,7 +31,14 @@ if __name__ == '__main__':
     
     user_token2id = deepcopy(dataset.field2token_id[dataset.uid_field])
     del user_token2id['[PAD]']
+    model_name = args.model_path.split('/')[6][:3]
 
+    if model_name == 'BPR':
+        item_vector = model.item_embedding.weight.cpu().detach().numpy()
+        np.save(f'./saved/{model_name}_itemvector', item_vector)
+        
+    id_item_df = pd.DataFrame(list(test_data._dataset.field2token_id['item_id']), columns=['item_id'])
+    id_item_df.to_csv(f'./saved/{model_name}_id_item_df.csv', index=False)
     print(dataset)
     
     preds = []
