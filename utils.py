@@ -1,9 +1,13 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+
+from tqdm import tqdm
 from typing import List
 from typing import Dict
 from tqdm import tqdm
+from collections import defaultdict
+from itertools import combinations
 
 from time import time
 
@@ -12,20 +16,23 @@ class quantitative_indicator():
 
 class qualitative_indicator():
     def __init__(self, train_df, user, item_df): # 현재 이 클래스는 한 유저에 대해서 계산하는 클래스이나, 차라리 모든 유저를 받도록 하는 것이 나을 것.
+        train_df.columns = ['user_id', 'item_id', 'rating', 'timestamp', 'origin_timestamp']
+        item_df.columns = ['item_id', 'movie_title', 'release_year', 'genre']
         self.train_df = train_df
-
+        self.item_mean_df = train_df.groupby('item_id').agg('mean')['rating']
+        self.rating_matrix = train_df.pivot_table(index='user_id', columns='item_id', values='rating', fill_value=0)
         # self.user_profile = {i: train_df[train_df['user_id:token'] == i]['item_id:token'].tolist() for i in train_df['user_id:token'].unique()}
         # 유저_id : 유저의 히스토리
         # ground_truth에 해당하는 정보는 빼야 할 수도?
 
-        self.total_user = train_df['user_id:token'].nunique()
+        self.total_user = train_df['user_id'].nunique()
 
-        self.user_profile = train_df[train_df['user_id:token'] == user]['item_id:token'].tolist()
+        self.user_profile = train_df[train_df['user_id'] == user]['item_id'].tolist()
         #user는 추천된 리스트를 받은 해당 유저
-        self.item_profiles = {item : train_df[train_df['item_id:token'] == item]['user_id:token'].tolist() for item in train_df['item_id:token'].unique()}
+        self.item_profiles = {item : train_df[train_df['item_id'] == item]['user_id'].tolist() for item in train_df['item_id'].unique()}
 
         self.genre = dict()
-        for i,j in zip(item_df['item_id:token'], item_df['genre:token_seq']):
+        for i,j in zip(item_df['item_id'], item_df['genre']):
             self.genre[i] = j.split(' ')
         #결국 traindf는 받아야 하는 것 같기도. 그럼 상위 클래스를 만들기?
 
@@ -66,14 +73,32 @@ class qualitative_indicator():
 
         return: R의 diversity
         '''
-        diversity = 0
-        for i in R:
-            for j in R:
-                if i == j: continue
-                dist = eval('self.'+ mode)(i,j)
-                diversity += dist
-        diversity = diversity / (len(R) * (len(R) - 1))
-        return diversity
+        if mode == 'rating':
+            dist_dict = defaultdict(defaultdict)
+            DoU = 0   # Diversity of User의 약자
+            for i,j in combinations(R, 2):
+                i,j = min(i,j), max(i,j)
+                if i in dist_dict and j in dist_dict[i]:
+                    DoU += dist_dict[i][j]
+                else:
+                    if mode == 'rating':             # mode 별로 하나씩 추가하면 될 듯
+                        d = self.rating_dist(i,j)    # rating_dist 함수로 측정한 dist(i,j)
+                    dist_dict[i][j] = d
+                    DoU += d
+            DoU /= ((len(R) * (len(R)-1)) / 2)
+
+            return DoU
+
+        elif mode == 'jaccard':
+            diversity = 0
+            for i in R:
+                for j in R:
+                    if i == j: continue
+                    dist = eval('self.'+ mode)(i,j)
+                    diversity += dist
+            diversity = diversity / (len(R) * (len(R) - 1))
+            return diversity
+
 
     def Serendipity(self, R:List[int], mode:str='PMI'):
         '''
@@ -141,6 +166,26 @@ class qualitative_indicator():
         s2 = set(self.genre[j])
 
         return 1 - len(s1 & s2) / len(s1 | s2)
+
+    def rating_dist(self, i:int, j:int):
+        '''
+        i: 아이템 i
+        j: 아이템 j
+
+        return : i와 j의 rating 기반 유사도 값
+        '''
+        A = self.rating_matrix
+        item_mean_df = self.item_mean_df
+
+        a = A.loc[(A.loc[:,i] * A.loc[:,j]) != 0, i] - item_mean_df[i] # rui - mean(ri)
+        b = A.loc[(A.loc[:,i] * A.loc[:,j]) != 0, j] - item_mean_df[j] # ruj - mean(rj)
+        sum_of_A = sum(a*b)  # 분자 식
+        sum_of_B = sum(a**2) # 분모 식 앞 부분
+        sum_of_C = sum(b**2) # 분모 식 뒷 부분
+
+        result = 0.5 -  (sum_of_A / (2 * np.sqrt(sum_of_B) * np.sqrt(sum_of_C)))
+
+        return result
 
 
 
