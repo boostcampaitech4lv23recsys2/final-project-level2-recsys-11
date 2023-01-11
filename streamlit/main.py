@@ -25,7 +25,8 @@ head.set_title()
 
 st.markdown('<h3>compare table</h3>', unsafe_allow_html=True)
 body.display_dataframe(df, container_width=True)
-
+st.markdown('---')
+body.compare_metric()
 multi_plot = st.container()
 
 mcol1, mcol2, mcol3 = multi_plot.columns(3)
