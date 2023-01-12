@@ -4,6 +4,8 @@ import matplotlib as plt
 import viz
 import plotly.express as px
 import os
+import requests
+import plotly.io as pio
 from design import head, body
 
 
@@ -19,28 +21,21 @@ st.set_page_config(
     # }
 )
 
-@st.cache
-def load_data(path):
-    df = pd.read_csv(path)[:100]
-    return df
+df_r = requests.get(
+    url = 'http://127.0.0.1:30004/data'
+)
 
-df = load_data('/opt/ml/input/data/train/train_ratings.csv')[:100]
+df = pd.DataFrame(df_r.json())
 
 head.set_title()
 
-st.markdown('<h3>compare table</h3>', unsafe_allow_html=True)
+st.markdown('<h3>compare table</h3>', unsafe_allow_html=True) # display_dataframe에서 실행하면 에러 남
 body.display_dataframe(df, container_width=True)
 st.markdown('---')
 body.compare_metric()
-multi_plot = st.container()
 
-mcol1, mcol2, mcol3 = multi_plot.columns(3)
-'''
-임베딩 벡터 시각화 아이디어
-'''
-if 'column' not in st.session_state:
-    st.session_state.column = 'user'
-# mcol1.markdown(f"<h1 style='text-align: center; color: black;'>{option}</h1>", unsafe_allow_html=True) # 중앙 정렬 텍스트
-st.session_state.column = mcol1.selectbox(label='select value',options=df.columns, key=1)
-# mcol1.header(f'{option}+1', align='center)
-mcol1.pyplot(fig = viz.histogram(df[st.session_state.column]))
+plot_r = requests.get(
+    url = 'http://127.0.0.1:30004/plot'
+)
+plotly_fig = pio.from_json(plot_r.json())
+st.plotly_chart(plotly_fig)
