@@ -93,11 +93,15 @@ class quantitative_indicator():
         return popularity_metric
 
     def NDCG(self):
+        '''
+        NDCG = DCG / IDCG
+        DCG = rel(i) / log2(i + 1)
+        '''
         ndcg = 0
         for i in self.R_df.index:
-            k = (self.k, len(self.ground_truth[i]))
-            idcg = sum([1 / np.log2(j + 2) for j in range(k)])
-            dcg = sum([self.R_df.loc[i][j] in set(self.ground_truth[i]) / np.log2(j + 2) for j in range(self.k)])
+            k = min(self.k, len(self.ground_truth.iloc[i]))
+            idcg = sum([1 / np.log2(j + 2) for j in range(k)]) # 최대 dcg. +2는 range가 0에서 시작해서
+            dcg = sum([int(self.R_df.iloc[i][j] in set(self.ground_truth.iloc[i])) / np.log2(j + 2) for j in range(self.k)])
             ndcg += dcg / idcg
         return ndcg / len(self.R_df)
 
@@ -109,8 +113,12 @@ class quantitative_indicator():
         #이 TOTAL은 GROUND까지 포함한 값이어야 한다.
         return rec_num / self.n_item
 
-    def Recall():
-        pass
+    def Recall(self):
+        #해당 코드는 현재 hit지표에 맞게 쓰여저 있습니다.
+        sum_recall = 0
+
+
+        return sum_recall / self.n_user
 
 
     def Sparsity():
