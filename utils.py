@@ -154,9 +154,9 @@ class quantitative_indicator():
         '''
         ndcg = 0
         for i in self.R_df.index:
-            k = min(self.k, len(self.truth.iloc[i]))
+            k = min(self.K, len(self.ground_truth['item'].loc[1]))
             idcg = sum([1 / np.log2(j + 2) for j in range(k)]) # 최대 dcg. +2는 range가 0에서 시작해서
-            dcg = sum([int(self.R_df.iloc[i][j] in set(self.truth.iloc[i])) / np.log2(j + 2) for j in range(self.k)])
+            dcg = sum([int(self.R_df.loc[i].item()[j] in set(self.ground_truth['item'].loc[i])) / np.log2(j + 2) for j in range(self.K)])
             ndcg += dcg / idcg
         return ndcg / len(self.R_df)
 
@@ -204,16 +204,6 @@ class quantitative_indicator():
 
         return sum_recall / true_users
 
-
-
-
-
-class qualitative_indicator:
-
-
-
-    def Sparsity():
-        pass
 
 
 class qualitative_indicator:
