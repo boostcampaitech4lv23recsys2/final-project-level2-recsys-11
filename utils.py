@@ -12,7 +12,26 @@ from itertools import combinations
 from time import time
 
 class quantitative_indicator():
-    pass
+    def __init__(self, train_df, rec_df, ground_truth):
+        train_df.columns = ['user_id', 'item_id', 'rating', 'timestamp', 'origin_timestamp']
+        self.total_user = rec_df['user'].nunique()
+        self.k = len(rec_df) / self.total_user
+
+
+    def Recall():
+        pass
+
+    def Coverage(self):
+        '''
+        return: 추천된 아이템의 고유값 수 / 전체 아이템 수
+        '''
+        rec_num = self.rec_df['item'].nunique()
+        total_num = self.train_df['item_id'].nunique()
+        #이 TOTAL은 GROUND까지 포함한 값이어야 한다.
+        return rec_num / total_num
+
+    def Sparsity():
+        pass
 
 class qualitative_indicator():
     def __init__(self, train_df, user, item_df): # 현재 이 클래스는 한 유저에 대해서 계산하는 클래스이나, 차라리 모든 유저를 받도록 하는 것이 나을 것.
@@ -21,7 +40,7 @@ class qualitative_indicator():
         self.train_df = train_df
         self.item_mean_df = train_df.groupby('item_id').agg('mean')['rating']
         self.rating_matrix = train_df.pivot_table(index='user_id', columns='item_id', values='rating', fill_value=0)
-        # self.user_profile = {i: train_df[train_df['user_id:token'] == i]['item_id:token'].tolist() for i in train_df['user_id:token'].unique()}
+        # self.user_profile = {i: train_df[train_df['user_id'] == i]['item_id'].tolist() for i in train_df['user_id'].unique()}
         # 유저_id : 유저의 히스토리
         # ground_truth에 해당하는 정보는 빼야 할 수도?
 
@@ -48,7 +67,7 @@ class qualitative_indicator():
 
         return: 각 아이템 번호에 따른 인기도 딕트
         '''
-        inter_count_of_items = self.train_df.groupby('item_id:token').count()['user_id:token']
+        inter_count_of_items = self.train_df.groupby('item_id').count()['user_id']
         total_len = len(self.train_df)
 
         pop_of_each_items = dict()
@@ -58,7 +77,7 @@ class qualitative_indicator():
         return pop_of_each_items
 
     def calculate_Famousness(self):
-        users_of_items = train_df.groupby('item_id:token')['user_id:token'].nunique()
+        users_of_items = train_df.groupby('item_id')['user_id'].nunique()
 
         fam_of_each_items = dict()
         for i, j in zip(users_of_items.keys(), users_of_items):
@@ -204,6 +223,8 @@ print('유저 1에 대한 추천리스트 R', R)
 print('R의 Serendipity by PMI', tmp.Serendipity(R, 'PMI'))
 print('R의 Serendipity by jaccard', tmp.Serendipity(R, 'jaccard'))
 print('R의 Novelty', tmp.Novelty(R))
+print('R의 Diversity by jaccard', tmp.Diversity(R, 'jaccard'))
+print('R의 Diversity by rating', tmp.Diversity(R, 'rating'))
 
 end = time()
 
