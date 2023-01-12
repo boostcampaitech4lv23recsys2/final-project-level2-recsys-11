@@ -74,12 +74,15 @@ class dataset_info:
 
 class quantitative_indicator():
 
-    def __init__(self, dataset_inf:dataset_info, R_df:pd.DataFrame):
+    def __init__(self, dataset_inf:dataset_info, R_df:pd.DataFrame, pred:pd.DataFrame):
         self.R_df = R_df # 전체 추천 리스트들. 유저가 인덱스이고 한 컬럼에 모든 각 유저에 대한 추천리스트가 담김
         self.n_user = dataset_info.n_user
         self.K = len(self.R_df.loc[0, 'item'])  # 수정 필요 -- ex. shape[1]
         self.n_user = dataset_info.n_user
         self.n_item = dataset_info.n_item
+
+        self.pred = pred  # 필요 없을 지도..?
+        self.train_df = dataset_info.train_df
 
         # Popularity
         self.pop_user_per_item = self.calculate_Popularity_user()
@@ -116,9 +119,21 @@ class quantitative_indicator():
     def Recall(self):
         #해당 코드는 현재 hit지표에 맞게 쓰여저 있습니다.
         sum_recall = 0
+        pass
+
+    def TailPercentage(self, tail_ratio=0.1):
+        item_count = self.train_df.groupby('item_id').agg('count')
+        item_count.drop(['rating', 'timestamp','origin_timestamp'], axis=1, inplace=True)
+        item_count.columns =  ['item_count']
+
+        item_count_sort = item_count.sort_values(by = 'item_count', ascending=False)
+        item_count_sort.reset_index(inplace=True)
+        T = item_count_sort.item_id[-int(len(item_count_sort) * tail_ratio):].values
+
+        Tp = np.mean([sum([1 if item in T else 0 for item in self.R_df.loc[idx,'item']]) / 10 for idx in self.R_df.index])
+        return Tp
 
 
-        return sum_recall / self.n_user
 
 
     def Sparsity():
