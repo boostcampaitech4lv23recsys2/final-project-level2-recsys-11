@@ -19,6 +19,7 @@ import argparse
 import pandas as pd
 import os
 from copy import deepcopy
+import uuid
 
 def get_parser():
     parser = argparse.ArgumentParser()
@@ -51,6 +52,8 @@ if __name__ == '__main__':
             # '/opt/ml/final-project-level2-recsys-11/RecBole/config/BPR1.yaml'
         ]
     )
+    id = uuid.uuid4()
+    config['config_id'] = id
 
     # train config
     config.final_config_dict['train_batch_size'] = args.train_batch_size
