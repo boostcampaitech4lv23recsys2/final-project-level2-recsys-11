@@ -19,19 +19,17 @@ class dataset_info:
 
         train_df.columns = ['user_id', 'item_id', 'rating', 'timestamp', 'origin_timestamp']
         item_df.columns = ['item_id', 'movie_title', 'release_year', 'genre']
+        self.truth = ground_truth.groupby('user').agg(list)
 
         self.train_df = train_df
         self.item_mean_df = train_df.groupby('item_id').agg('mean')['rating']
         self.rating_matrix = train_df.pivot_table(index='user_id', columns='item_id', values='rating', fill_value=0)
 
-        # self.user_profile = {i: train_df[train_df['user_id:token'] == i]['item_id:token'].tolist() for i in train_df['user_id:token'].unique()}
-        # 유저_id : 유저의 히스토리
-        # ground_truth에 해당하는 정보는 빼야 할 수도?
-
         self.n_user = train_df['user_id'].nunique()
         self.n_item = train_df['item_id'].nunique()
         self.user_profiles = {user: train_df[train_df['user_id'] == user]['item_id'].tolist() for user in train_df['user_id'].unique()} # 모든 유저들의 유저 프로파일로 수정
         self.item_profiles = {item : train_df[train_df['item_id'] == item]['user_id'].tolist() for item in train_df['item_id'].unique()}
+        # 이 값들은 ground_truth로 간 값은 빼고 고려해야 한다. 추후 수정 꼭 필요
 
         self.genre = dict()
         for i,j in zip(item_df['item_id'], item_df['genre']):
@@ -105,6 +103,19 @@ class quantitative_indicator():
             k = min(self.k, len(self.ground_truth.iloc[i]))
             idcg = sum([1 / np.log2(j + 2) for j in range(k)]) # 최대 dcg. +2는 range가 0에서 시작해서
             dcg = sum([int(self.R_df.iloc[i][j] in set(self.ground_truth.iloc[i])) / np.log2(j + 2) for j in range(self.k)])
+            ndcg += dcg / idcg
+        return ndcg / len(self.R_df)
+
+    def NDCG(self):
+        '''
+        NDCG = DCG / IDCG
+        DCG = rel(i) / log2(i + 1)
+        '''
+        ndcg = 0
+        for i in tqdm(self.R_df.index):
+            k = min(self.K, len(self.ground_truth['item'].loc[1]))
+            idcg = sum([1 / np.log2(j + 2) for j in range(k)]) # 최대 dcg. +2는 range가 0에서 시작해서
+            dcg = sum([int(self.R_df.loc[i].item()[j] in set(self.ground_truth['item'].loc[i])) / np.log2(j + 2) for j in range(self.K)])
             ndcg += dcg / idcg
         return ndcg / len(self.R_df)
 
@@ -333,7 +344,7 @@ train_df = pd.read_csv('/opt/ml/final-project-level2-recsys-11/dataset/ml-1m/ml-
 item_df = pd.read_csv('/opt/ml/final-project-level2-recsys-11/dataset/ml-1m/ml-1m.item', sep='\t')
 rec_df = pd.read_csv('/opt/ml/input/final-project-level2-recsys-11/RecBole/inference/EASE_9e463a68-2033-47dc-bac6-d6ee82df8e91.csv', sep='\t')
 
-tmp = qualitative_indicator(train_df, 1, item_df)
+tmp = qualitative_indicator
 R = rec_df[:10]['item'].tolist()
 
 start = time()
@@ -344,6 +355,8 @@ print('R의 Serendipity by jaccard', tmp.Serendipity(R, 'jaccard'))
 print('R의 Novelty', tmp.Novelty(R))
 print('R의 Diversity by jaccard', tmp.Diversity(R, 'jaccard'))
 print('R의 Diversity by rating', tmp.Diversity(R, 'rating'))
+
+# tmp = quantitative_indicator()
 
 end = time()
 
