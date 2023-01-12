@@ -28,6 +28,7 @@ class dataset_info:
         # ground_truth에 해당하는 정보는 빼야 할 수도?
 
         self.n_user = train_df['user_id'].nunique()
+        self.n_item = train_df['item_id'].nunique()
         self.user_profiles = {user: train_df[train_df['user_id'] == user]['item_id'].tolist() for user in train_df['user_id'].unique()} # 모든 유저들의 유저 프로파일로 수정
         self.item_profiles = {item : train_df[train_df['item_id'] == item]['user_id'].tolist() for item in train_df['item_id'].unique()}
 
@@ -70,11 +71,24 @@ class dataset_info:
         return fam_of_each_items
 
 
-class quantitative_indicator():
-    def __init__(self, train_df, rec_df, ground_truth):
-        train_df.columns = ['user_id', 'item_id', 'rating', 'timestamp', 'origin_timestamp']
-        self.total_user = rec_df['user'].nunique()
-        self.k = len(rec_df) / self.total_user
+class quantitative_indicator:
+    def __init__(self, dataset_info:dataset_info, R_df:pd.DataFrame):
+        self.R_df = R_df # 전체 추천 리스트들. 유저가 인덱스이고 한 컬럼에 모든 각 유저에 대한 추천리스트가 담김
+
+
+
+        self.n_user = dataset_info.n_user
+        self.n_item = dataset_info.n_item
+
+
+    def NDCG(self):
+        ndcg = 0
+        for i in self.R_df.index:
+            k = (self.k, len(self.ground_truth[i]))
+            idcg = sum([1 / np.log2(j + 2) for j in range(k)])
+            dcg = sum([self.R_df.loc[i][j] in set(self.ground_truth[i]) / np.log2(j + 2) for j in range(self.k)])
+            ndcg += dcg / idcg
+        return ndcg / len(self.R_df)
 
 
     def Recall():
@@ -85,9 +99,8 @@ class quantitative_indicator():
         return: 추천된 아이템의 고유값 수 / 전체 아이템 수
         '''
         rec_num = self.rec_df['item'].nunique()
-        total_num = self.train_df['item_id'].nunique()
         #이 TOTAL은 GROUND까지 포함한 값이어야 한다.
-        return rec_num / total_num
+        return rec_num / self.n_item
 
     def Sparsity():
         pass
@@ -127,7 +140,7 @@ class qualitative_indicator:
         mode : 사용할 방식. {'jaccard', 'rating', 'latent'}
         '''
         DoA = [0.5] + [self.Diversity(self.R_df.loc[idx, 'item'],mode) for idx in self.R_df.index]  # 0번째는 패딩
-        
+
         return DoA
 
 
@@ -137,8 +150,8 @@ class qualitative_indicator:
         mode :  사용할 방식. {'PMI', 'jaccard'}
         '''
         DoA = [0.5] + [self.Serendipity(self.R_df.loc[idx, 'item'],mode) for idx in self.R_df.index]  # 0번째는 패딩
-        
-        return DoA 
+
+        return DoA
 
 
     def Total_Novelty(self) -> List[float]:
@@ -146,8 +159,8 @@ class qualitative_indicator:
         모든 유저에 대한 추천 리스트를 받으면 각각의 Novelty를 계산하여 리스트로 return
         '''
         DoA = [0.5] + [self.Novelty(self.R_df.loc[idx, 'item']) for idx in self.R_df.index]  # 0번째는 패딩
-        
-        return DoA 
+
+        return DoA
 
 
     def Diversity(self, R:List[int], mode:str='jaccard'):
