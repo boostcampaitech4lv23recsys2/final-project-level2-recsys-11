@@ -72,11 +72,11 @@ class dataset_info:
 
 class quantitative_indicator():
 
-    def __init__(self, dataset_inf:dataset_info, R_df:pd.DataFrame, pred:pd.DataFrame):
-        self.R_df = R_df 
+    def __init__(self, dataset_inf:dataset_info, pred:pd.DataFrame):
+        self.R_df = pred.groupby('user').agg(list)
         self.n_user = dataset_info.n_user
         self.K = len(self.R_df.loc[0, 'item'])  # 수정 필요 -- ex. shape[1]
-        self.pred = pred  # 필요 없을 지도..?
+        # self.pred = pred  # 필요 없을 지도..?
         self.train_df = dataset_info.train_df
         
         # Popularity
@@ -101,6 +101,13 @@ class quantitative_indicator():
         
         Tp = np.mean([sum([1 if item in T else 0 for item in self.R_df.loc[idx,'item']]) / 10 for idx in self.R_df.index])
         return Tp
+
+    def Recall_K(self):
+        '''
+        최종 추천된 |R|->10개, ground_truth:1개로 계산 0,1
+        '''
+        
+
 
 class qualitative_indicator:    
 
