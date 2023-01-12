@@ -133,6 +133,14 @@ class quantitative_indicator():
         Tp = np.mean([sum([1 if item in T else 0 for item in self.R_df.loc[idx,'item']]) / 10 for idx in self.R_df.index])
         return Tp
 
+    def Recall_K(self):
+        '''
+        최종 추천된 |R|->10개, ground_truth:1개로 계산 0,1
+        '''
+
+
+
+class qualitative_indicator:
 
 
 
