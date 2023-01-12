@@ -13,6 +13,7 @@ from time import time
 
 
 class dataset_info:
+
     def __init__(self, train_df, user, item_df, ground_truth, item_h_matrix): # 현재 이 클래스는 한 유저에 대해서 계산하는 클래스이나, 차라리 모든 유저를 받도록 하는 것이 나을 것.
         #user는 추천된 리스트를 받은 해당 유저
 
@@ -42,11 +43,16 @@ class dataset_info:
         self.item_item_matrix = self.item_h_matrix @ self.item_h_matrix.T
 
         # Popularity
-        self.pop_of_each_items = self.calculate_Popularity()
-        self.fam_of_each_items = self.calculate_Famousness()
+        self.pop_user_per_item = self.calculate_Popularity_user()
+        self.pop_inter_per_item = self.calculate_Popularity_inter()
 
+    def calculate_Popularity_user(self):   # 유저 관점의 popularity
 
-    def calculate_Popularity(self):    # interaction 관점의 popularity
+        pop_user_per_item = (self.train_df['item_id'].value_counts() / self.n_user).to_dict()
+
+        return pop_user_per_item
+
+    def calculate_Popularity_inter(self):    # interaction 관점의 popularity
         '''
 
         지표를 계산하는 역할만 하는 함수인가?
@@ -55,31 +61,36 @@ class dataset_info:
 
         return: 각 아이템 번호에 따른 인기도 딕트
         '''
+
         inter_count_of_items = self.train_df.groupby('item_id').count()['user_id']
         total_len = len(self.train_df)
 
-        pop_of_each_items = dict()
+        pop_inter_per_item = dict()
         for i, j in zip(inter_count_of_items.keys(), inter_count_of_items):
-            pop_of_each_items[i] = j / total_len
+            pop_inter_per_item[i] = j / total_len
         #차라리 total_len을 항상 들고 다니고, 여기는 그냥 상호작용된 횟수만 넣고 다니는 게 좋은가?
-        return pop_of_each_items
-
-    def calculate_Famousness(self):   # 유저 관점의 popularity
-
-        fam_of_each_items = (self.train_df['item_id:token'].value_counts() / self.n_user).to_dict()
-
-        return fam_of_each_items
+        return pop_inter_per_item
 
 
-class quantitative_indicator:
-    def __init__(self, dataset_info:dataset_info, R_df:pd.DataFrame):
+class quantitative_indicator():
+
+    def __init__(self, dataset_inf:dataset_info, R_df:pd.DataFrame):
         self.R_df = R_df # 전체 추천 리스트들. 유저가 인덱스이고 한 컬럼에 모든 각 유저에 대한 추천리스트가 담김
-
-
-
+        self.n_user = dataset_info.n_user
+        self.K = len(self.R_df.loc[0, 'item'])  # 수정 필요 -- ex. shape[1]
         self.n_user = dataset_info.n_user
         self.n_item = dataset_info.n_item
 
+        # Popularity
+        self.pop_user_per_item = self.calculate_Popularity_user()
+        self.pop_inter_per_item = self.calculate_Popularity_inter()
+
+    def AveragePopularity(self):
+        popularity_df = self.R_df.applymap(lambda x: self.pop_user_per_item[x])
+
+        popularity_metric = popularity_df.sum(axis=1).mean() / self.k
+
+        return popularity_metric
 
     def NDCG(self):
         ndcg = 0
@@ -90,10 +101,6 @@ class quantitative_indicator:
             ndcg += dcg / idcg
         return ndcg / len(self.R_df)
 
-
-    def Recall():
-        pass
-
     def Coverage(self):
         '''
         return: 추천된 아이템의 고유값 수 / 전체 아이템 수
@@ -102,11 +109,16 @@ class quantitative_indicator:
         #이 TOTAL은 GROUND까지 포함한 값이어야 한다.
         return rec_num / self.n_item
 
+    def Recall():
+        pass
+
+
     def Sparsity():
         pass
 
 
 class qualitative_indicator:
+
     def __init__(self, dataset_info:dataset_info, R_df:pd.DataFrame):  # dataset_info: class
         self.R_df = R_df
         self.n_user = dataset_info.n_user
@@ -126,13 +138,12 @@ class qualitative_indicator:
         self.item_h_matrix = dataset_info.item_h_matrix
         self.item_item_matrix = dataset_info.item_item_matrix
 
+        # Diversity - dist dictionary
+        self.dist_dict = defaultdict(defaultdict)
+
         # Popularity
         self.pop_of_each_items = dataset_info.pop_of_each_items
         self.fam_of_each_items = dataset_info.fam_of_each_items
-
-        # dist dictionary
-        self.dist_dict = defaultdict(defaultdict)
-
 
     def Total_Diversity(self, mode:str='jaccard') -> List[float]:
         '''
@@ -143,25 +154,22 @@ class qualitative_indicator:
 
         return DoA
 
-
     def Total_Serendipity(self, mode:str='jaccard') -> List[float]:
         '''
         모든 유저에 대한 추천 리스트를 받으면 각각의 Serendipity를 계산하여 리스트로 return
         mode :  사용할 방식. {'PMI', 'jaccard'}
         '''
-        DoA = [0.5] + [self.Serendipity(self.R_df.loc[idx, 'item'],mode) for idx in self.R_df.index]  # 0번째는 패딩
+        SoA = [0.5] + [self.Serendipity(self.R_df.loc[idx, 'item'],mode) for idx in self.R_df.index]  # 0번째는 패딩
 
-        return DoA
-
+        return SoA
 
     def Total_Novelty(self) -> List[float]:
         '''
         모든 유저에 대한 추천 리스트를 받으면 각각의 Novelty를 계산하여 리스트로 return
         '''
-        DoA = [0.5] + [self.Novelty(self.R_df.loc[idx, 'item']) for idx in self.R_df.index]  # 0번째는 패딩
+        NoA = [0.5] + [self.Novelty(self.R_df.loc[idx, 'item']) for idx in self.R_df.index]  # 0번째는 패딩
 
-        return DoA
-
+        return NoA
 
     def Diversity(self, R:List[int], mode:str='jaccard'):
         '''
@@ -189,7 +197,6 @@ class qualitative_indicator:
 
             return diversity
 
-
     def Serendipity(self, R:List[int], mode:str='PMI'):
         '''
         R: 추천된 아이템 리스트
@@ -204,12 +211,10 @@ class qualitative_indicator:
         serendipity = sum_pmi / len(R)
         return serendipity
 
-
     def Novelty(self, R:List[int]):
         lst = np.array([*map(lambda x: self.fam_of_each_items[x], R)])
         novelty = -np.log2(lst)
         return novelty.mean() / np.log2(self.total_user)
-
 
     def Serendipity_foreach(self, i:int, u:int, mode:str='PMI'):
         '''
@@ -226,7 +231,6 @@ class qualitative_indicator:
             seren = eval('self.'+ mode)(i, item)
             min_seren = min(min_seren, seren)
         return min_seren
-
 
     def PMI(self, i:int, j:int):
         '''
@@ -245,7 +249,6 @@ class qualitative_indicator:
         pmi = np.log2(p_ij / (p_i * p_j)) / -np.log2(p_ij)
         return (1 - pmi) / 2
 
-
     def jaccard(self, i:int, j:int):
         '''
         i: 아이템 i
@@ -257,7 +260,6 @@ class qualitative_indicator:
         s2 = set(self.genre[j])
 
         return 1 - len(s1 & s2) / len(s1 | s2)
-
 
     def rating_dist(self, i:int, j:int):
         '''
@@ -278,7 +280,6 @@ class qualitative_indicator:
         result = 0.5 -  (sum_of_A / (2 * np.sqrt(sum_of_B) * np.sqrt(sum_of_C)))
 
         return result
-
 
     def latent(self, i:int, j:int):
         '''
