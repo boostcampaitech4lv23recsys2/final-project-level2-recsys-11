@@ -13,11 +13,12 @@ from time import time
 
 class dataset_info:
 
-    def __init__(self, train_df, user, item_df, ground_truth, item_h_matrix): # 현재 이 클래스는 한 유저에 대해서 계산하는 클래스이나, 차라리 모든 유저를 받도록 하는 것이 나을 것.
+    def __init__(self, train_df, user, item_df, ground_truth, item_h_matrix, K): # 현재 이 클래스는 한 유저에 대해서 계산하는 클래스이나, 차라리 모든 유저를 받도록 하는 것이 나을 것.
         #user는 추천된 리스트를 받은 해당 유저
 
         train_df.columns = ['user_id', 'item_id', 'rating', 'timestamp', 'origin_timestamp']
         item_df.columns = ['item_id', 'movie_title', 'release_year', 'genre']
+        self.ground_truth = ground_truth # ground_truth에 해당하는 정보는 빼야 할 수도?
 
         self.train_df = train_df
         self.item_mean_df = train_df.groupby('item_id').agg('mean')['rating']
@@ -25,7 +26,6 @@ class dataset_info:
 
         # self.user_profile = {i: train_df[train_df['user_id:token'] == i]['item_id:token'].tolist() for i in train_df['user_id:token'].unique()}
         # 유저_id : 유저의 히스토리
-        # ground_truth에 해당하는 정보는 빼야 할 수도?
 
         self.n_user = train_df['user_id'].nunique()
         self.user_profiles = {user: train_df[train_df['user_id'] == user]['item_id'].tolist() for user in train_df['user_id'].unique()} # 모든 유저들의 유저 프로파일로 수정
@@ -39,6 +39,9 @@ class dataset_info:
         # matrices for latent(i, j) 
         self.item_h_matrix = item_h_matrix
         self.item_item_matrix = self.item_h_matrix @ self.item_h_matrix.T
+
+        # Recommendation list length for each users
+        self.K = K
 
         # Popularity
         self.pop_user_per_item = self.calculate_Popularity_user()
@@ -75,7 +78,9 @@ class quantitative_indicator():
     def __init__(self, dataset_inf:dataset_info, pred:pd.DataFrame):
         self.R_df = pred.groupby('user').agg(list)
         self.n_user = dataset_info.n_user
-        self.K = len(self.R_df.loc[0, 'item'])  # 수정 필요 -- ex. shape[1]
+        self.K = dataset_info.K
+        self.ground_truth = dataset_info.ground_truth
+        # self.K = len(self.R_df.item[1])
         # self.pred = pred  # 필요 없을 지도..?
         self.train_df = dataset_info.train_df
         
@@ -99,13 +104,28 @@ class quantitative_indicator():
         item_count_sort.reset_index(inplace=True)
         T = item_count_sort.item_id[-int(len(item_count_sort) * tail_ratio):].values
         
-        Tp = np.mean([sum([1 if item in T else 0 for item in self.R_df.loc[idx,'item']]) / 10 for idx in self.R_df.index])
+        Tp = np.mean([sum([1 if item in T else 0 for item in self.R_df.loc[idx,'item']]) / self.K for idx in self.R_df.index])
         return Tp
 
     def Recall_K(self):
-        '''
-        최종 추천된 |R|->10개, ground_truth:1개로 계산 0,1
-        '''
+        # def recall_at_k(actual, predicted, topk):
+        topk = self.K
+        R_df = self.R_df                              # 유저, [추천리스트] 형태
+        ground_truth = self.ground_truth
+        T_df = ground_truth.groupby('user').agg(list) # R_df와 같은 형태
+        actual = T_df.item
+        predicted = R_df.item
+        sum_recall = 0.0
+        true_users = 0
+        for idx in actual.index:
+            act_set = set(actual[idx])
+            pred_set = set(predicted[idx][:topk])
+            if len(act_set) != 0:
+                sum_recall += len(act_set & pred_set) / float(len(act_set))
+                true_users += 1
+
+        return sum_recall / true_users
+
         
 
 
