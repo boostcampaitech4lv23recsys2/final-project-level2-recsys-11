@@ -13,15 +13,17 @@ from time import time
 
 class dataset_info:
 
-    def __init__(self, train_df, user, item_df, ground_truth, item_h_matrix): # 현재 이 클래스는 한 유저에 대해서 계산하는 클래스이나, 차라리 모든 유저를 받도록 하는 것이 나을 것.
-        #user는 추천된 리스트를 받은 해당 유저
-
+    def __init__(self, train_df, user, item_df, R_df:pd.Series, ground_truth:pd.Series, item_h_matrix): # 현재 이 클래스는 한 유저에 대해서 계산하는 클래스이나, 차라리 모든 유저를 받도록 하는 것이 나을 것.
+        # DataFrames
         train_df.columns = ['user_id', 'item_id', 'rating', 'timestamp', 'origin_timestamp']
         item_df.columns = ['item_id', 'movie_title', 'release_year', 'genre']
 
         self.train_df = train_df
         self.item_mean_df = train_df.groupby('item_id').agg('mean')['rating']
         self.rating_matrix = train_df.pivot_table(index='user_id', columns='item_id', values='rating', fill_value=0)
+
+        self.R_df = R_df 
+        self.ground_truth = ground_truth
 
         # self.user_profile = {i: train_df[train_df['user_id:token'] == i]['item_id:token'].tolist() for i in train_df['user_id:token'].unique()}
         # 유저_id : 유저의 히스토리
@@ -72,21 +74,69 @@ class dataset_info:
 
 class quantitative_indicator():
 
-    def __init__(self, dataset_inf:dataset_info, R_df:pd.DataFrame):
-        self.R_df = R_df 
+    def __init__(self, dataset_info:dataset_info):
+        # DataFrames 
+        self.R_df = dataset_info.R_df 
+        self.ground_truth = dataset_info.ground_truth
+
         self.n_user = dataset_info.n_user
         self.K = len(self.R_df.loc[0, 'item'])  # 수정 필요 -- ex. shape[1]
 
         # Popularity
-        self.pop_user_per_item = self.calculate_Popularity_user()
-        self.pop_inter_per_item = self.calculate_Popularity_inter()
+        self.pop_user_per_item = dataset_info.pop_user_per_item
+        self.pop_inter_per_item = dataset_info.pop_inter_per_item
+        self.popularity_df = self.R_df.apply(lambda R: [self.pop_user_per_item[item] for item in R])
         
-    def AveragePopularity(self):
-        popularity_df = self.R_df.applymap(lambda x: self.pop_user_per_item[x])
-
-        popularity_metric = popularity_df.sum(axis=1).mean() / self.k
+    def AveragePopularity(self) -> float:
+        '''
+        유저별로 주어진 추천 아이템 리스트의 평균 아이템 인기도 (self.popularity_df)
+        -> 모든 유저들에 대한 평균 추천 아이템 인기도 (popularity_metric)
+        '''
+        popularity_metric = self.popularity_df.apply(lambda R: sum(R)).mean() / self.K
 
         return popularity_metric
+
+    def apk(self, actual, predicted, k=10):
+        """
+        Computes the average precision at k.
+        This function computes the average precision at k between two lists of
+        items.
+        Parameters
+        ----------
+        actual : list
+                A list of elements that are to be predicted (order doesn't matter)
+        predicted : list
+                    A list of predicted elements (order does matter)
+        k : int, optional
+            The maximum number of predicted elements
+        Returns
+        -------
+        score : double
+                The average precision at k over the input lists
+        """
+        if len(predicted) > k:
+            predicted = predicted[:k]
+
+        score = 0.0
+        num_hits = 0.0
+
+        for i, p in enumerate(predicted):
+            if p in actual and p not in predicted[:i]:
+                num_hits += 1.0
+                score += num_hits / (i + 1.0)
+
+        if not actual:
+            return 0.0
+
+        return score / min(len(actual), k)
+
+    def mapk(self, actual, predicted, k=10):
+        """
+        Computes the mean average precision at k.
+        This function computes the mean average prescision at k between two lists
+        of lists of items.
+        """
+        return np.mean([self.apk(a, p, k) for a, p in zip(actual, predicted)])
 
 
 class qualitative_indicator:    
