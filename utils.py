@@ -90,7 +90,7 @@ class quantitative_indicator():
 
         return popularity_metric
 
-    def Tail_percentage(self, tail_ratio=0.1):
+    def TailPercentage(self, tail_ratio=0.1):
         item_count = self.train_df.groupby('item_id').agg('count')
         item_count.drop(['rating', 'timestamp','origin_timestamp'], axis=1, inplace=True)
         item_count.columns =  ['item_count']
