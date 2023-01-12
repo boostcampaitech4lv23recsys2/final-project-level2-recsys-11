@@ -54,7 +54,7 @@ class dataset_info:
         return: 각 아이템 번호에 따른 인기도 딕트
         '''
         
-        inter_count_of_items = self.train_df.groupby('item_id:token').count()['user_id:token']
+        inter_count_of_items = self.train_df.groupby('item_id').count()['user_id']
         total_len = len(self.train_df)
 
         pop_of_each_items = dict()
@@ -66,7 +66,7 @@ class dataset_info:
 
     def calculate_Famousness(self):   # 유저 관점의 popularity
         
-        fam_of_each_items = (self.train_df['item_id:token'].value_counts() / self.n_user).to_dict()
+        fam_of_each_items = (self.train_df['item_id'].value_counts() / self.n_user).to_dict()
 
         return fam_of_each_items
     
