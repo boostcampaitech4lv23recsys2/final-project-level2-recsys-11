@@ -99,6 +99,38 @@ class qualitative_indicator:
         self.pop_of_each_items = dataset_info.pop_of_each_items
         self.fam_of_each_items = dataset_info.fam_of_each_items
 
+        # dist dictionary
+        self.dist_dict = defaultdict(defaultdict)
+
+
+    def Total_Diversity(self, mode:str='jaccard') -> List[float]:
+        '''
+        모든 유저에 대한 추천 리스트를 받으면 각각의 Diversity 계산하여 리스트로 return
+        mode : 사용할 방식. {'jaccard', 'rating', 'latent'}
+        '''
+        DoA = [0.5] + [self.Diversity(self.R_df.loc[idx, 'item'],mode) for idx in self.R_df.index]  # 0번째는 패딩
+        
+        return DoA
+
+
+    def Total_Serendipity(self, mode:str='jaccard') -> List[float]:
+        '''
+        모든 유저에 대한 추천 리스트를 받으면 각각의 Serendipity를 계산하여 리스트로 return
+        mode :  사용할 방식. {'PMI', 'jaccard'}
+        '''
+        DoA = [0.5] + [self.Serendipity(self.R_df.loc[idx, 'item'],mode) for idx in self.R_df.index]  # 0번째는 패딩
+        
+        return DoA 
+
+
+    def Total_Novelty(self) -> List[float]:
+        '''
+        모든 유저에 대한 추천 리스트를 받으면 각각의 Novelty를 계산하여 리스트로 return
+        '''
+        DoA = [0.5] + [self.Novelty(self.R_df.loc[idx, 'item']) for idx in self.R_df.index]  # 0번째는 패딩
+        
+        return DoA 
+
 
     def Diversity(self, R:List[int], mode:str='jaccard'):
         '''
@@ -107,30 +139,23 @@ class qualitative_indicator:
 
         return: R의 diversity
         '''
-        if mode == 'rating':
-            dist_dict = defaultdict(defaultdict)
-            DoU = 0   # Diversity of User의 약자
-            for i,j in combinations(R, 2):
-                i,j = min(i,j), max(i,j)
-                if i in dist_dict and j in dist_dict[i]:
-                    DoU += dist_dict[i][j]
-                else:
-                    if mode == 'rating':             # mode 별로 하나씩 추가하면 될 듯
-                        d = self.rating_dist(i,j)    # rating_dist 함수로 측정한 dist(i,j)
-                    dist_dict[i][j] = d
-                    DoU += d
-            DoU /= ((len(R) * (len(R)-1)) / 2)
+        # dist_dict = defaultdict(defaultdict)
+        diversity = 0   # Diversity of User의 약자
+        for i,j in combinations(R, 2):
+            i,j = min(i,j), max(i,j)
+            if i in self.dist_dict and j in self.dist_dict[i]:
+                diversity += self.dist_dict[i][j]
+            else:
+                if mode == 'rating':             # mode 별로 하나씩 추가하면 될 듯
+                    d = self.rating_dist(i,j)    # rating_dist 함수로 측정한 dist(i,j)
+                elif mode == 'jaccard':
+                    d = self.jaccard(i,j)
+                elif mode == 'latent':
+                    d = self.latent(i,j)
+                self.dist_dict[i][j] = d
+                diversity += d
+            diversity /= ((len(R) * (len(R)-1)) / 2)
 
-            return DoU
-
-        else:
-            diversity = 0
-            for i in R:
-                for j in R:
-                    if i == j: continue
-                    dist = eval('self.'+ mode)(i,j)
-                    diversity += dist
-            diversity = diversity / (len(R) * (len(R) - 1))
             return diversity
 
 
@@ -150,9 +175,6 @@ class qualitative_indicator:
 
 
     def Novelty(self, R:List[int]):
-        # p(i) = popularity
-        # 1 - p(i) or -log(p(i))
-
         lst = np.array([*map(lambda x: self.fam_of_each_items[x], R)])
         novelty = -np.log2(lst)
         return novelty.mean() / np.log2(self.total_user)
@@ -173,10 +195,6 @@ class qualitative_indicator:
             seren = eval('self.'+ mode)(i, item)
             min_seren = min(min_seren, seren)
         return min_seren
-
-
-    def Serendipity_total(self, i:int, mode:str='PMI'): # 모든 유저들에 대한 Serendipity_foreach(i, mode)
-        pass
 
 
     def PMI(self, i:int, j:int):
