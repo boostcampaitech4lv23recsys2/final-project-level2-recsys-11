@@ -89,7 +89,7 @@ class qualitative_indicator:
         self.item_mean_df = dataset_info.item_mean_df
 
         # Diversity - rating
-        self.pivot_table = dataset_info.rating_matrix
+        self.rating_matrix = dataset_info.rating_matrix
 
         # Diversity - latent
         self.item_h_matrix = dataset_info.item_h_matrix
