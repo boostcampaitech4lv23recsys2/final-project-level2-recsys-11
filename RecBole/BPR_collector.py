@@ -9,14 +9,15 @@ from recbole.utils.case_study import full_sort_topk
 
 
 if __name__ == '__main__':
-    model_config_path = os.path.join(os.path.dirname(__file__), 'BPR_configs') 
+    model_config_path = os.path.join(os.path.dirname(__file__), '..', 'BPR_configs') 
     if not os.path.exists(model_config_path):
         os.mkdir(model_config_path)
 
     model_config = {}
     model_dir_path = os.path.join(os.path.dirname(__file__), 'saved')
     
-    for i, model_file_name in enumerate(tqdm(os.listdir(model_dir_path))):
+    model_list = [path for path in os.listdir(model_dir_path) if 'BPR' in path]
+    for i, model_file_name in enumerate(tqdm(model_list)):
         model_path = os.path.join(model_dir_path, model_file_name)
 
         config, model, dataset, train_data, valid_data, test_data = \
@@ -50,24 +51,4 @@ if __name__ == '__main__':
 
         with open(os.path.join(model_config_path, f'BPR_{i:03}.pickle'), 'wb') as f:
             pickle.dump(model_config, f)
-
-
-    # user_token2id = deepcopy(dataset.field2token_id[dataset.uid_field])
-    # del user_token2id['[PAD]']
-    # model_name = args.model_path.split('/')[6][:3]
-
-    # if model_name == 'BPR':
-    #     item_vector = model.item_embedding.weight.cpu().detach().numpy()
-    #     np.save(f'./saved/{model_name}_itemvector', item_vector)
-        
-    # id_item_df = pd.DataFrame(list(test_data._dataset.field2token_id['item_id']), columns=['item_id'])
-    # id_item_df.to_csv(f'./saved/{model_name}_id_item_df.csv', index=False)
-    # print(dataset)
-    
-    # preds = []
-    # for user, uid in tqdm(user_token2id.items()):
-    #     topk_score, topk_iid_list = \
-    #         full_sort_topk([uid], model=model, test_data=test_data, k=args.topk, device=config['device'])
-    #     external_item_list = dataset.id2token(dataset.iid_field, topk_iid_list.cpu())
-    #     for item in external_item_list[0]:
-    #         preds.append([user, item])
+            

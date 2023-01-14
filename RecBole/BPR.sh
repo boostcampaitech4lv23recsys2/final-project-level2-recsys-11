@@ -1,4 +1,6 @@
 #! /bin/bash
+find saved/ -name "BPR*" -delete
+
 neg_distribution_list="uniform popularity"
 neg_sample_num_list="1 3 5"
 embedding_size_list="16 32 64"

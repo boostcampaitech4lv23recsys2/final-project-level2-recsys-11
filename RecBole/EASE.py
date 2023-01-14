@@ -1,8 +1,6 @@
 from logging import getLogger
 from recbole.config import Config
 from recbole.data import create_dataset, data_preparation
-from recbole.model.general_recommender import BPR
-from recbole.trainer import Trainer
 from recbole.utils import init_seed, init_logger, get_model, get_trainer
 
 from recbole.data.transform import construct_transform
@@ -47,8 +45,7 @@ if __name__ == '__main__':
         model='EASE',
         dataset=args.dataset,
         config_file_list=[
-            os.path.join(os.path.dirname(__file__), 'config', 'environment.yaml'), 
-            # '/opt/ml/final-project-level2-recsys-11/RecBole/config/BPR1.yaml'
+            os.path.join(os.path.dirname(__file__), 'config', 'environment.yaml'),
         ]
     )
     id = uuid.uuid4()
