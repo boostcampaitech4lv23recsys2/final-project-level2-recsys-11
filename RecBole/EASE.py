@@ -28,14 +28,13 @@ def get_parser():
 
     # train
     parser.add_argument('--train_batch_size', default=4096, type=int)
-    parser.add_argument('--epochs', default=200, type=int)
+    parser.add_argument('--epochs', default=2, type=int)
     parser.add_argument('--neg_distribution', default='uniform', type=str) # uniform, popularity
     parser.add_argument('--neg_sample_num', default=1, type=int)
     parser.add_argument('--neg_min', default=0, type=int)
     
     # model
-    parser.add_argument('--embedding_size', default=16, type=int)
-    parser.add_argument('--weight_decay', default=0.0, type=float)
+    parser.add_argument('--reg_weight', default=250.0, type=float)
 
     args = parser.parse_args()
     return args
@@ -45,7 +44,7 @@ if __name__ == '__main__':
     args = get_parser()
     # configurations initialization
     config = Config(
-        model='BPR',
+        model='EASE',
         dataset=args.dataset,
         config_file_list=[
             os.path.join(os.path.dirname(__file__), 'config', 'environment.yaml'), 
@@ -55,19 +54,8 @@ if __name__ == '__main__':
     id = uuid.uuid4()
     config['config_id'] = id
 
-    # train config
-    config.final_config_dict['train_batch_size'] = args.train_batch_size
-    config.final_config_dict['epochs'] = args.epochs
-    config.final_config_dict['train_neg_sample_args']['distribution'] =\
-        args.neg_distribution    
-    config.final_config_dict['train_neg_sample_args']['sample_num'] =\
-        args.neg_sample_num
-    config.final_config_dict['val_interval']['rating']=\
-        f'[{args.neg_min}, inf)'
-
     # model config
-    config.final_config_dict['embedding_size'] = args.embedding_size
-    config.final_config_dict['weight_decay'] = args.weight_decay
+    config.final_config_dict['reg_weight'] = args.reg_weight
     
     # # init random seed
     init_seed(config['seed'], config['reproducibility'])
