@@ -4,32 +4,31 @@ import json
 import pickle
 from tqdm import tqdm
 
+import numpy as np
 from recbole.quick_start.quick_start import load_data_and_model
 from recbole.utils.case_study import full_sort_topk
 
 
 if __name__ == '__main__':
-    model_config_path = os.path.join(os.path.dirname(__file__), '..', 'BPR_configs') 
+    model_config_path = os.path.join(os.path.dirname(__file__), '..', 'EASE_configs') 
     if not os.path.exists(model_config_path):
         os.mkdir(model_config_path)
 
     model_config = {}
     model_dir_path = os.path.join(os.path.dirname(__file__), 'saved')
     
-    model_list = [path for path in os.listdir(model_dir_path) if 'BPR' in path]
+    model_list = [path for path in os.listdir(model_dir_path) if 'EASE' in path]
     for i, model_file_name in enumerate(tqdm(model_list)):
         model_path = os.path.join(model_dir_path, model_file_name)
 
         config, model, dataset, train_data, valid_data, test_data = \
             load_data_and_model(model_path)
 
-        model_config['neg_distribution'] = config['train_neg_sample_args']['distribution']
-        model_config['neg_sample_num'] = config['train_neg_sample_args']['sample_num']
-        model_config['embedding_size'] = config['embedding_size']
-        model_config['weight_decay'] = config['weight_decay']
+        model_config['reg_weight'] = config['reg_weight']
+        print(config['reg_weight'])
 
         # model_config[''] = model.user_embedding.weight.detach().cpu().numpy()
-        model_config['ITEM_VECTOR'] = model.item_embedding.weight.detach().cpu().numpy()
+        model_config['ITEM_VECTOR'] = np.asarray(model.item_similarity)
 
         user_token2id = deepcopy(dataset.field2token_id[dataset.uid_field])
         model_config['USER2IDX'] = user_token2id
@@ -49,6 +48,6 @@ if __name__ == '__main__':
             model_config['TOPK'][user] = external_item_list[0]
             model_config['SCORE'][user] = topk_score.cpu().tolist()
 
-        with open(os.path.join(model_config_path, f'BPR_{i:03}.pickle'), 'wb') as f:
+        with open(os.path.join(model_config_path, f'EASE_{i:03}.pickle'), 'wb') as f:
             pickle.dump(model_config, f)
             
