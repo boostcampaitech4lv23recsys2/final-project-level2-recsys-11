@@ -15,4 +15,4 @@ wandb/*
 /ray_log*
 ml-1m/
 *.csv
-.out
+*.out
