@@ -18,17 +18,7 @@ class model_form():
 
 n_model = st.sidebar.number_input('how many models you compare?', step = 1, max_value=5)
 for i in range(int(n_model)):
-    # st.button('fdsaafsd', key=i)
     model_form(i, 3)
-# count =0
-# def add_model():
-#     global count
-#     count+=1
-# if st.sidebar.button('➕', key="add_model", on_click=add_model):
-#     count += 1
-# for i in range(count):
-#     model_form(i, 3)
-
 
 def plot_models():
     with st.spinner('Wait for drawing..'):
@@ -47,12 +37,14 @@ st.markdown(f"---", unsafe_allow_html=True)
 # body: show Quantitative Indicator
 st.markdown(f"<h2 style='text-align: left; color: black;'>Quantitative Indicator</h2>", unsafe_allow_html=True)
 
-# plot에 필요한 데이터 프레임 받아온뒤
+# plot에 필요한 데이터 프레임 받아오는 함수 작성
+#TODO: data_df = request(url)
+
 
 plot1, plot2 = st.columns(2)
 
 plot1.markdown('<h4>Recall</h4>', unsafe_allow_html=True)
-plot1.line_chart()
+plot1.line_chart() #TODO: 위에서 받은 df를 그래프로 나타내기
 plot1.markdown('<h4>NDCG</h4>', unsafe_allow_html=True)
 plot1.line_chart()
 
@@ -64,6 +56,16 @@ plot2.line_chart()
 st.markdown(f"<h2 style='text-align: left; color: black;'>Quantitative  Indicator</h2>", unsafe_allow_html=True)
 
 plot3, plot4 = st.columns(2)
+
+plot3.markdown('<h4>Diversity</h4>', unsafe_allow_html=True)
+plot3.line_chart() #TODO: 위에서 받은 df를 그래프로 나타내기
+plot3.markdown('<h4>Novelty</h4>', unsafe_allow_html=True)
+plot3.line_chart()
+
+plot4.markdown('<h4>Serendipity</h4>', unsafe_allow_html=True)
+plot4.line_chart()
+plot4.markdown('<h4>Coverage</h4>', unsafe_allow_html=True)
+plot4.line_chart()
 
 def plot_Recall():
     pass
