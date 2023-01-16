@@ -1,4 +1,6 @@
 import streamlit as st
+import altair as alt
+import pandas as pd
 import requests
 import time
 import numpy as np
@@ -42,20 +44,49 @@ st.markdown(f"---", unsafe_allow_html=True)
 st.markdown(f"<h2 style='text-align: left; color: black;'>Quantitative Indicator</h2>", unsafe_allow_html=True)
 
 # plot에 필요한 데이터 프레임 받아오는 함수 작성
-#TODO: data_df = request(url)
+exp_df = pd.DataFrame(columns = ['model','recall','ndcg','map','popularity'])
 
+#TODO: data_df = request(url)
+# exp_df.loc['모델 고유 번호',:] = ['recall','ndcg','map','popularity']
+exp_df.loc[1,:] = ['M1',0.1084,0.0847,0.1011,0.0527]
+exp_df.loc[2,:] = ['M2',0.1124,0.0777,0.1217,0.0781]
+exp_df.loc[3,:] = ['M3',0.1515,0.1022,0.1195,0.0999]
+exp_df.loc[4,:] = ['M4',0.0917,0.0698,0.0987,0.0315]
 
 plot1, plot2 = st.columns(2)
 
+#TODO: 위에서 받은 df를 그래프로 나타내기
 plot1.markdown('<h4>Recall</h4>', unsafe_allow_html=True)
-plot1.line_chart() #TODO: 위에서 받은 df를 그래프로 나타내기
+bar_chart = alt.Chart(exp_df).mark_bar().encode(
+    alt.X('model:O'),
+    alt.Y('recall:Q'),
+    alt.Color('model:O'),
+)
+plot1.altair_chart(bar_chart, use_container_width=True)
+
 plot1.markdown('<h4>NDCG</h4>', unsafe_allow_html=True)
-plot1.line_chart()
+bar_chart = alt.Chart(exp_df).mark_bar().encode(
+    alt.X('model:O'),
+    alt.Y('ndcg:Q'),
+    alt.Color('model:O'),
+)
+plot1.altair_chart(bar_chart, use_container_width=True)
 
 plot2.markdown('<h4>MAP</h4>', unsafe_allow_html=True)
-plot2.line_chart()
+bar_chart = alt.Chart(exp_df).mark_bar().encode(
+    alt.X('model:O'),
+    alt.Y('map:Q'),
+    alt.Color('model:O'),
+)
+plot2.altair_chart(bar_chart, use_container_width=True)
+
 plot2.markdown('<h4>Popularity</h4>', unsafe_allow_html=True)
-plot2.line_chart()
+bar_chart = alt.Chart(exp_df).mark_bar().encode(
+    alt.X('model:O'),
+    alt.Y('popularity:Q'),
+    alt.Color('model:O'),
+)
+plot2.altair_chart(bar_chart, use_container_width=True)
 
 st.markdown(f"<h2 style='text-align: left; color: black;'>Quantitative  Indicator</h2>", unsafe_allow_html=True)
 
