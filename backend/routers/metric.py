@@ -7,24 +7,6 @@ from itertools import combinations
 from fastapi import APIRouter
 
 from routers.data import dataset_info
-from routers import model
-
-router = APIRouter()
-
-def total_configs_metrics(model_managers: Dict) -> pd.DataFrame:
-    for model in model_managers.values:
-        total_runs = model.runs
-
-
-@router.get('/qualitative/{model_config}')
-async def get_qualitative_metrics():
-    pass
-
-
-@router.get('/quantitative/{model_config}')
-async def get_quantitative_metrics():
-    pass
-
 
 class quantitative_indicator:
 
@@ -158,7 +140,7 @@ class qualitative_indicator:
 
     def __init__(self, dataset_info:dataset_info, pred_item:Dict, pred_score:Dict):  # dataset_info: class
         self.pred_item = pred_item
-        self.pred_score
+        # self.pred_score
         self.n_user = dataset_info.n_user
 
         # Serendipity

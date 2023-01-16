@@ -4,37 +4,59 @@ import pandas as pd
 import requests
 import time
 import numpy as np
+import random
 
 st.set_page_config(layout="wide")
 
 # sidebar settings
 class model_form():
-    def __init__(self, key, n_hype):
-        self.color = list(np.random.choice(range(255),size=3))
+    def __init__(self, key):
+        self.key = key
         self.container = st.sidebar.container()
         
+        hypes = requests.get(url='http://0.0.0.0:8000/model_hype_type').json()
         self.model = self.container.selectbox(label='Select Model',
-                         options=['BPR', 'EASE'],
+                         options=hypes.keys(),
                          key=key
         )
+        self.key +=1
+        self.color = self.container.color_picker('select color', key=self.key)
+        self.key += 1
+        n = len(hypes[self.model])
+        self.n = n
+        for plus, hype in enumerate(hypes[self.model], self.key):
+            self.container.radio(hype, (1,2,3), key=plus, horizontal=True)
+        self.key += self.n
         
-        self.hype = dict()
-        
-    
+
+forms = []
 
 n_model = st.sidebar.number_input('how many models you compare?', step = 1, max_value=5)
+before_param_n = 0
 for i in range(int(n_model)):
-    model_form(i, 3)
+    # random.
+    
+    A = model_form(key=before_param_n)
+    before_param_n += A.key 
+    forms.append(A)
+    # forms.append(model_form(key = i))
 
 def plot_models():
     with st.spinner('Wait for drawing..'):
+        # requests(url)
         time.sleep(5)
     st.success('done!')
     # if request.get(url):
     #     draw_page()
 
 st.sidebar.button('Compare!', on_click=plot_models)
-st.sidebar.radio('select value', (1,2,3), horizontal=True)
+# st.sidebar.radio('select value', (1,2,3), horizontal=True)
+
+
+
+# for form in forms:
+#     st.write(form.model)
+
 
 # header
 st.markdown(f"<h1 style='text-align: center; color: black;'>Model vs Model</h1>", unsafe_allow_html=True)
@@ -93,14 +115,14 @@ st.markdown(f"<h2 style='text-align: left; color: black;'>Quantitative  Indicato
 plot3, plot4 = st.columns(2)
 
 plot3.markdown('<h4>Diversity</h4>', unsafe_allow_html=True)
-plot3.line_chart() #TODO: 위에서 받은 df를 그래프로 나타내기
+# plot3.line_chart() #TODO: 위에서 받은 df를 그래프로 나타내기
 plot3.markdown('<h4>Novelty</h4>', unsafe_allow_html=True)
-plot3.line_chart()
+# plot3.line_chart()
 
 plot4.markdown('<h4>Serendipity</h4>', unsafe_allow_html=True)
-plot4.line_chart()
+# plot4.line_chart()
 plot4.markdown('<h4>Coverage</h4>', unsafe_allow_html=True)
-plot4.line_chart()
+# plot4.line_chart()
 
 def plot_Recall():
     pass
