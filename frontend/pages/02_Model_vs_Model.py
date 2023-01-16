@@ -1,17 +1,21 @@
 import streamlit as st
 import requests
 import time
+import numpy as np
 
 st.set_page_config(layout="wide")
 
 # sidebar settings
 class model_form():
     def __init__(self, key, n_hype):
-        # radom.color()
-        self.model = st.sidebar.selectbox(label='Select Model',
+        self.color = list(np.random.choice(range(255),size=3))
+        self.container = st.sidebar.container()
+        
+        self.model = self.container.selectbox(label='Select Model',
                          options=['BPR', 'EASE'],
                          key=key
         )
+        
         self.hype = dict()
         
     
