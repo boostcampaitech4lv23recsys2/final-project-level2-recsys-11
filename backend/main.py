@@ -21,12 +21,8 @@ import dependencies
 app = FastAPI()
 # df = pd.read_csv('/opt/ml/input/data/train/train_ratings.csv')[:10]
 
-app.include_router(data.router, prefix='/data')
 app.include_router(model.router, prefix='/model')
 app.include_router(metric.router, prefix='/metric')
-
-
-model_managers = {'BPR': model.BPR_Manager}
 
 
 @app.get("/")
@@ -38,13 +34,13 @@ def read_root():
 
 #     return df.to_dict(orient='records')
 
-@app.get('/dataset/{attribute}')
-def get_dataset(attribute, dataset=Depends(dependencies.get_dataset)):
-    return {"From dataset_info: ": data.dataset.attribute}
+# @app.get('/dataset/{attribute}')
+# def get_dataset(attribute, dataset=Depends(dependencies.get_dataset)):
+#     return {"From dataset_info: ": data.dataset.attribute}
 
-@app.get('/model_manager')
-def get_model_manager(model_manager=Depends(dependencies.get_model_manager)):
-    return {'model_name': str(model_manager.datetime)}
+# @app.get('/model_manager')
+# def get_model_manager(model_manager=Depends(dependencies.get_model_manager)):
+#     return {'model_name': str(model_manager.datetime)}
 
 
 # @app.get("/data/{data_path}", description = 'data_path 이름에 있는 데이터들을 가져')
@@ -54,7 +50,7 @@ def get_model_manager(model_manager=Depends(dependencies.get_model_manager)):
 
 #     return df.to_dict(orient='records')
 
-
+ 
 @app.get("/plot/")
 async def create_plot():
     trace = go.Scatter(x=[1, 2, 3], y=[4, 5, 6])
@@ -105,15 +101,7 @@ async def create_plot():
 
 
 
-
-# @app.get("/model/{model_name}", description='model manager를 불러옵니다')
-# async def load_run(model_name: str):
-    
-
 # # streamlit에서 데이터를 올릴때 -- 지금은 path로 access 
 # @app.post("/model_run", description='model_run 업로드')
 
 
-# # 성훈이형 클래스에서 fastapi로 변환...어떻게??
-
-# BPR_manager = Model_Manager(model_name='BPR', runs=class_1.runs)
