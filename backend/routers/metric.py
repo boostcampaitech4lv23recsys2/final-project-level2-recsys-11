@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 import pandas as pd
 import numpy as np 
 from collections import defaultdict
@@ -11,27 +11,38 @@ from routers import model
 
 router = APIRouter()
 
-@router.get('testing2')
-def testing2():
-    return model.testing.datetime
+def total_configs_metrics(model_managers: Dict) -> pd.DataFrame:
+    for model in model_managers.values:
+        total_runs = model.runs
 
-class quantitative_indicator():
 
-    def __init__(self, dataset_info:dataset_info, pred_item:pd.Series, pred_score:pd.DataFrame):
-        self.train_df = dataset_info.train_df
-        self.ground_truth = dataset_info.ground_truth
+@router.get('/qualitative/{model_config}')
+async def get_qualitative_metrics():
+    pass
 
-        self.K = dataset_info.K
+
+@router.get('/quantitative/{model_config}')
+async def get_quantitative_metrics():
+    pass
+
+
+class quantitative_indicator:
+
+    def __init__(self, dataset:dataset_info, pred_item:Dict, pred_score:Dict):
+        self.train_df = dataset.train_df
+        self.ground_truth = dataset.ground_truth
+
+        self.K = dataset.K
 
         self.pred_item = pred_item # 전체 추천 리스트들. 유저가 인덱스이고 한 컬럼에 모든 각 유저에 대한 추천리스트가 담김
         self.pred_score = pred_score 
         
-        self.n_user = dataset_info.n_user
-        self.n_item = dataset_info.n_item
+        self.n_user = dataset.n_user
+        self.n_item = dataset.n_item
 
         # Popularity
-        self.pop_user_per_item = dataset_info.pop_user_per_item
-        self.pop_inter_per_item = dataset_info.pop_inter_per_item
+        self.pop_user_per_item = dataset.pop_user_per_item
+        self.pop_inter_per_item = dataset.pop_inter_per_item
         self.popularity_df = self.pred_item.apply(lambda R: [self.pop_user_per_item[item] for item in R])
         
     def AveragePopularity(self) -> float:
@@ -145,8 +156,9 @@ class quantitative_indicator():
 
 class qualitative_indicator:
 
-    def __init__(self, dataset_info:dataset_info, pred_item:pd.DataFrame):  # dataset_info: class
+    def __init__(self, dataset_info:dataset_info, pred_item:Dict, pred_score:Dict):  # dataset_info: class
         self.pred_item = pred_item
+        self.pred_score
         self.n_user = dataset_info.n_user
 
         # Serendipity

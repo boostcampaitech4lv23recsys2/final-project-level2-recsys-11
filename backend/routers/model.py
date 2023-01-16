@@ -3,13 +3,15 @@ import numpy as np
 import os
 import pickle
 
-from typing import List, Tuple
+from typing import List, Dict
 from fastapi import APIRouter, Depends
 
 import dependencies
 
-from datetime import datetime 
+from routers import data, metric
 from pydantic import BaseModel, Field
+
+from datetime import datetime
 
 router = APIRouter()
 
@@ -24,8 +26,6 @@ router = APIRouter()
 #     return response
 
 
-
-
 class Model_Manager(BaseModel):
     model_name: str
     # hyperparam: str
@@ -36,7 +36,7 @@ class Model_Manager(BaseModel):
 testing = Model_Manager(model_name='BPR')
 
 
-NECESSARY_INFOS = ['ITEM_VECTOR', 'USER2IDX', 'ITEM2IDX', 'TOPK', 'SCORE']
+NECESSARY_INFOS = ['ITEM_VECTOR', 'USER2IDX', 'ITEM2IDX', 'PRED_ITEM', 'PRED_SCORE']
 
 
 class ModelConfig:
@@ -47,6 +47,9 @@ class ModelConfig:
 
         self.string_key = None
 
+        # 지표 계산 클래스
+        self.quantitative = None
+        self.qualitative = None
 
     def load_config(self):
         with open(self.config_path, 'rb') as fr:
@@ -58,6 +61,8 @@ class ModelConfig:
                 if hyper_k not in NECESSARY_INFOS:
                     self.hyper[hyper_k] = hyper_v
 
+        self.quantitative = metric.quantitative_indicator(data.dataset, infos['PRED_ITEM'], infos['PRED_SCORE'])
+        self.qualitative = metric.qualitative_indicator(data.dataset, infos['PRED_ITEM'], infos['PRED_SCORE'])
 
     def set_string_key(self, hyper_keys: list):
         # 하이퍼 파라미터 순으로 'uniform_5_0.0' 과 같은 키 생성
@@ -68,15 +73,14 @@ class ModelConfig:
         self.string_key = "_".join(string_list)
 
 
-
 class ModelManager:
     def __init__(self, dir_path: str):
         self.dir_path = dir_path
-        self.models = {}
+        self.runs = {}
+        self.model_name = None # 추가 필요
 
         self.hyper_keys = None # ['neg_sample_num', 'embedding_size' ... ]
         self._build_configs()
-
 
     def _build_configs(self):
         files = sorted(os.listdir(self.dir_path))
@@ -94,16 +98,13 @@ class ModelManager:
                     continue
             
             model_config.set_string_key(self.hyper_keys)
-            self.models[model_config.string_key] = model_config
+            self.runs[model_config.string_key] = model_config
 
-    
     def get_model_config(self, string_key: str) -> ModelConfig:
-        return self.models[string_key]
-
+        return self.runs[string_key]
     
     def get_all_model_configs(self) -> List[ModelConfig]:
-        return list(self.models.values())
-
+        return list(self.runs.values())
 
     def _sanity_check(self):
         pass
