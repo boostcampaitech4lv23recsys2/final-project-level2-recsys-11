@@ -14,30 +14,35 @@ from time import time
 
 class dataset_info:
 
-    def __init__(self, train_df, user, item_df, ground_truth, item_h_matrix, K): # 현재 이 클래스는 한 유저에 대해서 계산하는 클래스이나, 차라리 모든 유저를 받도록 하는 것이 나을 것.
-        #user는 추천된 리스트를 받은 해당 유저
+    def __init__(self, train_df, item_df, ground_truth, item_h_matrix, K):
 
-        train_df.columns = ['user_id', 'item_id', 'rating', 'timestamp', 'origin_timestamp']
-        item_df.columns = ['item_id', 'movie_title', 'release_year', 'genre']
+        # Dataset
+        self.train_df = train_df                                        # interaction data
+        self.item_df = item_df                                          # item context data
+        # self.ground_truth = ground_truth                    
+        self.ground_truth = ground_truth.groupby('user').agg(list)      # ground truth for metric evaluation    
 
-        self.truth = ground_truth.groupby('user').agg(list) #NDCG에서 이게 더 편해서 이렇게 뒀는데, 이거 나중에 다같이 이야기해봅세
-        self.ground_truth = ground_truth # ground_truth에 해당하는 정보는 빼야 할 수도?
+        self.train_df.columns = ['user_id', 'item_id', 'rating', 'timestamp', 'origin_timestamp']
+        self.item_df.columns = ['item_id', 'movie_title', 'release_year', 'genre']
 
-        self.train_df = train_df
-        self.item_mean_df = train_df.groupby('item_id').agg('mean')['rating']
+        # qualitative class 안으로
+        # average rating per item
+        self.item_mean_df = train_df.groupby('item_id').agg('mean')['rating'] 
+        # Diversity - rating matrix
         self.rating_matrix = train_df.pivot_table(index='user_id', columns='item_id', values='rating', fill_value=0)
 
+        # user, item specific information -- profiles: users/items interacted by an item/user
         self.n_user = train_df['user_id'].nunique()
         self.n_item = train_df['item_id'].nunique()
-        self.user_profiles = {user: train_df[train_df['user_id'] == user]['item_id'].tolist() for user in train_df['user_id'].unique()} # 모든 유저들의 유저 프로파일로 수정
+        self.user_profiles = {user: train_df[train_df['user_id'] == user]['item_id'].tolist() for user in train_df['user_id'].unique()} 
         self.item_profiles = {item : train_df[train_df['item_id'] == item]['user_id'].tolist() for item in train_df['item_id'].unique()}
-        # 이 값들은 ground_truth로 간 값은 빼고 고려해야 한다. 추후 수정 꼭 필요
 
+        # genre of an item in dictionary
         self.genre = dict()
         for i,j in zip(item_df['item_id'], item_df['genre']):
             self.genre[i] = j.split(' ')
 
-        # matrices for latent(i, j)
+        # Matrices for item latent vector
         self.item_h_matrix = item_h_matrix
         self.item_item_matrix = self.item_h_matrix @ self.item_h_matrix.T
 
@@ -218,10 +223,10 @@ class qualitative_indicator:
 
         # Diversity - jaccard
         self.genre = dataset_info.genre
-        self.item_mean_df = dataset_info.item_mean_df
-
+        
         # Diversity - rating
         self.rating_matrix = dataset_info.rating_matrix
+        self.item_mean_df = dataset_info.item_mean_df
 
         # Diversity - latent
         self.item_h_matrix = dataset_info.item_h_matrix
