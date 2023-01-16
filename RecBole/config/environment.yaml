@@ -23,6 +23,17 @@ load_col:
     item: ['item_id', 'release_year', 'class']
 normalize_all: True
 
+# General Train Settings
+learner: adam
+learning_rate: 0.001
+
+train_neg_sample_args:
+    distribution: uniform
+    sample_num: 1
+
+val_interval:
+    rating: "[0, inf)"
+
 # Evaluation Settings
 eval_args:
     split: 
@@ -38,3 +49,10 @@ metrics:
     - NDCG
 topk: 10
 valid_metric: Recall@10
+
+eval_step: 1
+stopping_step: 5
+eval_batch_size: 65536
+
+# wandb_project: 'yang-bpr'
+# log_wandb: True

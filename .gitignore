@@ -11,7 +11,8 @@ saved/
 *.lprof
 *.egg-info/
 docs/build/
-wandb/*
+wandb/
 /ray_log*
 ml-1m/
 *.csv
+*.ipynb
