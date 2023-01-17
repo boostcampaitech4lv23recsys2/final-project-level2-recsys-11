@@ -15,18 +15,19 @@ class model_form():
         self.key = key
         self.container = st.sidebar.container()
         
-        hypes = requests.get(url='http://0.0.0.0:8000/model_hype_type').json()
+        model_hype_type = requests.get(url='http://0.0.0.0:8000/model_hype_type').json()
         self.model = self.container.selectbox(label='Select Model',
-                         options=hypes.keys(),
+                         options=model_hype_type.keys(),
                          key=key
         )
         self.key +=1
         self.color = self.container.color_picker('select color', key=self.key)
         self.key += 1
-        n = len(hypes[self.model])
+        n = len(model_hype_type[self.model])
         self.n = n
-        for plus, hype in enumerate(hypes[self.model], self.key):
-            self.container.radio(hype, (1,2,3), key=plus, horizontal=True)
+        
+        for plus, hype in enumerate(model_hype_type[self.model], self.key):
+            self.container.radio(hype, model_hype_type[self.model][hype], key=plus, horizontal=True)
         self.key += self.n
         
 

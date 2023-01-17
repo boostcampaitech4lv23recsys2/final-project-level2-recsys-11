@@ -22,8 +22,8 @@ class Model_Manager(BaseModel):
 testing = Model_Manager(model_name='BPR')
 
 
-# NECESSARY_INFOS = ['ITEM_VECTOR', 'USER2IDX', 'ITEM2IDX', 'PRED_ITEM', 'PRED_SCORE']
-NECESSARY_INFOS = ['ITEM_VECTOR', 'USER2IDX', 'ITEM2IDX']
+NECESSARY_INFOS = ['ITEM_VECTOR', 'USER2IDX', 'ITEM2IDX', 'PRED_ITEM', 'PRED_SCORE']
+# NECESSARY_INFOS = ['ITEM_VECTOR', 'USER2IDX', 'ITEM2IDX']
 
 
 class ModelConfig:
@@ -77,7 +77,7 @@ class ModelManager:
         self.dir_path = dir_path
         self.runs = {}
         self.model_name = None # 추가 필요
-
+        
         self.hyper_keys = None # ['neg_sample_num', 'embedding_size' ... ]
 
         self._build_configs()
@@ -116,6 +116,8 @@ class ModelManager:
 
     def _sanity_check(self):
         pass
+
+    
 
 
 BPR_manager = ModelManager(dir_path='/opt/ml/final-project-level2-recsys-11/BPR_configs')
