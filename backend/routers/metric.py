@@ -8,24 +8,60 @@ from fastapi import APIRouter
 
 from routers.data import dataset_info
 
+router = APIRouter()
+
+@router.get('/total_metrics')
+async def total_configs_metrics():
+    from routers.model import model_managers
+
+    MODELS = model_managers.values
+
+    run_metrics = [("_".join((model.model_name, run.string_key)), 
+                    run.quantitative.Recall_K(), 
+                    run.quantitative.mapk(), 
+                    run.quantitative.NDCG(), 
+                    run.qualitative.AveragePopularity(), 
+                    run.quantitative.TailPercentage(), 
+                    run.qualitative.Total_Diversity().mean(), 
+                    run.qualitative.Total_Serendipity().mean(), 
+                    run.qualitative.Total_Novelty().mean()) 
+                    for model in MODELS for run in model.runs] # model: ModelManager
+
+    total_metrics_pd = pd.DataFrame(run_metrics, 
+                        columns=['Recall', 'MAP', 'NDCG', 'AvgPopularity', 'Tail_Percentage', 
+                                'Diversity', 'Serendipity', 'Novelty'])
+
+    return total_metrics_pd.to_dict(orient='records')
+
+@router.get('/qualitative/{model_config}')
+async def get_qualitative_metrics():
+    pass
+
+@router.get('/quantitative/{model_config}')
+async def get_quantitative_metrics():
+    pass
+
+
 class quantitative_indicator:
 
     def __init__(self, dataset:dataset_info, pred_item:Dict, pred_score:Dict):
         self.train_df = dataset.train_df
-        self.ground_truth = dataset.ground_truth
+        self.ground_truth = dataset.ground_truth  
 
         self.K = dataset.K
 
-        self.pred_item = pred_item # 전체 추천 리스트들. 유저가 인덱스이고 한 컬럼에 모든 각 유저에 대한 추천리스트가 담김
+        self.pred_item_dict = pred_item # dict(user: [pred_item1, pred_item2, ...])
+        self.pred_item_np = np.array(list(pred_item.values()))
+
         self.pred_score = pred_score 
-        
+
         self.n_user = dataset.n_user
         self.n_item = dataset.n_item
 
         # Popularity
         self.pop_user_per_item = dataset.pop_user_per_item
         self.pop_inter_per_item = dataset.pop_inter_per_item
-        self.popularity_df = self.pred_item.apply(lambda R: [self.pop_user_per_item[item] for item in R])
+        self.popularity_df = self.pred_item_np.apply(lambda R: [self.pop_user_per_item[item] for item in R])
         
     def AveragePopularity(self) -> float:
         '''
@@ -36,7 +72,7 @@ class quantitative_indicator:
 
         return popularity_metric 
 
-    def apk(self, actual, predicted, k=10):
+    def apk(self, actual, predicted, k):
         """
         Computes the average precision at k.
         This function computes the average precision at k between two lists of
@@ -70,13 +106,13 @@ class quantitative_indicator:
 
         return score / min(len(actual), k)
 
-    def mapk(self, actual, predicted, k=10):
+    def mapk(self,):
         """
         Computes the mean average precision at k.
         This function computes the mean average prescision at k between two lists
         of lists of items.
         """
-        return np.mean([self.apk(a, p, k) for a, p in zip(actual, predicted)])
+        return np.mean([self.apk(a, p, self.k) for a, p in zip(self.ground_truth.values, self.pred_item_np.values)])
 
     def NDCG(self):
         '''
