@@ -57,14 +57,16 @@ async def create_plot():
     return pio.to_json(fig)
 
 
-@app.get('/model_hype_type')
+@app.get('/model_hype_type', description='모델의 하이퍼파라미터 종류를 가져옵니다.')
 def model_hype_type():
     model_dict= dict()
     
     for key in model.model_managers.keys():
         model_dict[key] = model.model_managers[key].hyper_keys
     return model_dict
-    
+
+
+
 
 # 클래스
 # TODO: class dataset, model_run, model_manager
