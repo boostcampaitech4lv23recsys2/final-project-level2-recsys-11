@@ -15,8 +15,6 @@ wandb/
 /ray_log*
 ml-1m/
 *.csv
-<<<<<<< HEAD
 *.out
-=======
 *.ipynb
->>>>>>> 580d7e7929755876e8aede10f4868cc04406165f
+*.output
