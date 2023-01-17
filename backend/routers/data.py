@@ -11,7 +11,7 @@ class dataset_info:
         # self.ground_truth = ground_truth                    
         self.ground_truth = ground_truth.groupby('user').agg(list)      # ground truth for metric evaluation    
 
-        self.train_df.columns = ['user_id', 'item_id', 'rating', 'timestamp'] #, 'origin_timestamp']
+        self.train_df.columns = ['user_id', 'item_id', 'rating', 'timestamp','origin_timestamp']
         self.item_df.columns = ['item_id', 'movie_title', 'release_year', 'genre']
 
         # Recommendation list length for each users
@@ -72,5 +72,5 @@ user_df = pd.read_csv('/opt/ml/final-project-level2-recsys-11/dataset/ml-1m/ml-1
 ground_truth = pd.read_csv('/opt/ml/final-project-level2-recsys-11/dataset/ml-1m/ml-1m.test', sep='\t')
 
 
-dataset = dataset_info(train_df=train_df, item_df=item_df, user_df=user_df, 
-                        ground_truth=ground_truth, K=10)
+dataset = dataset_info(train_df=train_df, item_df=item_df, user_df=user_df, ground_truth=ground_truth, K=10)
+                        

@@ -6,24 +6,10 @@ import pickle
 from typing import List, Dict
 from fastapi import APIRouter, Depends
 
-import dependencies
-
-from routers import data, metric
+# from routers import data, metric
 from pydantic import BaseModel, Field
 
 from datetime import datetime
-
-router = APIRouter()
-
-# @router.get("/model_manager/{model_name}")
-# async def get_model_manager(model_name: str):
-#     return model_managers[model_name]
-
-
-# @router.get('/K')
-# def get_dataset_info(dataset_info=Depends(dependencies.get_dataset)):
-#     response = {'K': dataset_info.K}
-#     return response
 
 
 class Model_Manager(BaseModel):
@@ -36,7 +22,8 @@ class Model_Manager(BaseModel):
 testing = Model_Manager(model_name='BPR')
 
 
-NECESSARY_INFOS = ['ITEM_VECTOR', 'USER2IDX', 'ITEM2IDX', 'PRED_ITEM', 'PRED_SCORE']
+# NECESSARY_INFOS = ['ITEM_VECTOR', 'USER2IDX', 'ITEM2IDX', 'PRED_ITEM', 'PRED_SCORE']
+NECESSARY_INFOS = ['ITEM_VECTOR', 'USER2IDX', 'ITEM2IDX']
 
 
 class ModelConfig:
@@ -61,8 +48,9 @@ class ModelConfig:
                 if hyper_k not in NECESSARY_INFOS:
                     self.hyper[hyper_k] = hyper_v
 
-        self.quantitative = metric.quantitative_indicator(data.dataset, infos['PRED_ITEM'], infos['PRED_SCORE'])
-        self.qualitative = metric.qualitative_indicator(data.dataset, infos['PRED_ITEM'], infos['PRED_SCORE'])
+        
+        # self.qualitative = metric.qualitative_indicator(data.dataset, infos['PRED_ITEM'], infos['PRED_SCORE'])
+        # self.quantitative = metric.quantitative_indicator(data.dataset, infos['PRED_ITEM'], infos['PRED_SCORE'])
 
     def set_string_key(self, hyper_keys: list):
         # 하이퍼 파라미터 순으로 'uniform_5_0.0' 과 같은 키 생성
@@ -110,7 +98,7 @@ class ModelManager:
         pass
 
 
-# BPR_manager = ModelManager(dir_path='/opt/ml/final-project-level2-recsys-11/BPR_configs')
-# EASE_manager = ModelManager(dir_path='/opt/ml/final-project-level2-recsys-11/EASE_configs')
+BPR_manager = ModelManager(dir_path='/opt/ml/final-project-level2-recsys-11/BPR_configs')
+EASE_manager = ModelManager(dir_path='/opt/ml/final-project-level2-recsys-11/EASE_configs')
 
-# model_managers = {'BPR': BPR_manager, 'EASE': EASE_manager}
+model_managers = {'BPR': BPR_manager, 'EASE': EASE_manager}
