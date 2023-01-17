@@ -51,15 +51,15 @@ class ModelConfig:
                 if hyper_k not in NECESSARY_INFOS:
                     self.hyper[hyper_k] = hyper_v
 
-        self.quantitative = quantitative_indicator(data.dataset, infos['PRED_ITEM'], infos['PRED_SCORE'])
-        self.qualitative = qualitative_indicator(data.dataset, infos['PRED_ITEM'], infos['PRED_SCORE'])
+        # self.quantitative = quantitative_indicator(data.dataset, infos['PRED_ITEM'], infos['PRED_SCORE'])
+        # self.qualitative = qualitative_indicator(data.dataset, infos['PRED_ITEM'], infos['PRED_SCORE'])
 
     def set_string_key(self, hyper_keys: list):
         # 하이퍼 파라미터 순으로 'uniform_5_0.0' 과 같은 키 생성
         # 여기서 하이퍼 파라미터 문자열 정렬은 필요 없을 수 있음
         # 어차피 파이썬 3.6 이상부터 dict 가 아이템 들어온 순서를 유지함.
         string_list = [str(self.hyper[hyper_key]) for hyper_key in hyper_keys]
-        print(string_list)
+        # print(string_list)
         self.string_key = "_".join(string_list)
 
 
@@ -68,9 +68,10 @@ class ModelManager:
         self.dir_path = dir_path
         self.runs = {}
         self.model_name = None # 추가 필요
-
+        
         self.hyper_keys = None # ['neg_sample_num', 'embedding_size' ... ]
         self._build_configs()
+        self.possible_hyper_param = self.get_possible_hyper_param()
 
     def _build_configs(self):
         files = sorted(os.listdir(self.dir_path))
@@ -96,8 +97,17 @@ class ModelManager:
     def get_all_model_configs(self) -> List[ModelConfig]:
         return list(self.runs.values())
 
+    def get_possible_hyper_param(self) -> Dict:
+        total_string_keys = [string_key.split('_') for string_key in self.runs.keys()]
+        all_possible_hyper_param = {hyper_param: set(all_possible_per_hyper_param) 
+                                    for hyper_param, all_possible_per_hyper_param in 
+                                    zip(self.hyper_keys, zip(*total_string_keys))}
+        return all_possible_hyper_param
+
     def _sanity_check(self):
         pass
+
+    
 
 
 BPR_manager = ModelManager(dir_path='/opt/ml/final-project-level2-recsys-11/BPR_configs')

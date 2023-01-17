@@ -2,9 +2,11 @@ from typing import Dict, TypeVar
 import numpy as np
 import numpy.typing as npt
 import uvicorn
+from collections import defaultdict
 
 from fastapi import FastAPI, Depends
 from pydantic import BaseModel, Field
+
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -33,16 +35,12 @@ async def create_plot():
 
     return pio.to_json(fig)
 
-
 @app.get('/model_hype_type', description='모델의 하이퍼파라미터 종류를 가져옵니다.')
-def model_hype_type():
-    model_dict= dict()
-    
+def model_hype_type() -> dict:
+    result = dict()
     for key in model.model_managers.keys():
-        model_dict[key] = model.model_managers[key].hyper_keys
-    return model_dict
-
-
+        result[key] = model.model_managers[key].possible_hyper_param
+    return result
 
 
 # 클래스
