@@ -157,8 +157,8 @@ class quantitative_indicator:
         topk = self.K
         pred_item = self.pred_item                              # 유저, [추천리스트] 형태
         ground_truth = self.ground_truth
-        T_df = ground_truth.groupby('user').agg(list) # pred_item와 같은 형태
-        actual = T_df.item
+        # T_df = ground_truth.groupby('user').agg(list) # pred_item와 같은 형태
+        actual = ground_truth.item
         predicted = pred_item.item
         sum_recall = 0.0
         true_users = 0

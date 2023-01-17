@@ -51,15 +51,15 @@ class ModelConfig:
                 if hyper_k not in NECESSARY_INFOS:
                     self.hyper[hyper_k] = hyper_v
 
-        self.quantitative = quantitative_indicator(data.dataset, infos['PRED_ITEM'], infos['PRED_SCORE'])
-        self.qualitative = qualitative_indicator(data.dataset, infos['PRED_ITEM'], infos['PRED_SCORE'])
+        # self.quantitative = quantitative_indicator(data.dataset, infos['PRED_ITEM'], infos['PRED_SCORE'])
+        # self.qualitative = qualitative_indicator(data.dataset, infos['PRED_ITEM'], infos['PRED_SCORE'])
 
     def set_string_key(self, hyper_keys: list):
         # 하이퍼 파라미터 순으로 'uniform_5_0.0' 과 같은 키 생성
         # 여기서 하이퍼 파라미터 문자열 정렬은 필요 없을 수 있음
         # 어차피 파이썬 3.6 이상부터 dict 가 아이템 들어온 순서를 유지함.
         string_list = [str(self.hyper[hyper_key]) for hyper_key in hyper_keys]
-        print(string_list)
+        # print(string_list)
         self.string_key = "_".join(string_list)
 
 
