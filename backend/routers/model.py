@@ -22,8 +22,8 @@ class Model_Manager(BaseModel):
 testing = Model_Manager(model_name='BPR')
 
 
-# NECESSARY_INFOS = ['ITEM_VECTOR', 'USER2IDX', 'ITEM2IDX', 'PRED_ITEM', 'PRED_SCORE']
-NECESSARY_INFOS = ['ITEM_VECTOR', 'USER2IDX', 'ITEM2IDX']
+NECESSARY_INFOS = ['ITEM_VECTOR', 'USER2IDX', 'ITEM2IDX', 'PRED_ITEM', 'PRED_SCORE']
+# NECESSARY_INFOS = ['ITEM_VECTOR', 'USER2IDX', 'ITEM2IDX']
 
 
 class ModelConfig:
@@ -68,9 +68,10 @@ class ModelManager:
         self.dir_path = dir_path
         self.runs = {}
         self.model_name = None # 추가 필요
-
+        
         self.hyper_keys = None # ['neg_sample_num', 'embedding_size' ... ]
         self._build_configs()
+        self.possible_hyper_param = self.get_possible_hyper_param()
 
     def _build_configs(self):
         files = sorted(os.listdir(self.dir_path))
@@ -96,8 +97,17 @@ class ModelManager:
     def get_all_model_configs(self) -> List[ModelConfig]:
         return list(self.runs.values())
 
+    def get_possible_hyper_param(self) -> Dict:
+        total_string_keys = [string_key.split('_') for string_key in self.runs.keys()]
+        all_possible_hyper_param = {hyper_param: set(all_possible_per_hyper_param) 
+                                    for hyper_param, all_possible_per_hyper_param in 
+                                    zip(self.hyper_keys, zip(*total_string_keys))}
+        return all_possible_hyper_param
+
     def _sanity_check(self):
         pass
+
+    
 
 
 # BPR_manager = ModelManager(dir_path='/opt/ml/final-project-level2-recsys-11/BPR_configs')
