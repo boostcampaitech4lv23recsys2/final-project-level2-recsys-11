@@ -174,14 +174,16 @@ class quantitative_indicator:
 
 class qualitative_indicator:
 
-    def __init__(self, dataset_info:dataset_info, pred_item:Dict, pred_score:Dict):  # dataset_info: class
+    def __init__(self, dataset_info:dataset_info, pred_item:pd.Series, pred_score:Dict):  # dataset_info: class
         self.pred_item = pred_item
         # self.pred_score
         self.n_user = dataset_info.n_user
 
         # Serendipity
-        self.user_profiles = dataset_info.user_profiles
-        self.item_profiles = dataset_info.item_profiles
+        self.pmi_matrix = dataset_info.pmi_matrix
+        self.jaccard_matrix = dataset_info.jaccard_matrix
+        # self.user_profiles = dataset_info.user_profiles
+        # self.item_profiles = dataset_info.item_profiles
 
         # Diversity - jaccard
         self.genre = dataset_info.genre
@@ -206,7 +208,7 @@ class qualitative_indicator:
         모든 유저에 대한 추천 리스트를 받으면 각각의 Diversity 계산하여 리스트로 return
         mode : 사용할 방식. {'jaccard', 'rating', 'latent'}
         '''
-        DoA = [0.5] + [self.Diversity(self.pred_item.loc[idx, 'item'],mode) for idx in self.pred_item.index]  # 0번째는 패딩
+        DoA = np.array([0.5] + [self.Diversity(self.R_df.loc[idx],mode) for idx in self.R_df.index])  # 0번째는 패딩
 
         return DoA
 
@@ -215,7 +217,7 @@ class qualitative_indicator:
         모든 유저에 대한 추천 리스트를 받으면 각각의 Serendipity를 계산하여 리스트로 return
         mode :  사용할 방식. {'PMI', 'jaccard'}
         '''
-        SoA = [0.5] + [self.Serendipity(self.pred_item.loc[idx, 'item'],mode) for idx in self.pred_item.index]  # 0번째는 패딩
+        SoA = np.array([0.5] + [self.Serendipity(idx, self.R_df.loc[idx], mode) for idx in self.R_df.index])  # 0번째는 패딩
 
         return SoA
 
@@ -223,7 +225,7 @@ class qualitative_indicator:
         '''
         모든 유저에 대한 추천 리스트를 받으면 각각의 Novelty를 계산하여 리스트로 return
         '''
-        NoA = [0.5] + [self.Novelty(self.pred_item.loc[idx, 'item']) for idx in self.pred_item.index]  # 0번째는 패딩
+        NoA = np.array([0.5] + [self.Novelty(self.R_df.loc[idx]) for idx in self.R_df.index])  # 0번째는 패딩
 
         return NoA
 
@@ -252,58 +254,29 @@ class qualitative_indicator:
             diversity /= ((len(R) * (len(R)-1)) / 2)
 
             return diversity
-
-    def Serendipity(self, R:List[int], mode:str='PMI'):
+        
+    def Serendipity(self, u:int, R:List[int], mode:str='PMI'):
         '''
-        R: 추천된 아이템 리스트
+        u: 유저 u
+        R: u에게 추천된 아이템 리스트. 유저별로 그룹바이됨.
         mode: 사용할 방식. {'PMI', 'jaccard'}
 
         return: R의 serendipity
         '''
-
-        sum_pmi = 0
-        for i in R:
-            sum_pmi += self.Serendipity_foreach(i, mode)
-        serendipity = sum_pmi / len(R)
-        return serendipity
+        user_pro = self.rating_matrix.T[self.rating_matrix.loc[u] != 0].index
+        if mode == 'PMI':
+            pmi_lst = self.pmi_matrix[R].loc[user_pro].min()
+            return pmi_lst.mean()
+        elif mode == 'jaccard':
+            jac_lst = self.jaccard_matrix[R].loc[user_pro].min()
+            return jac_lst.mean()
+        else:
+            raise ValueError("Only {PMI, jaccard} mode available")
 
     def Novelty(self, R:List[int]):
         lst = np.array([*map(lambda x: self.fam_of_each_items[x], R)])
         novelty = -np.log2(lst)
         return novelty.mean() / np.log2(self.total_user)
-
-    def Serendipity_foreach(self, i:int, u:int, mode:str='PMI'):
-        '''
-        i: 아이템 i
-        u: 유저 u
-        mode: 사용할 방식. {'PMI', 'jaccard'}
-
-        return: 유저 프로필과 i 간의 PMI 최소값
-
-        이 함수는 추후 reranking에 그대로 쓰입니다. 각 i의 serendipity 값을 계산해주죠!
-        '''
-        min_seren = np.inf
-        for item in self.user_profile[u]:
-            seren = eval('self.'+ mode)(i, item)
-            min_seren = min(min_seren, seren)
-        return min_seren
-
-    def PMI(self, i:int, j:int):
-        '''
-        i: 아이템 i
-        j: 아이템 j
-
-        return: i와 j의 scaled PMI 값(0~1)
-        '''
-        set_i = set(self.item_profiles[i])
-        set_j = set(self.item_profiles[j])
-        p_i = len(set_i) / self.n_user
-        p_j = len(set_j) / self.n_user
-        p_ij = len(set_i & set_j) / self.n_user
-
-        #pmi 공식. -1~1 사이의 값
-        pmi = np.log2(p_ij / (p_i * p_j)) / -np.log2(p_ij)
-        return (1 - pmi) / 2
 
     def jaccard(self, i:int, j:int):
         '''
