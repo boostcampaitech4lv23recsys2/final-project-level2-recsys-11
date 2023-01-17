@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends
 
 import dependencies
 
-from routers import data, metric
+from routers import data
 from pydantic import BaseModel, Field
 
 from datetime import datetime
@@ -41,6 +41,7 @@ NECESSARY_INFOS = ['ITEM_VECTOR', 'USER2IDX', 'ITEM2IDX', 'PRED_ITEM', 'PRED_SCO
 
 class ModelConfig:
     def __init__(self, config_path: str):
+        self.model_name = None # model_name
         self.config_path = config_path
         self.necessary = {} # 필수적으로 들고있어야 할 정보들 (아이템 벡터, 아이디2idx, preds 등)
         self.hyper = {} # 각기 모델 config 파일에 있는 하이퍼 파람들 
@@ -52,6 +53,8 @@ class ModelConfig:
         self.qualitative = None
 
     def load_config(self):
+        from routers.metric import quantitative_indicator, qualitative_indicator
+
         with open(self.config_path, 'rb') as fr:
             infos = pickle.load(fr)
             for necessary_key in NECESSARY_INFOS:
@@ -61,8 +64,8 @@ class ModelConfig:
                 if hyper_k not in NECESSARY_INFOS:
                     self.hyper[hyper_k] = hyper_v
 
-        self.quantitative = metric.quantitative_indicator(data.dataset, infos['PRED_ITEM'], infos['PRED_SCORE'])
-        self.qualitative = metric.qualitative_indicator(data.dataset, infos['PRED_ITEM'], infos['PRED_SCORE'])
+        self.quantitative = quantitative_indicator(data.dataset, infos['PRED_ITEM'], infos['PRED_SCORE'])
+        self.qualitative = qualitative_indicator(data.dataset, infos['PRED_ITEM'], infos['PRED_SCORE'])
 
     def set_string_key(self, hyper_keys: list):
         # 하이퍼 파라미터 순으로 'uniform_5_0.0' 과 같은 키 생성
@@ -110,7 +113,7 @@ class ModelManager:
         pass
 
 
-# BPR_manager = ModelManager(dir_path='/opt/ml/final-project-level2-recsys-11/BPR_configs')
-# EASE_manager = ModelManager(dir_path='/opt/ml/final-project-level2-recsys-11/EASE_configs')
+BPR_manager = ModelManager(dir_path='/opt/ml/final-project-level2-recsys-11/BPR_configs')
+EASE_manager = ModelManager(dir_path='/opt/ml/final-project-level2-recsys-11/EASE_configs')
 
-# model_managers = {'BPR': BPR_manager, 'EASE': EASE_manager}
+model_managers = {'BPR': BPR_manager, 'EASE': EASE_manager}
