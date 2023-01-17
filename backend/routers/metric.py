@@ -25,7 +25,7 @@ async def total_configs_metrics():
                     run.qualitative.Total_Diversity().mean(), 
                     run.qualitative.Total_Serendipity().mean(), 
                     run.qualitative.Total_Novelty().mean()) 
-                    for run in model.runs for model in MODELS] # model: ModelManager
+                    for model in MODELS for run in model.runs] # model: ModelManager
 
     total_metrics_pd = pd.DataFrame(run_metrics, 
                         columns=['Recall', 'MAP', 'NDCG', 'AvgPopularity', 'Tail_Percentage', 
@@ -176,7 +176,7 @@ class qualitative_indicator:
 
     def __init__(self, dataset_info:dataset_info, pred_item:Dict, pred_score:Dict):  # dataset_info: class
         self.pred_item = pred_item
-        self.pred_score
+        # self.pred_score
         self.n_user = dataset_info.n_user
 
         # Serendipity

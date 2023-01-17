@@ -6,24 +6,10 @@ import pickle
 from typing import List, Dict
 from fastapi import APIRouter, Depends
 
-import dependencies
-
 from routers import data
 from pydantic import BaseModel, Field
 
 from datetime import datetime
-
-router = APIRouter()
-
-# @router.get("/model_manager/{model_name}")
-# async def get_model_manager(model_name: str):
-#     return model_managers[model_name]
-
-
-# @router.get('/K')
-# def get_dataset_info(dataset_info=Depends(dependencies.get_dataset)):
-#     response = {'K': dataset_info.K}
-#     return response
 
 
 class Model_Manager(BaseModel):
@@ -36,7 +22,8 @@ class Model_Manager(BaseModel):
 testing = Model_Manager(model_name='BPR')
 
 
-NECESSARY_INFOS = ['ITEM_VECTOR', 'USER2IDX', 'ITEM2IDX', 'PRED_ITEM', 'PRED_SCORE']
+# NECESSARY_INFOS = ['ITEM_VECTOR', 'USER2IDX', 'ITEM2IDX', 'PRED_ITEM', 'PRED_SCORE']
+NECESSARY_INFOS = ['ITEM_VECTOR', 'USER2IDX', 'ITEM2IDX']
 
 
 class ModelConfig:

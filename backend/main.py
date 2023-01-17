@@ -1,7 +1,7 @@
 from typing import Dict, TypeVar
 import numpy as np
 import numpy.typing as npt
-
+import uvicorn
 
 from fastapi import FastAPI, Depends
 from pydantic import BaseModel, Field
@@ -19,10 +19,6 @@ from routers import data, metric, model
 app = FastAPI()
 # df = pd.read_csv('/opt/ml/input/data/train/train_ratings.csv')[:10]
 
-app.include_router(model.router, prefix='/model')
-app.include_router(metric.router, prefix='/metric')
-
-
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
@@ -36,6 +32,16 @@ async def create_plot():
     fig = go.Figure(data=data, layout=layout)
 
     return pio.to_json(fig)
+
+
+@app.get('/model_hype_type')
+def model_hype_type():
+    model_dict= dict()
+    
+    for key in model.model_managers.keys():
+        model_dict[key] = model.model_managers[key].hyper_keys
+    return model_dict
+    
 
 # 클래스
 # TODO: class dataset, model_run, model_manager
@@ -82,3 +88,5 @@ async def create_plot():
 # @app.post("/model_run", description='model_run 업로드')
 
 
+if __name__ == '__main__':
+    uvicorn.run(app)

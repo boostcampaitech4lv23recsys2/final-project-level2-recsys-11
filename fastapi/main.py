@@ -9,13 +9,17 @@ import plotly.io as pio
 import os 
 import json
 
+
 app = FastAPI()
+
+
 df = pd.read_csv('/opt/ml/input/data/train/train_ratings.csv')[:10]
 
 
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
+
 
 
 @app.get("/data")

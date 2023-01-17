@@ -11,8 +11,11 @@ port = 30001
 
 fileWatcherType = "none"
 
+runOnSave = true
+
 [theme]
 
 backgroundColor="#FFFFFF" # default(white)
 # backgroundColor="#000000" # black color
 secondaryBackgroundColor="#F0F2F6"
+
