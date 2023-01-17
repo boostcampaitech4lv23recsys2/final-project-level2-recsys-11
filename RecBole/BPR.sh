@@ -2,8 +2,8 @@
 find saved/ -name "BPR*" -delete
 
 neg_distribution_list="uniform popularity"
-neg_sample_num_list="1 3 5"
-embedding_size_list="16 32 64"
+neg_sample_num_list="1 3"
+embedding_size_list="16 32"
 weight_decay_list="0.0 0.2"
 
 

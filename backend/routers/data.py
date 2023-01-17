@@ -47,6 +47,8 @@ class dataset_info:
 
         pop_user_per_item = (self.train_df['item_id'].value_counts() / self.n_user).to_dict()
 
+        
+
         return pop_user_per_item
 
     def calculate_Popularity_inter(self):    # interaction 관점의 popularity

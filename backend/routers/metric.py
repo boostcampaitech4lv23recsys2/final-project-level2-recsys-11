@@ -44,24 +44,23 @@ async def get_quantitative_metrics():
 
 class quantitative_indicator:
 
-    def __init__(self, dataset:dataset_info, pred_item:Dict, pred_score:Dict):
+    def __init__(self, dataset:dataset_info, pred_item:pd.Series, pred_score:pd.Series):
         self.train_df = dataset.train_df
         self.ground_truth = dataset.ground_truth  
 
         self.K = dataset.K
 
-        self.pred_item_dict = pred_item # dict(user: [pred_item1, pred_item2, ...])
-        self.pred_item_np = np.array(list(pred_item.values()))
-
+        self.pred_item = pred_item 
         self.pred_score = pred_score 
 
         self.n_user = dataset.n_user
         self.n_item = dataset.n_item
 
         # Popularity
-        self.pop_user_per_item = dataset.pop_user_per_item
+        self.pop_user_per_item = dataset.pop_user_per_item # Dict
         self.pop_inter_per_item = dataset.pop_inter_per_item
-        self.popularity_df = self.pred_item_np.apply(lambda R: [self.pop_user_per_item[item] for item in R])
+
+        self.popularity_df = self.pred_item.apply(lambda R: [self.pop_user_per_item[int(item)] for item in R])
         
     def AveragePopularity(self) -> float:
         '''
@@ -106,13 +105,13 @@ class quantitative_indicator:
 
         return score / min(len(actual), k)
 
-    def mapk(self,):
+    def mapk(self):
         """
         Computes the mean average precision at k.
         This function computes the mean average prescision at k between two lists
         of lists of items.
         """
-        return np.mean([self.apk(a, p, self.k) for a, p in zip(self.ground_truth.values, self.pred_item_np.values)])
+        return np.mean([self.apk(a, p, self.k) for a, p in zip(self.ground_truth.values, self.pred_item.values)])
 
     def NDCG(self):
         '''
@@ -134,11 +133,6 @@ class quantitative_indicator:
         rec_num = self.rec_df['item'].nunique()
         #이 TOTAL은 GROUND까지 포함한 값이어야 한다.
         return rec_num / self.n_item
-
-    def Recall(self):
-        #해당 코드는 현재 hit지표에 맞게 쓰여저 있습니다.
-        sum_recall = 0
-        pass
 
     def TailPercentage(self, tail_ratio=0.1):
         item_count = self.train_df.groupby('item_id').agg('count')
@@ -174,7 +168,7 @@ class quantitative_indicator:
 
 class qualitative_indicator:
 
-    def __init__(self, dataset_info:dataset_info, pred_item:Dict, pred_score:Dict):  # dataset_info: class
+    def __init__(self, dataset_info:dataset_info, pred_item:pd.Series, pred_score:pd.Series, item_h_matrix:np.array):  # dataset_info: class
         self.pred_item = pred_item
         # self.pred_score
         self.n_user = dataset_info.n_user
@@ -191,8 +185,8 @@ class qualitative_indicator:
         self.item_mean_df = dataset_info.item_mean_df
 
         # Diversity - latent
-        self.item_h_matrix = dataset_info.item_h_matrix
-        self.item_item_matrix = dataset_info.item_item_matrix
+        self.item_h_matrix = item_h_matrix
+        self.item_item_matrix = self.item_h_matrix @ self.item_h_matrix.T
 
         # Diversity - dist dictionary
         self.dist_dict = defaultdict(defaultdict)

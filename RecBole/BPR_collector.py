@@ -3,6 +3,8 @@ from copy import deepcopy
 import json
 import pickle
 from tqdm import tqdm
+import numpy as np
+import pandas as pd
 
 from recbole.quick_start.quick_start import load_data_and_model
 from recbole.utils.case_study import full_sort_topk
@@ -37,18 +39,21 @@ if __name__ == '__main__':
         item_token2id = deepcopy(dataset.field2token_id[dataset.iid_field])
         model_config['ITEM2IDX'] = item_token2id
 
-        
-        model_config['PRED_ITEM'] = {} # list
-        model_config['PRED_SCORE'] = {} # list
-        
+        pred_item = {}
+        pred_score = {}
+
         for user, uid in user_token2id.items():
             if user == '[PAD]': continue
 
             topk_score, topk_iid_list = \
                 full_sort_topk([uid], model=model, test_data=test_data, k=30, device=config['device'])
             external_item_list = dataset.id2token(dataset.iid_field, topk_iid_list.cpu())
-            model_config['PRED_ITEM'][user] = external_item_list[0]
-            model_config['PRED_SCORE'][user] = topk_score.cpu().tolist()
+
+            pred_item[user] = np.array(external_item_list[0])
+            pred_score[user] = np.array(topk_score.cpu())
+
+        model_config['PRED_ITEM'] = pd.Series(pred_item.values(), index=pred_item.keys())
+        model_config['PRED_SCORE'] = pd.Series(pred_score.values(), index=pred_score.keys())
 
         with open(os.path.join(model_config_path, f'BPR_{i:03}.pickle'), 'wb') as f:
             pickle.dump(model_config, f)
