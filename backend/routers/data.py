@@ -40,9 +40,9 @@ class dataset_info:
 
     def calculate_Popularity_user(self):   # 유저 관점의 popularity - default
         '''
-        return: 각 아이템 번호에 따른 인기도 딕트
+        popularity = (item과 상호작용한 유저 수) / (전체 유저 수) 
 
-        상호작용한 유저 수를 기반으로 인기도 측정
+        return: dict('item_id': popularity, 'item_id2': popularity2, ...)
         '''
 
         pop_user_per_item = (self.train_df['item_id'].value_counts() / self.n_user).to_dict()
@@ -51,9 +51,9 @@ class dataset_info:
 
     def calculate_Popularity_inter(self):    # interaction 관점의 popularity
         '''
-        return: 각 아이템 번호에 따른 인기도 딕트
+        popularity = (item과 상호작용한 유저 수 = 상호작용 횟수) / (전체 상호작용 수) 
 
-        상호작용 횟수를 기반으로 인기도 측정
+        return: dict('item_id': popularity, 'item_id2': popularity2, ...)
         '''
 
         inter_count_of_items = self.train_df.groupby('item_id').count()['user_id']

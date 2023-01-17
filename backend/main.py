@@ -15,8 +15,6 @@ import os
 # import json
 
 from routers import data, metric, model
-import dependencies
-
 
 app = FastAPI()
 # df = pd.read_csv('/opt/ml/input/data/train/train_ratings.csv')[:10]
@@ -24,27 +22,6 @@ app = FastAPI()
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
-
-# @app.get("/data")
-# def road_data():
-
-#     return df.to_dict(orient='records')
-
-# @app.get('/dataset/{attribute}')
-# def get_dataset(attribute, dataset=Depends(dependencies.get_dataset)):
-#     return {"From dataset_info: ": data.dataset.attribute}
-
-# @app.get('/model_manager')
-# def get_model_manager(model_manager=Depends(dependencies.get_model_manager)):
-#     return {'model_name': str(model_manager.datetime)}
-
-
-# @app.get("/data/{data_path}", description = 'data_path 이름에 있는 데이터들을 가져')
-# def load_data(data_path: str, desc):
-#     path = os.path.join("/opt/ml/final-project-level2-recsys-11/dataset", )
-#     df = pd.read_csv(path)
-
-#     return df.to_dict(orient='records')
 
  
 @app.get("/plot/")
