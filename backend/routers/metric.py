@@ -167,7 +167,7 @@ class quantitative_indicator:
 
 class qualitative_indicator:
 
-    def __init__(self, dataset_info:dataset_info, pred_item:pd.Series, pred_score:Dict, item_h_matrix=None):  # dataset_info: class
+    def __init__(self, dataset_info:dataset_info, pred_item:pd.Series, pred_score:pd.Series, item_h_matrix=None):  # dataset_info: class
         self.pred_item = pred_item
         # self.pred_score
         self.n_user = dataset_info.n_user
@@ -190,7 +190,9 @@ class qualitative_indicator:
         # self.item_item_matrix = self.item_h_matrix @ self.item_h_matrix.T
 
         # Diversity - dist dictionary
-        self.dist_dict = defaultdict(defaultdict)
+        self.rating_dist_dict = defaultdict(defaultdict)
+        self.jaccard_dist_dict = defaultdict(defaultdict)
+        self.latent_dist_dict = defaultdict(defaultdict)
 
         # Popularity
         # self.pop_of_each_items = dataset_info.pop_of_each_items
@@ -201,7 +203,7 @@ class qualitative_indicator:
         모든 유저에 대한 추천 리스트를 받으면 각각의 Diversity 계산하여 리스트로 return
         mode : 사용할 방식. {'jaccard', 'rating', 'latent'}
         '''
-        DoA = np.array([0.5] + [self.Diversity(self.R_df.loc[idx],mode) for idx in self.R_df.index])  # 0번째는 패딩
+        DoA = np.array([0.5] + [self.Diversity(self.pred_item.loc[idx],mode) for idx in self.pred_item.index])  # 0번째는 패딩
 
         return DoA
 
@@ -210,7 +212,7 @@ class qualitative_indicator:
         모든 유저에 대한 추천 리스트를 받으면 각각의 Serendipity를 계산하여 리스트로 return
         mode :  사용할 방식. {'PMI', 'jaccard'}
         '''
-        SoA = np.array([0.5] + [self.Serendipity(idx, self.R_df.loc[idx], mode) for idx in self.R_df.index])  # 0번째는 패딩
+        SoA = np.array([0.5] + [self.Serendipity(idx, self.pred_item.loc[idx], mode) for idx in self.pred_item.index])  # 0번째는 패딩
 
         return SoA
 
@@ -218,7 +220,7 @@ class qualitative_indicator:
         '''
         모든 유저에 대한 추천 리스트를 받으면 각각의 Novelty를 계산하여 리스트로 return
         '''
-        NoA = np.array([0.5] + [self.Novelty(self.R_df.loc[idx]) for idx in self.R_df.index])  # 0번째는 패딩
+        NoA = np.array([0.5] + [self.Novelty(self.pred_item.loc[idx]) for idx in self.pred_item.index])  # 0번째는 패딩
 
         return NoA
 
@@ -229,12 +231,18 @@ class qualitative_indicator:
 
         return: R의 diversity
         '''
+        if mode == 'jaccard':
+            dist_dict = self.jaccard_dist_dict
+        elif mode == 'rating':
+            dist_dict = self.rating_dist_dict
+        elif mode == 'latent':
+            dist_dict = self.latent_dist_dict
         # dist_dict = defaultdict(defaultdict)
         diversity = 0   # Diversity of User의 약자
         for i,j in combinations(R, 2):
             i,j = min(i,j), max(i,j)
-            if i in self.dist_dict and j in self.dist_dict[i]:
-                diversity += self.dist_dict[i][j]
+            if i in dist_dict and j in dist_dict[i]:
+                diversity += dist_dict[i][j]
             else:
                 if mode == 'rating':             # mode 별로 하나씩 추가하면 될 듯
                     d = self.rating_dist(i,j)    # rating_dist 함수로 측정한 dist(i,j)
@@ -242,11 +250,11 @@ class qualitative_indicator:
                     d = self.jaccard(i,j)
                 elif mode == 'latent':
                     d = self.latent(i,j)
-                self.dist_dict[i][j] = d
+                dist_dict[i][j] = d
                 diversity += d
             diversity /= ((len(R) * (len(R)-1)) / 2)
 
-            return diversity
+        return diversity
         
     def Serendipity(self, u:int, R:List[int], mode:str='PMI'):
         '''
