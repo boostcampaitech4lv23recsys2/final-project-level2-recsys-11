@@ -251,7 +251,8 @@ class qualitative_indicator:
                     d = self.latent(i,j)
                 dist_dict[i][j] = d
                 diversity += d
-            diversity /= ((len(R) * (len(R)-1)) / 2)
+                
+        diversity /= ((len(R) * (len(R)-1)) / 2)
 
         return diversity
 
