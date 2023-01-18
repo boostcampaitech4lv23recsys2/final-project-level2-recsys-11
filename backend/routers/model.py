@@ -37,6 +37,7 @@ class ModelConfig:
         self.item_vector = None # np.array
         self.pred_item = None # pd.Series
         self.pred_score = None # pd.Series
+        self.item2idx = None
 
         self.item2idx = None
 
