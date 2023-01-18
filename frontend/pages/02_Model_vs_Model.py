@@ -9,17 +9,22 @@ import random
 import copy
 
 st.set_page_config(layout="wide")
-
+API_url = 'http://127.0.0.1:8000'
 # sidebar settings
-class Model_Form():
-    def __init__(self, key):
+class Model_Form:
+    def __init__(self, key:int) -> None:
         self.key = key
         self.container = st.sidebar.container()
         self.container.markdown('---', unsafe_allow_html=True)
-        model_hype_type = requests.get(url='http://0.0.0.0:8000/model_hype_type').json()
+        
+        @st.cache
+        def get_hype_type():
+            return requests.get(url=f'{API_url}/model_hype_type').json()
+        model_hype_type = get_hype_type()
+        
         self.model = self.container.selectbox(label='Select Model',
                          options=model_hype_type.keys(),
-                         key=key
+                         key=self.key
         )
         self.key += 1
         self.color = self.container.color_picker('select color', key=self.key)
@@ -33,7 +38,7 @@ class Model_Form():
             # self.selected_values[hype] = self.container.radio(hype, model_hype_type[self.model][hype], key=plus, horizontal=True)
             self.selected_values.append(self.container.radio(hype, model_hype_type[self.model][hype], key=plus, horizontal=True))
         self.key += self.n
-        self.container.markdown('---', unsafe_allow_html=True)
+        # self.container.markdown('---', unsafe_allow_html=True)
 
     def get_data(self):
         datas = dict()
@@ -42,17 +47,17 @@ class Model_Form():
         datas['values'] = '_'.join(self.selected_values)
         return datas
 
-n_model = st.sidebar.number_input('how many models you compare?', step = 1, max_value=5)
+n_model = st.sidebar.number_input('How many models you compare?', step = 1, max_value=5, value=2)
 
 before_param_n = 0
-forms = []
+model_forms = []
 for i in range(int(n_model)):
-    form = Model_Form(key=before_param_n)
-    before_param_n += form.key 
-    forms.append(form.get_data())
+    model_form = Model_Form(key=before_param_n)
+    before_param_n += model_form.key 
+    model_forms.append(model_form.get_data())
 
-for form in forms:
-    form
+# for model_form in model_forms:
+#     model_form
 
 def plot_models():
     with st.spinner('Wait for drawing..'):
@@ -134,12 +139,7 @@ fig = px.bar(
     color_discrete_sequence=exp_df['colors'].values
     )
 plot1.plotly_chart(fig, use_container_width=True)
-# bar_chart = alt.Chart(exp_df).mark_bar().encode(
-#     alt.X('model:O'),
-#     alt.Y('recall:Q'),
-#     alt.Color('model:O'),
-# )
-# plot1.altair_chart(bar_chart, use_container_width=True)
+
 
 plot1.markdown('<h4>NDCG</h4>', unsafe_allow_html=True)
 fig = px.bar(
@@ -150,13 +150,7 @@ fig = px.bar(
     color_discrete_sequence=exp_df['colors'].values
     )
 plot1.plotly_chart(fig, use_container_width=True)
-# plot1.plotly_chart(fig, use_container_width=True)
-# bar_chart = alt.Chart(exp_df).mark_bar().encode(
-#     alt.X('model:O'),
-#     alt.Y('ndcg:Q'),
-#     alt.Color('model:O'),
-# )
-# plot1.altair_chart(bar_chart, use_container_width=True)
+
 
 plot2.markdown('<h4>MAP</h4>', unsafe_allow_html=True)
 fig = px.bar(
@@ -167,12 +161,6 @@ fig = px.bar(
     color_discrete_sequence=exp_df['colors'].values
     )
 plot2.plotly_chart(fig, use_container_width=True)
-# bar_chart = alt.Chart(exp_df).mark_bar().encode(
-#     alt.X('model:O'),
-#     alt.Y('map:Q'),
-#     alt.Color('model:O'),
-# )
-# plot2.altair_chart(bar_chart, use_container_width=True)
 
 plot2.markdown('<h4>Popularity</h4>', unsafe_allow_html=True)
 fig = px.bar(
@@ -183,23 +171,18 @@ fig = px.bar(
     color_discrete_sequence=exp_df['colors'].values
     )
 plot2.plotly_chart(fig, use_container_width=True)
-# bar_chart = alt.Chart(exp_df).mark_bar().encode(
-#     alt.X('model:O'),
-#     alt.Y('popularity:Q'),
-#     alt.Color('model:O'),
-# )
-# plot2.altair_chart(bar_chart, use_container_width=True)
+
 
 st.markdown(f"<h2 style='text-align: left; color: black;'>Quantitative  Indicator</h2>", unsafe_allow_html=True)
 
 plot3, plot4 = st.columns(2)
 
-plot3.markdown('<h4>Diversity</h4>', unsafe_allow_html=True)
+plot3.markdown('<h4>Diversity(jaccard)</h4>', unsafe_allow_html=True)
 # plot3.line_chart() #TODO: 위에서 받은 df를 그래프로 나타내기
-plot3.markdown('<h4>Novelty</h4>', unsafe_allow_html=True)
+plot3.markdown('<h4>Novelty(jaccard)</h4>', unsafe_allow_html=True)
 # plot3.line_chart()
 
-plot4.markdown('<h4>Serendipity</h4>', unsafe_allow_html=True)
+plot4.markdown('<h4>Serendipity(jaccard)</h4>', unsafe_allow_html=True)
 # plot4.line_chart()
 plot4.markdown('<h4>Coverage</h4>', unsafe_allow_html=True)
 # plot4.line_chart()

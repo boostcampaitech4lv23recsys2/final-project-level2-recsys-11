@@ -8,26 +8,22 @@ import requests
 import plotly.io as pio
 from design import head, body
 
+API_url = 'http://127.0.0.1:8000'
 
 st.set_page_config(
     page_title="Recommendation Model Evaluation",
     page_icon="😊",
     layout="wide",
     initial_sidebar_state="expanded",
-    # menu_items={
-    #     'Get Help': 'https://www.extremelycoolapp.com/help',
-    #     'Report a bug': "https://www.extremelycoolapp.com/bug",
-    #     'About': "# This is a header. This is an *extremely* cool app!"
-    # }
 )
 
-
-df_r = requests.get(
-    url = 'http://127.0.0.1:30004/data'
+@st.cache
+def get_metric_df():
+    return requests.get(
+    url = f'{API_url}/metric/total_metrics'
 )
 
-
-df = pd.DataFrame(df_r.json())
+df = pd.DataFrame(get_metric_df().json())
 
 head.set_title('Recommendation Model Evaluation', 'center')
 
@@ -40,7 +36,7 @@ model1, model2 = st.columns(2)
 body.compare_metric()
 
 plot_r = requests.get(
-    url = 'http://127.0.0.1:30004/plot'
+    url = f'{API_url}/plot'
 )
 plotly_fig = pio.from_json(plot_r.json())
 st.plotly_chart(plotly_fig)
