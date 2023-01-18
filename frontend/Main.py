@@ -23,9 +23,8 @@ st.set_page_config(
 
 
 df_r = requests.get(
-    url = 'http://127.0.0.1:30004/data'
+    url = 'http://127.0.0.1:30004/metric/total_metrics'
 )
-
 
 df = pd.DataFrame(df_r.json())
 
