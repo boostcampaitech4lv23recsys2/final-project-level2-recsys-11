@@ -15,21 +15,25 @@ async def total_configs_metrics():
     from routers.model import model_managers
 
     MODELS = model_managers.values()
+    run = model_managers['EASE'].get_all_model_configs()[0]    
 
-    run_metrics = [("_".join((model.model_name, run.string_key)),
+    run_metrics = [("_".join(('EASE', run.string_key)), # 'EASE' = model.model_name
                     run.quantitative.Recall_K(),
                     run.quantitative.mapk(),
                     run.quantitative.NDCG(),
-                    run.qualitative.AveragePopularity(),
-                    run.quantitative.TailPercentage())
-                    # run.qualitative.Total_Diversity().mean(),
-                    # run.qualitative.Total_Serendipity().mean(),
-                    # run.qualitative.Total_Novelty().mean())
-                    for model in MODELS for run in model.get_all_model_configs()] # model: ModelManager
+                    run.quantitative.AveragePopularity(),
+                    run.quantitative.Coverage(),
+                    run.quantitative.TailPercentage(),
+                    run.qualitative.Total_Diversity().mean(),
+                    run.qualitative.Total_Serendipity().mean(),
+                    run.qualitative.Total_Novelty().mean())
+                    # for model in MODELS for run in model.get_all_model_configs()
+                    ] # model: ModelManager
 
     total_metrics_pd = pd.DataFrame(run_metrics,
-                        columns=['Recall', 'MAP', 'NDCG', 'AvgPopularity', 'Tail_Percentage',
-                                'Diversity', 'Serendipity', 'Novelty'])
+                        columns=['Name', 'Recall', 'MAP', 'NDCG', 'AvgPopularity', 'Coverage', 'Tail_Percentage',
+                                'Diversity', 'Serendipity', 'Novelty'
+                                ])
 
     return total_metrics_pd.to_dict(orient='records')
 
@@ -197,7 +201,7 @@ class qualitative_indicator:
         self.pop_user_per_item = dataset.pop_user_per_item
         self.pop_inter_per_item = dataset.pop_inter_per_item
 
-    def Total_Diversity(self, mode:str='latent') -> List[float]:
+    def Total_Diversity(self, mode:str='jaccard') -> List[float]:
         '''
         모든 유저에 대한 추천 리스트를 받으면 각각의 Diversity 계산하여 리스트로 return
         mode : 사용할 방식. {'jaccard', 'rating', 'latent'}
@@ -206,7 +210,7 @@ class qualitative_indicator:
 
         return DoA
 
-    def Total_Serendipity(self, mode:str='latent') -> List[float]:
+    def Total_Serendipity(self, mode:str='jaccard') -> List[float]:
         '''
         모든 유저에 대한 추천 리스트를 받으면 각각의 Serendipity를 계산하여 리스트로 return
         mode :  사용할 방식. {'PMI', 'jaccard'}
@@ -223,7 +227,7 @@ class qualitative_indicator:
 
         return NoA
 
-    def Diversity(self, R:List[int], mode:str='latent'):
+    def Diversity(self, R:List[int], mode:str='jaccard'):
         '''
         R: 추천된 아이템 리스트
         mode: 사용할 방식. {'rating', 'jaccard', 'latent'}

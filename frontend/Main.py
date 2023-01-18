@@ -19,7 +19,7 @@ st.set_page_config(
 
 
 df_r = requests.get(
-    url = f'{API_url}/data'
+    url = f'{API_url}/metric/total_metrics'
 )
 st.write(df_r.json())
 
