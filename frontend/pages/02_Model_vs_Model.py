@@ -9,14 +9,19 @@ import random
 import copy
 
 st.set_page_config(layout="wide")
-
+API_url = 'http://127.0.0.1:8000'
 # sidebar settings
 class Model_Form:
     def __init__(self, key:int) -> None:
         self.key = key
         self.container = st.sidebar.container()
         self.container.markdown('---', unsafe_allow_html=True)
-        model_hype_type = requests.get(url='http://0.0.0.0:8000/model_hype_type').json()
+        
+        @st.cache
+        def get_hype_type():
+            return requests.get(url=f'{API_url}/model_hype_type').json()
+        model_hype_type = get_hype_type()
+        
         self.model = self.container.selectbox(label='Select Model',
                          options=model_hype_type.keys(),
                          key=self.key

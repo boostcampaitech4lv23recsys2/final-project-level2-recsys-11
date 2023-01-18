@@ -9,7 +9,6 @@ class ReRanking_Form:
     def __init__(self, key:int) -> None:
         self.key = key
         self.container = st.sidebar.container()
-        # self.container.markdown('---', unsafe_allow_html=True)
         self.alpha = self.container.radio(label='Select alpha',
                          options=(0, 0.5, 1),
                          key=self.key,
@@ -24,7 +23,6 @@ class ReRanking_Form:
                                                       'Novelty(rating)',
                                                       'Novelty(item vector)','Novelty(jacard)'),
                                              key=self.key,
-                                            #  horizontal=True
         )
         self.key += 1
         self.container.markdown('---', unsafe_allow_html=True)
