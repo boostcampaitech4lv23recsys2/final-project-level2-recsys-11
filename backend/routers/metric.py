@@ -168,18 +168,19 @@ class qualitative_indicator:
 
     def __init__(self, dataset:dataset_info, pred_item:pd.Series, pred_score:pd.Series, item_h_matrix:np.array):  # dataset_info: class
         self.pred_item = pred_item
-        # self.pred_score
+        self.pred_score = pred_score
         self.n_user = dataset.n_user
 
         # Serendipity
         self.pmi_matrix = dataset.pmi_matrix
         self.jaccard_matrix = dataset.jaccard_matrix
+        self.implicit_matrix = dataset.implicit_matrix
         # self.user_profiles = dataset.user_profiles
         # self.item_profiles = dataset.item_profiles
 
         # Diversity - jaccard
         self.genre = dataset.genre
-        
+
         # Diversity - rating
         self.rating_matrix = dataset.rating_matrix
         self.item_mean_df = dataset.item_mean_df
@@ -197,29 +198,35 @@ class qualitative_indicator:
         self.pop_user_per_item = dataset.pop_user_per_item
         self.pop_inter_per_item = dataset.pop_inter_per_item
 
-    def Total_Diversity(self, mode:str='latent') -> List[float]:
+    def Total_Diversity(self, mode:str='jaccard', pred_item:pd.Series=None) -> List[float]:
         '''
         모든 유저에 대한 추천 리스트를 받으면 각각의 Diversity 계산하여 리스트로 return
         mode : 사용할 방식. {'jaccard', 'rating', 'latent'}
         '''
-        DoA = np.array([0.5] + [self.Diversity(self.pred_item.loc[idx],mode) for idx in self.pred_item.index])  # 0번째는 패딩
+        if pred_item is None:
+            pred_item = self.pred_item
+        DoA = np.array([0.5] + [self.Diversity(pred_item.loc[idx],mode) for idx in pred_item.index])  # 0번째는 패딩
 
         return DoA
 
-    def Total_Serendipity(self, mode:str='latent') -> List[float]:
+    def Total_Serendipity(self, mode:str='PMI', pred_item:pd.Series=None) -> List[float]:
         '''
         모든 유저에 대한 추천 리스트를 받으면 각각의 Serendipity를 계산하여 리스트로 return
         mode :  사용할 방식. {'PMI', 'jaccard'}
         '''
-        SoA = np.array([0.5] + [self.Serendipity(idx, self.pred_item.loc[idx], mode) for idx in self.pred_item.index])  # 0번째는 패딩
+        if pred_item is None:
+            pred_item = self.pred_item
+        SoA = np.array([0.5] + [self.Serendipity(idx, pred_item.loc[idx], mode) for idx in pred_item.index])  # 0번째는 패딩
 
         return SoA
 
-    def Total_Novelty(self) -> List[float]:
+    def Total_Novelty(self, pred_item:pd.Series=None) -> List[float]:
         '''
         모든 유저에 대한 추천 리스트를 받으면 각각의 Novelty를 계산하여 리스트로 return
         '''
-        NoA = np.array([0.5] + [self.Novelty(self.pred_item.loc[idx]) for idx in self.pred_item.index])  # 0번째는 패딩
+        if pred_item is None:
+            pred_item = self.pred_item
+        NoA = np.array([0.5] + [self.Novelty(pred_item.loc[idx]) for idx in pred_item.index])  # 0번째는 패딩
 
         return NoA
 
@@ -251,7 +258,7 @@ class qualitative_indicator:
                     d = self.latent(i,j)
                 dist_dict[i][j] = d
                 diversity += d
-                
+
         diversity /= ((len(R) * (len(R)-1)) / 2)
 
         return diversity
@@ -323,3 +330,76 @@ class qualitative_indicator:
         similarity = self.item_item_matrix[i][j] / (norm_i * norm_j)
 
         return 1 - similarity
+
+
+
+    def total_rerank(self, alpha= 0.5, obj='Serendipity', mode='PMI', k= 10):
+        '''
+        alpha : rel과 obj 간의 가중치
+        obj : 사용할 목적함수 {'Diversity', 'Serendipity', 'Novelty'}
+        mode : 사용할 모드. obj에 따라 값이 다름
+        k : 만들 추천 리스트의 원소 갯수
+
+        return : Diversity, Serendipity, Novelty가 담긴 딕트
+        '''
+        total = pd.Series(dtype=object)
+        for user in self.pred_item.index:
+            total.loc[user] = self.rerank(user, alpha, obj, mode, k)
+        ans = dict()
+        ans['Diversity'] = self.Total_Diversity(pred_item=total) #어느 mode로 할지 정할 수 있게 하는 게 좋을 것 같기는 한데..
+        ans['Serendipity'] = self.Total_Serendipity(pred_item=total)
+        ans['Novelty'] = self.Total_Novelty(pred_item=total)
+        return ans
+
+    def rerank(self, user:int, alpha= 0.5, obj='Serendipity', mode='PMI', k= 10):
+        '''
+        user: 유저
+        alpha : rel과 obj 간의 가중치
+        obj : 사용할 목적함수 {'Diversity', 'Serendipity', 'Novelty'}
+        mode : 사용할 모드. obj에 따라 값이 다름
+        k : 만들 추천 리스트의 원소 갯수
+
+        return : user에 대해 재정렬한 리스트 반환
+        '''
+        item = self.pred_item.loc[user]
+        score = self.pred_score.loc[user]
+        length = len(self.pred_item.loc[user]) # 이건 나중에 빼서 속도 개선하자. 처음부터 지정을 하던가 하는 식으로
+        if k > length:
+            raise ValueError('k should not be bigger than C')
+        if obj == 'Diversity':
+            if mode == 'rating':
+                pass
+            elif mode == 'jaccard':
+                pass
+            elif mode == 'latent':
+                pass
+            else:
+                raise ValueError('only {rating, jaccard, latent} available for mode')
+
+        elif obj == 'Serendipity':
+            if mode == 'PMI':
+                user_profile = self.rating_matrix.T[self.rating_matrix.loc[user] != 0].index
+                obj_score = self.pmi_matrix[item].loc[user_profile].min()
+                score = alpha * self.pred_score.loc[user] + (1 - alpha) * obj_score[item]
+                topk_args = np.argsort(score.to_numpy())[:length-k-1:-1]
+                recommended_lst = item[topk_args]
+                return recommended_lst
+
+            elif mode == 'jaccard':
+                user_profile = self.rating_matrix.T[self.rating_matrix.loc[user] != 0].index
+                obj_score = self.jaccard_matrix[item].loc[user_profile].min()
+                score = alpha * self.pred_score.loc[user] + (1 - alpha) * obj_score[item]
+                topk_args = np.argsort(score.to_numpy())[:length-k-1:-1]
+                recommended_lst = item[topk_args]
+                return recommended_lst
+            else:
+                raise ValueError('only {PMI, jaccard} available for mode')
+        elif obj == 'Novelty':
+            obj_score = np.log10(self.n_user / self.implicit_matrix[self.pred_item.loc[user]].sum())
+            score = alpha * self.pred_score.loc[user] + (1 - alpha) * obj_score[item]
+            topk_args = np.argsort(score.to_numpy())[:length-k-1:-1]
+            recommended_lst = item[topk_args]
+            return recommended_lst
+
+        else:
+            raise ValueError('only {Diversity, Serendipity, Novelty} available for objective function')
