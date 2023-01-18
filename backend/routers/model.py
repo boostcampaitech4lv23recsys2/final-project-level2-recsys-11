@@ -38,6 +38,8 @@ class ModelConfig:
         self.pred_item = None # pd.Series
         self.pred_score = None # pd.Series
 
+        self.item2idx = None
+
         # 지표 계산 클래스
         self.quantitative = None
         self.qualitative = None
@@ -58,6 +60,7 @@ class ModelConfig:
             self.item_vector = infos['ITEM_VECTOR']
             self.pred_item = infos['PRED_ITEM']
             self.pred_score = infos['PRED_SCORE']
+            self.item2idx = infos['ITEM2IDX']
 
         self.quantitative = quantitative_indicator(data.dataset, self.pred_item, 
                                                     self.pred_score)
@@ -123,7 +126,7 @@ class ModelManager:
     
 
 
-# BPR_manager = ModelManager(dir_path='/opt/ml/final-project-level2-recsys-11/BPR_configs')
+BPR_manager = ModelManager(dir_path='/opt/ml/final-project-level2-recsys-11/BPR_configs')
 EASE_manager = ModelManager(dir_path='/opt/ml/final-project-level2-recsys-11/EASE_configs')
 
-# model_managers = {'BPR': BPR_manager, 'EASE': EASE_manager}
+model_managers = {'BPR': BPR_manager, 'EASE': EASE_manager}

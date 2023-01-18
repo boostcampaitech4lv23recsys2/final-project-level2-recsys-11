@@ -6,7 +6,7 @@ from itertools import combinations
 
 from fastapi import APIRouter
 
-from routers.data import dataset_info
+from routers.data import dataset
 
 router = APIRouter()
 
