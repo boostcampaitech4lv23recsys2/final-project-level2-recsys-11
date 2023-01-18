@@ -22,13 +22,12 @@ class Model_Manager(BaseModel):
 testing = Model_Manager(model_name='BPR')
 
 
-NECESSARY_INFOS = ['ITEM_VECTOR', 'USER2IDX', 'ITEM2IDX', 'PRED_ITEM', 'PRED_SCORE']
-# NECESSARY_INFOS = ['ITEM_VECTOR', 'USER2IDX', 'ITEM2IDX']
+NECESSARY_INFOS = ['model_name', 'ITEM_VECTOR', 'USER2IDX', 'ITEM2IDX', 'PRED_ITEM', 'PRED_SCORE']
 
 
 class ModelConfig:
     def __init__(self, config_path: str):
-        self.model_name = None # model_name
+        self.model_name = None 
         self.config_path = config_path
         self.necessary = {} # 필수적으로 들고있어야 할 정보들 (아이템 벡터, 아이디2idx, preds 등)
         self.hyper = {} # 각기 모델 config 파일에 있는 하이퍼 파람들 
@@ -55,6 +54,7 @@ class ModelConfig:
                 if hyper_k not in NECESSARY_INFOS:
                     self.hyper[hyper_k] = hyper_v
 
+            self.model_name = infos['model_name']
             self.item_vector = infos['ITEM_VECTOR']
             self.pred_item = infos['PRED_ITEM']
             self.pred_score = infos['PRED_SCORE']
@@ -98,6 +98,9 @@ class ModelManager:
                     # 일치하지 않는 상태
                     continue
             
+            if self.model_name == None:
+                self.model_name = model_config.model_name
+            
             model_config.set_string_key(self.hyper_keys)
             self.runs[model_config.string_key] = model_config
 
@@ -120,7 +123,7 @@ class ModelManager:
     
 
 
-BPR_manager = ModelManager(dir_path='/opt/ml/final-project-level2-recsys-11/BPR_configs')
+# BPR_manager = ModelManager(dir_path='/opt/ml/final-project-level2-recsys-11/BPR_configs')
 EASE_manager = ModelManager(dir_path='/opt/ml/final-project-level2-recsys-11/EASE_configs')
 
-model_managers = {'BPR': BPR_manager, 'EASE': EASE_manager}
+# model_managers = {'BPR': BPR_manager, 'EASE': EASE_manager}

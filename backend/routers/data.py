@@ -18,9 +18,10 @@ class dataset_info:
         self.train_df = train_df                                        # interaction data
         self.item_df = item_df                                          # item context data
         self.user_df = user_df
-        # self.ground_truth = ground_truth                    
-        self.ground_truth = ground_truth.groupby('user').agg(list)      # ground truth for metric evaluation    
-        self.ground_truth = self.ground_truth.applymap(lambda x: np.array(x))
+        
+        ground_truth.columns = ['user_id', 'item_id']                    
+        self.ground_truth = ground_truth.groupby('user_id').agg(list)               # ground truth for metric evaluation    
+        self.ground_truth = self.ground_truth.applymap(lambda x: np.array(x))       # pd.DataFrame
 
         self.train_df.columns = ['user_id', 'item_id', 'rating', 'timestamp','origin_timestamp']
         self.item_df.columns = ['item_id', 'movie_title', 'release_year', 'genre']
@@ -95,8 +96,6 @@ class dataset_info:
         '''
 
         pop_user_per_item = (self.train_df['item_id'].value_counts() / self.n_user).to_dict()
-
-        
 
         return pop_user_per_item
 

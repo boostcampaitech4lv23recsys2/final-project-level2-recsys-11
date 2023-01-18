@@ -26,6 +26,7 @@ if __name__ == '__main__':
         config, model, dataset, train_data, valid_data, test_data = \
             load_data_and_model(model_path)
 
+        model_config['model_name'] = 'BPR'
         model_config['neg_distribution'] = config['train_neg_sample_args']['distribution']
         model_config['neg_sample_num'] = config['train_neg_sample_args']['sample_num']
         model_config['embedding_size'] = config['embedding_size']
@@ -52,8 +53,8 @@ if __name__ == '__main__':
             pred_item[user] = np.array(external_item_list[0])
             pred_score[user] = np.array(topk_score.cpu())
 
-        model_config['PRED_ITEM'] = pd.Series(pred_item.values(), index=pred_item.keys())
-        model_config['PRED_SCORE'] = pd.Series(pred_score.values(), index=pred_score.keys())
+        model_config['PRED_ITEM'] = pd.Series(pred_item.values(), index=[int(k) for k in pred_item.keys()], name='item_id')
+        model_config['PRED_SCORE'] = pd.Series(pred_score.values(), index=[int(k) for k in pred_score.keys()], name='item_id')
 
         with open(os.path.join(model_config_path, f'BPR_{i:03}.pickle'), 'wb') as f:
             pickle.dump(model_config, f)

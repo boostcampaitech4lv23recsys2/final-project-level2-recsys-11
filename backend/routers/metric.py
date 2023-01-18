@@ -14,18 +14,18 @@ router = APIRouter()
 async def total_configs_metrics():
     from routers.model import model_managers
 
-    MODELS = model_managers.values
+    MODELS = model_managers.values()
 
     run_metrics = [("_".join((model.model_name, run.string_key)), 
                     run.quantitative.Recall_K(), 
                     run.quantitative.mapk(), 
                     run.quantitative.NDCG(), 
                     run.qualitative.AveragePopularity(), 
-                    run.quantitative.TailPercentage(), 
-                    run.qualitative.Total_Diversity().mean(), 
-                    run.qualitative.Total_Serendipity().mean(), 
-                    run.qualitative.Total_Novelty().mean()) 
-                    for model in MODELS for run in model.runs] # model: ModelManager
+                    run.quantitative.TailPercentage()) 
+                    # run.qualitative.Total_Diversity().mean(), 
+                    # run.qualitative.Total_Serendipity().mean(), 
+                    # run.qualitative.Total_Novelty().mean()) 
+                    for model in MODELS for run in model.get_all_model_configs()] # model: ModelManager
 
     total_metrics_pd = pd.DataFrame(run_metrics, 
                         columns=['Recall', 'MAP', 'NDCG', 'AvgPopularity', 'Tail_Percentage', 
@@ -111,7 +111,7 @@ class quantitative_indicator:
         This function computes the mean average prescision at k between two lists
         of lists of items.
         """
-        return np.mean([self.apk(a, p, self.k) for a, p in zip(self.ground_truth.values, self.pred_item.values)])
+        return np.mean([self.apk(a, p, self.K) for a, p in zip(self.ground_truth.values, self.pred_item.values)])
 
     def NDCG(self):
         '''
@@ -120,9 +120,9 @@ class quantitative_indicator:
         '''
         ndcg = 0
         for i in self.pred_item.index:
-            k = min(self.K, len(self.ground_truth['item'].loc[1]))
+            k = min(self.K, len(self.ground_truth['item_id'].loc[1]))
             idcg = sum([1 / np.log2(j + 2) for j in range(k)]) # 최대 dcg. +2는 range가 0에서 시작해서
-            dcg = sum([int(self.pred_item.loc[i].item()[j] in set(self.ground_truth['item'].loc[i])) / np.log2(j + 2) for j in range(self.K)])
+            dcg = sum([int(self.pred_item[i][j] in set(self.ground_truth['item_id'].loc[i])) / np.log2(j + 2) for j in range(self.K)])
             ndcg += dcg / idcg
         return ndcg / len(self.pred_item)
 
@@ -130,37 +130,34 @@ class quantitative_indicator:
         '''
         return: 추천된 아이템의 고유값 수 / 전체 아이템 수
         '''
-        rec_num = self.rec_df['item'].nunique()
+        rec_num = self.rec_df['item_id'].nunique()
         #이 TOTAL은 GROUND까지 포함한 값이어야 한다.
         return rec_num / self.n_item
 
     def TailPercentage(self, tail_ratio=0.1):
         item_count = self.train_df.groupby('item_id').agg('count')
         item_count.drop(['rating', 'timestamp','origin_timestamp'], axis=1, inplace=True)
-        item_count.columns =  ['item_count']
+        item_count.columns = ['item_count']
 
         item_count_sort = item_count.sort_values(by = 'item_count', ascending=False)
         item_count_sort.reset_index(inplace=True)
-        T = item_count_sort.item_id[-int(len(item_count_sort) * tail_ratio):].values
+        T = list(item_count_sort.item_id[-int(len(item_count_sort) * tail_ratio):].values)
 
-        Tp = np.mean([sum([1 if item in T else 0 for item in self.pred_item.loc[idx,'item']]) / self.K for idx in self.pred_item.index])
+        Tp = np.mean([sum([1 if item in T else 0 for item in self.pred_item[idx]]) / self.K 
+                            for idx in self.pred_item.index])
         return Tp
 
     def Recall_K(self):
-        # def recall_at_k(actual, predicted, topk):
-        topk = self.K
-        pred_item = self.pred_item                              # 유저, [추천리스트] 형태
-        ground_truth = self.ground_truth
-        T_df = ground_truth.groupby('user').agg(list) # pred_item와 같은 형태
-        actual = T_df.item
-        predicted = pred_item.item
+        actual = self.ground_truth['item_id']
+        predicted = self.pred_item
         sum_recall = 0.0
-        true_users = 0
+        true_users = 0 
+
         for idx in actual.index:
-            act_set = set(actual[idx])
-            pred_set = set(predicted[idx][:topk])
+            act_set = set(actual[idx].flatten())
+            pred_set = set(predicted[idx][:self.K].flatten())
             if len(act_set) != 0:
-                sum_recall += len(act_set & pred_set) / float(len(act_set))
+                sum_recall += len(act_set & pred_set) / min(len(act_set), len(pred_set))
                 true_users += 1
 
         return sum_recall / true_users
@@ -194,24 +191,24 @@ class qualitative_indicator:
         self.dist_dict = defaultdict(defaultdict)
 
         # Popularity
-        self.pop_of_each_items = dataset_info.pop_of_each_items
-        self.fam_of_each_items = dataset_info.fam_of_each_items
+        self.pop_user_per_item = dataset_info.pop_user_per_item
+        self.pop_inter_per_item = dataset_info.pop_inter_per_item
 
-    def Total_Diversity(self, mode:str='jaccard') -> List[float]:
+    def Total_Diversity(self, mode:str='latent') -> List[float]:
         '''
         모든 유저에 대한 추천 리스트를 받으면 각각의 Diversity 계산하여 리스트로 return
         mode : 사용할 방식. {'jaccard', 'rating', 'latent'}
         '''
-        DoA = np.array([0.5] + [self.Diversity(self.R_df.loc[idx],mode) for idx in self.R_df.index])  # 0번째는 패딩
+        DoA = np.array([0.5] + [self.Diversity(self.pred_item.loc[idx],mode) for idx in self.pred_item.index])  # 0번째는 패딩
 
         return DoA
 
-    def Total_Serendipity(self, mode:str='jaccard') -> List[float]:
+    def Total_Serendipity(self, mode:str='latent') -> List[float]:
         '''
         모든 유저에 대한 추천 리스트를 받으면 각각의 Serendipity를 계산하여 리스트로 return
         mode :  사용할 방식. {'PMI', 'jaccard'}
         '''
-        SoA = np.array([0.5] + [self.Serendipity(idx, self.R_df.loc[idx], mode) for idx in self.R_df.index])  # 0번째는 패딩
+        SoA = np.array([0.5] + [self.Serendipity(idx, self.pred_item.loc[idx], mode) for idx in self.pred_item.index])  # 0번째는 패딩
 
         return SoA
 
@@ -219,11 +216,11 @@ class qualitative_indicator:
         '''
         모든 유저에 대한 추천 리스트를 받으면 각각의 Novelty를 계산하여 리스트로 return
         '''
-        NoA = np.array([0.5] + [self.Novelty(self.R_df.loc[idx]) for idx in self.R_df.index])  # 0번째는 패딩
+        NoA = np.array([0.5] + [self.Novelty(self.pred_item.loc[idx]) for idx in self.pred_item.index])  # 0번째는 패딩
 
         return NoA
 
-    def Diversity(self, R:List[int], mode:str='jaccard'):
+    def Diversity(self, R:List[int], mode:str='latent'):
         '''
         R: 추천된 아이템 리스트
         mode: 사용할 방식. {'rating', 'jaccard', 'latent'}
@@ -247,7 +244,7 @@ class qualitative_indicator:
                 diversity += d
             diversity /= ((len(R) * (len(R)-1)) / 2)
 
-            return diversity
+        return diversity
         
     def Serendipity(self, u:int, R:List[int], mode:str='PMI'):
         '''

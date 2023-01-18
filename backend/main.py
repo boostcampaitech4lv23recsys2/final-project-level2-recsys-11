@@ -21,6 +21,9 @@ from routers import data, metric, model
 app = FastAPI()
 # df = pd.read_csv('/opt/ml/input/data/train/train_ratings.csv')[:10]
 
+app.include_router(metric.router, prefix='/metric')
+
+
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
