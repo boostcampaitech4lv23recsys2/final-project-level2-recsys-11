@@ -51,7 +51,7 @@ if __name__ == '__main__':
             external_item_list = dataset.id2token(dataset.iid_field, topk_iid_list.cpu())
 
             pred_item[user] = np.array(external_item_list[0])
-            pred_score[user] = np.array(topk_score.cpu())
+            pred_score[user] = topk_score.cpu().squeeze().numpy()
 
         model_config['PRED_ITEM'] = pd.Series(pred_item.values(), index=[int(k) for k in pred_item.keys()], name='item_id')
         model_config['PRED_SCORE'] = pd.Series(pred_score.values(), index=[int(k) for k in pred_score.keys()], name='item_id')
