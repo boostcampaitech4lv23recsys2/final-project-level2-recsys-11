@@ -123,7 +123,7 @@ class ModelManager:
     
 
 
-# # BPR_manager = ModelManager(dir_path='/opt/ml/final-project-level2-recsys-11/BPR_configs')
-# EASE_manager = ModelManager(dir_path='/opt/ml/final-project-level2-recsys-11/EASE_configs')
+BPR_manager = ModelManager(dir_path='/opt/ml/final-project-level2-recsys-11/BPR_configs')
+EASE_manager = ModelManager(dir_path='/opt/ml/final-project-level2-recsys-11/EASE_configs')
 
 model_managers = {'BPR': BPR_manager, 'EASE': EASE_manager}

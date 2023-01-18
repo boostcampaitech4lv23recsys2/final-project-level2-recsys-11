@@ -53,8 +53,8 @@ class quantitative_indicator:
         self.pred_item = pred_item 
         self.pred_score = pred_score 
 
-        self.n_user = dataset_info.n_user
-        self.n_item = dataset_info.n_item
+        self.n_user = dataset.n_user
+        self.n_item = dataset.n_item
 
         # Popularity
         self.pop_user_per_item = dataset.pop_user_per_item # Dict
@@ -165,23 +165,23 @@ class quantitative_indicator:
 
 class qualitative_indicator:
 
-    def __init__(self, dataset_info:dataset_info, pred_item:pd.Series, pred_score:pd.Series, item_h_matrix:np.array):  # dataset_info: class
+    def __init__(self, dataset:dataset_info, pred_item:pd.Series, pred_score:pd.Series, item_h_matrix:np.array):  # dataset_info: class
         self.pred_item = pred_item
         # self.pred_score
-        self.n_user = dataset_info.n_user
+        self.n_user = dataset.n_user
 
         # Serendipity
-        self.pmi_matrix = dataset_info.pmi_matrix
-        self.jaccard_matrix = dataset_info.jaccard_matrix
-        # self.user_profiles = dataset_info.user_profiles
-        # self.item_profiles = dataset_info.item_profiles
+        self.pmi_matrix = dataset.pmi_matrix
+        self.jaccard_matrix = dataset.jaccard_matrix
+        # self.user_profiles = dataset.user_profiles
+        # self.item_profiles = dataset.item_profiles
 
         # Diversity - jaccard
-        self.genre = dataset_info.genre
+        self.genre = dataset.genre
         
         # Diversity - rating
-        self.rating_matrix = dataset_info.rating_matrix
-        self.item_mean_df = dataset_info.item_mean_df
+        self.rating_matrix = dataset.rating_matrix
+        self.item_mean_df = dataset.item_mean_df
 
         # Diversity - latent
         self.item_h_matrix = item_h_matrix
@@ -193,8 +193,8 @@ class qualitative_indicator:
         self.latent_dist_dict = defaultdict(defaultdict)
 
         # Popularity
-        self.pop_user_per_item = dataset_info.pop_user_per_item
-        self.pop_inter_per_item = dataset_info.pop_inter_per_item
+        self.pop_user_per_item = dataset.pop_user_per_item
+        self.pop_inter_per_item = dataset.pop_inter_per_item
 
     def Total_Diversity(self, mode:str='latent') -> List[float]:
         '''
