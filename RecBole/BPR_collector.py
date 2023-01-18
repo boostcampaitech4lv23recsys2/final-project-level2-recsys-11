@@ -12,13 +12,13 @@ from recbole.utils.case_study import full_sort_topk
 # TOP N (K < N) 개의 모델 예측값들을 출력
 
 if __name__ == '__main__':
-    model_config_path = os.path.join(os.path.dirname(__file__), '..', 'BPR_configs') 
+    model_config_path = os.path.join(os.path.dirname(__file__), '..', 'BPR_configs')
     if not os.path.exists(model_config_path):
         os.mkdir(model_config_path)
 
     model_config = {}
     model_dir_path = os.path.join(os.path.dirname(__file__), 'saved')
-    
+
     model_list = [path for path in os.listdir(model_dir_path) if 'BPR' in path]
     for i, model_file_name in enumerate(tqdm(model_list)):
         model_path = os.path.join(model_dir_path, model_file_name)
@@ -51,11 +51,10 @@ if __name__ == '__main__':
             external_item_list = dataset.id2token(dataset.iid_field, topk_iid_list.cpu())
 
             pred_item[user] = np.array(external_item_list[0])
-            pred_score[user] = np.array(topk_score.cpu())
+            pred_score[user] = topk_score.cpu().squeeze(0).numpy()
 
-        model_config['PRED_ITEM'] = pd.Series(pred_item.values(), index=[int(k) for k in pred_item.keys()], name='item_id')
+        model_config['PRED_ITEM'] = pd.Series(pred_item.values(), index=[int(k) for k in pred_item.keys()], name='item_id').apply(lambda x: x.astype(int))
         model_config['PRED_SCORE'] = pd.Series(pred_score.values(), index=[int(k) for k in pred_score.keys()], name='item_id')
 
         with open(os.path.join(model_config_path, f'BPR_{i:03}.pickle'), 'wb') as f:
             pickle.dump(model_config, f)
-            
