@@ -1,6 +1,6 @@
 from typing import List, Dict
 import pandas as pd
-import numpy as np 
+import numpy as np
 from collections import defaultdict
 from itertools import combinations
 
@@ -16,19 +16,19 @@ async def total_configs_metrics():
 
     MODELS = model_managers.values()
 
-    run_metrics = [("_".join((model.model_name, run.string_key)), 
-                    run.quantitative.Recall_K(), 
-                    run.quantitative.mapk(), 
-                    run.quantitative.NDCG(), 
-                    run.qualitative.AveragePopularity(), 
-                    run.quantitative.TailPercentage()) 
-                    # run.qualitative.Total_Diversity().mean(), 
-                    # run.qualitative.Total_Serendipity().mean(), 
-                    # run.qualitative.Total_Novelty().mean()) 
+    run_metrics = [("_".join((model.model_name, run.string_key)),
+                    run.quantitative.Recall_K(),
+                    run.quantitative.mapk(),
+                    run.quantitative.NDCG(),
+                    run.qualitative.AveragePopularity(),
+                    run.quantitative.TailPercentage())
+                    # run.qualitative.Total_Diversity().mean(),
+                    # run.qualitative.Total_Serendipity().mean(),
+                    # run.qualitative.Total_Novelty().mean())
                     for model in MODELS for run in model.get_all_model_configs()] # model: ModelManager
 
-    total_metrics_pd = pd.DataFrame(run_metrics, 
-                        columns=['Recall', 'MAP', 'NDCG', 'AvgPopularity', 'Tail_Percentage', 
+    total_metrics_pd = pd.DataFrame(run_metrics,
+                        columns=['Recall', 'MAP', 'NDCG', 'AvgPopularity', 'Tail_Percentage',
                                 'Diversity', 'Serendipity', 'Novelty'])
 
     return total_metrics_pd.to_dict(orient='records')
@@ -46,22 +46,22 @@ class quantitative_indicator:
 
     def __init__(self, dataset:dataset_info, pred_item:pd.Series, pred_score:pd.Series):
         self.train_df = dataset.train_df
-        self.ground_truth = dataset.ground_truth  
+        self.ground_truth = dataset.ground_truth
 
         self.K = dataset.K
 
-        self.pred_item = pred_item 
-        self.pred_score = pred_score 
+        self.pred_item = pred_item.apply(lambda x: x[:self.K])
+        self.pred_score = pred_score.apply(lambda x: x[:self.K])
 
-        self.n_user = dataset_info.n_user
-        self.n_item = dataset_info.n_item
+        self.n_user = dataset.n_user
+        self.n_item = dataset.n_item
 
         # Popularity
         self.pop_user_per_item = dataset.pop_user_per_item # Dict
         self.pop_inter_per_item = dataset.pop_inter_per_item
 
         self.popularity_df = self.pred_item.apply(lambda R: [self.pop_user_per_item[int(item)] for item in R])
-        
+
     def AveragePopularity(self) -> float:
         '''
         유저별로 주어진 추천 아이템 리스트의 평균 아이템 인기도 (self.popularity_df)
@@ -69,7 +69,7 @@ class quantitative_indicator:
         '''
         popularity_metric = self.popularity_df.apply(lambda R: sum(R)).mean() / self.K
 
-        return popularity_metric 
+        return popularity_metric
 
     def apk(self, actual, predicted, k):
         """
@@ -130,9 +130,10 @@ class quantitative_indicator:
         '''
         return: 추천된 아이템의 고유값 수 / 전체 아이템 수
         '''
-        rec_num = self.rec_df['item_id'].nunique()
-        #이 TOTAL은 GROUND까지 포함한 값이어야 한다.
-        return rec_num / self.n_item
+        total_n_unique = set()
+        for i in self.R_df:
+            total_n_unique |= set(i)
+        return len(total_n_unique) / self.n_item
 
     def TailPercentage(self, tail_ratio=0.1):
         item_count = self.train_df.groupby('item_id').agg('count')
@@ -143,7 +144,7 @@ class quantitative_indicator:
         item_count_sort.reset_index(inplace=True)
         T = list(item_count_sort.item_id[-int(len(item_count_sort) * tail_ratio):].values)
 
-        Tp = np.mean([sum([1 if item in T else 0 for item in self.pred_item[idx]]) / self.K 
+        Tp = np.mean([sum([1 if item in T else 0 for item in self.pred_item[idx]]) / self.K
                             for idx in self.pred_item.index])
         return Tp
 
@@ -151,7 +152,7 @@ class quantitative_indicator:
         actual = self.ground_truth['item_id']
         predicted = self.pred_item
         sum_recall = 0.0
-        true_users = 0 
+        true_users = 0
 
         for idx in actual.index:
             act_set = set(actual[idx].flatten())
@@ -178,7 +179,7 @@ class qualitative_indicator:
 
         # Diversity - jaccard
         self.genre = dataset_info.genre
-        
+
         # Diversity - rating
         self.rating_matrix = dataset_info.rating_matrix
         self.item_mean_df = dataset_info.item_mean_df
@@ -253,7 +254,7 @@ class qualitative_indicator:
             diversity /= ((len(R) * (len(R)-1)) / 2)
 
         return diversity
-        
+
     def Serendipity(self, u:int, R:List[int], mode:str='PMI'):
         '''
         u: 유저 u
@@ -321,4 +322,3 @@ class qualitative_indicator:
         similarity = self.item_item_matrix[i][j] / (norm_i * norm_j)
 
         return 1 - similarity
-

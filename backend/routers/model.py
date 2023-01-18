@@ -27,10 +27,10 @@ NECESSARY_INFOS = ['model_name', 'ITEM_VECTOR', 'USER2IDX', 'ITEM2IDX', 'PRED_IT
 
 class ModelConfig:
     def __init__(self, config_path: str):
-        self.model_name = None 
+        self.model_name = None
         self.config_path = config_path
         self.necessary = {} # 필수적으로 들고있어야 할 정보들 (아이템 벡터, 아이디2idx, preds 등)
-        self.hyper = {} # 각기 모델 config 파일에 있는 하이퍼 파람들 
+        self.hyper = {} # 각기 모델 config 파일에 있는 하이퍼 파람들
 
         self.string_key = None
 
@@ -49,7 +49,7 @@ class ModelConfig:
             infos = pickle.load(fr)
             for necessary_key in NECESSARY_INFOS:
                 self.necessary[necessary_key] = infos[necessary_key]
-                
+
             for hyper_k, hyper_v in infos.items():
                 if hyper_k not in NECESSARY_INFOS:
                     self.hyper[hyper_k] = hyper_v
@@ -59,9 +59,9 @@ class ModelConfig:
             self.pred_item = infos['PRED_ITEM']
             self.pred_score = infos['PRED_SCORE']
 
-        self.quantitative = quantitative_indicator(data.dataset, self.pred_item, 
+        self.quantitative = quantitative_indicator(data.dataset, self.pred_item,
                                                     self.pred_score)
-        self.qualitative = qualitative_indicator(data.dataset, self.pred_item, 
+        self.qualitative = qualitative_indicator(data.dataset, self.pred_item,
                                                     self.pred_score, self.item_vector)
 
     def set_string_key(self, hyper_keys: list):
@@ -77,7 +77,7 @@ class ModelManager:
         self.dir_path = dir_path
         self.runs = {}
         self.model_name = None # 추가 필요
-        
+
         self.hyper_keys = None # ['neg_sample_num', 'embedding_size' ... ]
 
         self._build_configs()
@@ -85,7 +85,7 @@ class ModelManager:
 
     def _build_configs(self):
         files = sorted(os.listdir(self.dir_path))
-        
+
         for i, file in enumerate(files):
             config_path = os.path.join(self.dir_path, file)
             model_config = ModelConfig(config_path=config_path)
@@ -97,33 +97,33 @@ class ModelManager:
                 if set(self.hyper_keys) != set(model_config.hyper.keys()):
                     # 일치하지 않는 상태
                     continue
-            
+
             if self.model_name == None:
                 self.model_name = model_config.model_name
-            
+
             model_config.set_string_key(self.hyper_keys)
             self.runs[model_config.string_key] = model_config
 
     def get_model_config(self, string_key: str) -> ModelConfig:
         return self.runs[string_key]
-    
+
     def get_all_model_configs(self) -> List[ModelConfig]:
         return list(self.runs.values())
 
     def get_possible_hyper_param(self) -> Dict:
         total_string_keys = [string_key.split('_') for string_key in self.runs.keys()]
-        all_possible_hyper_param = {hyper_param: set(all_possible_per_hyper_param) 
-                                    for hyper_param, all_possible_per_hyper_param in 
+        all_possible_hyper_param = {hyper_param: set(all_possible_per_hyper_param)
+                                    for hyper_param, all_possible_per_hyper_param in
                                     zip(self.hyper_keys, zip(*total_string_keys))}
         return all_possible_hyper_param
 
     def _sanity_check(self):
         pass
 
-    
+
 
 
 # # BPR_manager = ModelManager(dir_path='/opt/ml/final-project-level2-recsys-11/BPR_configs')
-# EASE_manager = ModelManager(dir_path='/opt/ml/final-project-level2-recsys-11/EASE_configs')
+EASE_manager = ModelManager(dir_path='/opt/ml/final-project-level2-recsys-11/EASE_configs')
 
-model_managers = {'BPR': BPR_manager, 'EASE': EASE_manager}
+# model_managers = {'BPR': BPR_manager, 'EASE': EASE_manager}
