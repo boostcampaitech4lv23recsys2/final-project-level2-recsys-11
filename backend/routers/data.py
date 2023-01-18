@@ -59,6 +59,7 @@ class dataset_info:
         tmp2 = tmp2 * tmp2.T # 전치 행렬과의 아다마르 곱을 통해 (P_ij * n_user) / (P_i * P_j)를 만들어준다.
         tmp2 = np.log2(tmp2) / -np.log2(tmp1 / self.n_user) # PMI 최종 계산 -1~1 사이의 값
         tmp2 = (1 - tmp2) / 2 # 0과 1사이의 값으로 바꿔주는 동시에 음수를 취해준다.
+        np.fill_diagonal(tmp2, val=0)
         self.pmi_matrix = pd.DataFrame(tmp2, index=self.item_lst, columns=self.item_lst)
         #i행 j열에 있는 원소는 아이템 i와 j의 정규화된 PMI 값입니다.
 
@@ -86,6 +87,7 @@ class dataset_info:
         tmp2 = tmp2 - tmp2.diagonal()
         tmp2 = -(tmp2 + tmp2.T)
         tmp3 = 1 - (tmp1 / (tmp2 + 1e-6))
+        np.fill_diagonal(tmp3, val=0)
         self.jaccard_matrix = pd.DataFrame(tmp3, index=genre_item_lst, columns=genre_item_lst)
 
     def calculate_Popularity_user(self):   # 유저 관점의 popularity - default

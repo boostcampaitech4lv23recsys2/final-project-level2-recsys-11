@@ -37,6 +37,7 @@ class ModelConfig:
         self.item_vector = None # np.array
         self.pred_item = None # pd.Series
         self.pred_score = None # pd.Series
+        self.item2idx = None
 
         # 지표 계산 클래스
         self.quantitative = None
@@ -58,6 +59,7 @@ class ModelConfig:
             self.item_vector = infos['ITEM_VECTOR']
             self.pred_item = infos['PRED_ITEM']
             self.pred_score = infos['PRED_SCORE']
+            self.item2idx = infos['ITEM2IDX']
 
         self.quantitative = quantitative_indicator(data.dataset, self.pred_item,
                                                     self.pred_score)

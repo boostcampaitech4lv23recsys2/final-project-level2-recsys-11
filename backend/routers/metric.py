@@ -131,7 +131,7 @@ class quantitative_indicator:
         return: 추천된 아이템의 고유값 수 / 전체 아이템 수
         '''
         total_n_unique = set()
-        for i in self.R_df:
+        for i in self.pred_item:
             total_n_unique |= set(i)
         return len(total_n_unique) / self.n_item
 
@@ -274,9 +274,9 @@ class qualitative_indicator:
             raise ValueError("Only {PMI, jaccard} mode available")
 
     def Novelty(self, R:List[int]):
-        lst = np.array([*map(lambda x: self.fam_of_each_items[x], R)])
+        lst = np.array([*map(lambda x: self.pop_user_per_item[x], R)])
         novelty = -np.log2(lst)
-        return novelty.mean() / np.log2(self.total_user)
+        return novelty.mean() / np.log2(self.n_user)
 
     def jaccard(self, i:int, j:int):
         '''
