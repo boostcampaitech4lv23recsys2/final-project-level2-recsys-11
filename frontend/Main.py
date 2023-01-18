@@ -17,13 +17,13 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-
-df_r = requests.get(
+@st.cache
+def get_metric_df():
+    return requests.get(
     url = f'{API_url}/metric/total_metrics'
 )
-st.write(df_r.json())
 
-df = pd.DataFrame(df_r.json())
+df = pd.DataFrame(get_metric_df().json())
 
 head.set_title('Recommendation Model Evaluation', 'center')
 
