@@ -20,7 +20,8 @@ async def total_configs_metrics():
                     run.quantitative.Recall_K(),
                     run.quantitative.mapk(),
                     run.quantitative.NDCG(),
-                    run.qualitative.AveragePopularity(),
+                    run.quantitative.AveragePopularity(),
+                    run.quantitative.Coverage(),
                     run.quantitative.TailPercentage())
                     # run.qualitative.Total_Diversity().mean(),
                     # run.qualitative.Total_Serendipity().mean(),
@@ -28,8 +29,9 @@ async def total_configs_metrics():
                     for model in MODELS for run in model.get_all_model_configs()] # model: ModelManager
 
     total_metrics_pd = pd.DataFrame(run_metrics,
-                        columns=['Recall', 'MAP', 'NDCG', 'AvgPopularity', 'Tail_Percentage',
-                                'Diversity', 'Serendipity', 'Novelty'])
+                        columns=['Recall', 'MAP', 'NDCG', 'AvgPopularity', 'Coverage', 'Tail_Percentage',
+                                # 'Diversity', 'Serendipity', 'Novelty'
+                                ])
 
     return total_metrics_pd.to_dict(orient='records')
 
