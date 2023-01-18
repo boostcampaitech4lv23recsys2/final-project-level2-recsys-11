@@ -39,6 +39,8 @@ class ModelConfig:
         self.pred_score = None # pd.Series
         self.item2idx = None
 
+        self.item2idx = None
+
         # 지표 계산 클래스
         self.quantitative = None
         self.qualitative = None
@@ -121,7 +123,6 @@ class ModelManager:
 
     def _sanity_check(self):
         pass
-
 
 
 
