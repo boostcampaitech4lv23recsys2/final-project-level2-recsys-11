@@ -179,7 +179,7 @@ class qualitative_indicator:
 
         # Diversity - jaccard
         self.genre = dataset.genre
-
+        
         # Diversity - rating
         self.rating_matrix = dataset.rating_matrix
         self.item_mean_df = dataset.item_mean_df
