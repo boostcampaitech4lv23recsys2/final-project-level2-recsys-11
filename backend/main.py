@@ -20,6 +20,9 @@ from routers import data, metric, model
 
 app = FastAPI()
 
+app.include_router(metric.router, prefix='/metric')
+
+
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
