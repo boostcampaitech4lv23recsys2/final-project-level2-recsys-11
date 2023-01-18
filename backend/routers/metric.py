@@ -53,8 +53,8 @@ class quantitative_indicator:
         self.pred_item = pred_item 
         self.pred_score = pred_score 
 
-        self.n_user = dataset.n_user
-        self.n_item = dataset.n_item
+        self.n_user = dataset_info.n_user
+        self.n_item = dataset_info.n_item
 
         # Popularity
         self.pop_user_per_item = dataset.pop_user_per_item # Dict
@@ -188,7 +188,9 @@ class qualitative_indicator:
         self.item_item_matrix = self.item_h_matrix @ self.item_h_matrix.T
 
         # Diversity - dist dictionary
-        self.dist_dict = defaultdict(defaultdict)
+        self.rating_dist_dict = defaultdict(defaultdict)
+        self.jaccard_dist_dict = defaultdict(defaultdict)
+        self.latent_dist_dict = defaultdict(defaultdict)
 
         # Popularity
         self.pop_user_per_item = dataset_info.pop_user_per_item
@@ -227,12 +229,18 @@ class qualitative_indicator:
 
         return: R의 diversity
         '''
+        if mode == 'jaccard':
+            dist_dict = self.jaccard_dist_dict
+        elif mode == 'rating':
+            dist_dict = self.rating_dist_dict
+        elif mode == 'latent':
+            dist_dict = self.latent_dist_dict
         # dist_dict = defaultdict(defaultdict)
         diversity = 0   # Diversity of User의 약자
         for i,j in combinations(R, 2):
             i,j = min(i,j), max(i,j)
-            if i in self.dist_dict and j in self.dist_dict[i]:
-                diversity += self.dist_dict[i][j]
+            if i in dist_dict and j in dist_dict[i]:
+                diversity += dist_dict[i][j]
             else:
                 if mode == 'rating':             # mode 별로 하나씩 추가하면 될 듯
                     d = self.rating_dist(i,j)    # rating_dist 함수로 측정한 dist(i,j)
@@ -240,7 +248,7 @@ class qualitative_indicator:
                     d = self.jaccard(i,j)
                 elif mode == 'latent':
                     d = self.latent(i,j)
-                self.dist_dict[i][j] = d
+                dist_dict[i][j] = d
                 diversity += d
             diversity /= ((len(R) * (len(R)-1)) / 2)
 

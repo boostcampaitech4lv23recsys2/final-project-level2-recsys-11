@@ -6,59 +6,104 @@ import requests
 import time
 import numpy as np
 import random
+import copy
 
 st.set_page_config(layout="wide")
 
 # sidebar settings
-class model_form():
+class Model_Form():
     def __init__(self, key):
         self.key = key
         self.container = st.sidebar.container()
-        
+        self.container.markdown('---', unsafe_allow_html=True)
         model_hype_type = requests.get(url='http://0.0.0.0:8000/model_hype_type').json()
         self.model = self.container.selectbox(label='Select Model',
                          options=model_hype_type.keys(),
                          key=key
         )
-        self.key +=1
+        self.key += 1
         self.color = self.container.color_picker('select color', key=self.key)
         self.key += 1
         n = len(model_hype_type[self.model])
         self.n = n
         
+        # self.selected_values = dict()
+        self.selected_values = []
         for plus, hype in enumerate(model_hype_type[self.model], self.key):
-            self.container.radio(hype, model_hype_type[self.model][hype], key=plus, horizontal=True)
+            # self.selected_values[hype] = self.container.radio(hype, model_hype_type[self.model][hype], key=plus, horizontal=True)
+            self.selected_values.append(self.container.radio(hype, model_hype_type[self.model][hype], key=plus, horizontal=True))
         self.key += self.n
-        
+        self.container.markdown('---', unsafe_allow_html=True)
 
-forms = []
+    def get_data(self):
+        datas = dict()
+        datas['model'] = self.model
+        datas['color'] = self.color
+        datas['values'] = '_'.join(self.selected_values)
+        return datas
 
 n_model = st.sidebar.number_input('how many models you compare?', step = 1, max_value=5)
+
 before_param_n = 0
+forms = []
 for i in range(int(n_model)):
-    # random.
-    
-    A = model_form(key=before_param_n)
-    before_param_n += A.key 
-    forms.append(A)
-    # forms.append(model_form(key = i))
+    form = Model_Form(key=before_param_n)
+    before_param_n += form.key 
+    forms.append(form.get_data())
+
+for form in forms:
+    form
 
 def plot_models():
     with st.spinner('Wait for drawing..'):
-        # requests(url)
+        
         time.sleep(5)
     st.success('done!')
-    # if request.get(url):
-    #     draw_page()
+    exp_df = pd.DataFrame(columns = ['model','recall','ndcg','map','popularity','colors'])
+    #TODO: requests.get(url='http://0.0.0.0:8000/get_metric', params={'model_name': model_name, 'str_key': str_key})
+    '''
+    for i, form in enumerate(forms):
+        metrics = requests.get(url='http://0.0.0.0:8000/get_metric', params={'model_name': form['model'], 'str_key': form['values]})
+        exp_df = exp_df.append({'model': f'M{i}','recall':metrics['recall'], 'ndcg':metrics['ndcg'],
+                                'map':metrics['map'], 'popularity':metrics['popularity'], 'colors': form['color']
 
+    # body: show Quantitative Indicator
+    st.markdown(f"<h2 style='text-align: left; color: black;'>Quantitative Indicator</h2>", unsafe_allow_html=True)
+
+    plot1, plot2 = st.columns(2)
+
+    
+    plot1.markdown('<h4>Recall</h4>', unsafe_allow_html=True)
+    fig = px.bar(
+        exp_df,
+        x = 'model',
+        y = 'recall',
+        color = 'model',
+        color_discrete_sequence=exp_df['colors'].values
+        )
+    plot1.plotly_chart(fig, use_container_width=True)
+
+    plot1.markdown('<h4>NDCG</h4>', unsafe_allow_html=True)
+    fig = px.bar(
+        exp_df,
+        x = 'model',
+        y = 'ndcg',
+        color = 'model',
+        color_discrete_sequence=exp_df['colors'].values
+        )
+    plot1.plotly_chart(fig, use_container_width=True)
+
+    plot2.markdown('<h4>MAP</h4>', unsafe_allow_html=True)
+    fig = px.bar(
+        exp_df,
+        x = 'model',
+        y = 'map',
+        color = 'model',
+        color_discrete_sequence=exp_df['colors'].values
+        )
+    plot2.plotly_chart(fig, use_container_width=True)
+    '''
 st.sidebar.button('Compare!', on_click=plot_models)
-# st.sidebar.radio('select value', (1,2,3), horizontal=True)
-
-
-
-# for form in forms:
-#     st.write(form.model)
-
 
 # header
 st.markdown(f"<h1 style='text-align: center; color: black;'>Model vs Model</h1>", unsafe_allow_html=True)
@@ -158,6 +203,3 @@ plot4.markdown('<h4>Serendipity</h4>', unsafe_allow_html=True)
 # plot4.line_chart()
 plot4.markdown('<h4>Coverage</h4>', unsafe_allow_html=True)
 # plot4.line_chart()
-
-def plot_Recall():
-    pass

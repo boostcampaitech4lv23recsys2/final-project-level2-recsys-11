@@ -19,7 +19,6 @@ import os
 from routers import data, metric, model
 
 app = FastAPI()
-# df = pd.read_csv('/opt/ml/input/data/train/train_ratings.csv')[:10]
 
 app.include_router(metric.router, prefix='/metric')
 
@@ -45,7 +44,12 @@ def model_hype_type() -> dict:
         result[key] = model.model_managers[key].possible_hyper_param
     return result
 
-
+@app.get('/cal_metric', description='보내온 실험에 대해 metric을 계산합니다.')
+def cal_metric(model_name:str, str_key:str) -> dict:
+    result = dict()
+    result[model_name] = model_name
+    result[str_key] = str_key
+    return result
 # 클래스
 # TODO: class dataset, model_run, model_manager
 
@@ -57,38 +61,6 @@ def model_hype_type() -> dict:
 # TODO: get_model_run, 
 
 
-# class dataset(BaseModel):
-#     train_df: pd_DataFrame
-#     ground_truth: pd_DataFrame
-
-
-# class Model_Run(BaseModel):
-#     model_name: str
-#     run_name: str
-#     hyper_param: Dict[str, float] = Field(default_factory=dict)
-#     pred_score: npt.NDArray
-#     pred_items: npt.NDArray
-#     item_vector: npt.NDArray
-
-#     def load_infos(self):
-#         pass
-    
-# model_managers = dict()
-
-# class Model_Manager(BaseModel):
-#     model_name: str
-#     runs: Dict[str, Model_Run] = Field(default_factory=dict)
-
-#     # created_at: datetime = Field(default_factory=datetime.now)
-#     # updated_at: datetime = Field(default_factory=datetime.now)
-
-#     def add_run(self, model_run: Model_Run):
-#         # 
-
-
-
-# # streamlit에서 데이터를 올릴때 -- 지금은 path로 access 
-# @app.post("/model_run", description='model_run 업로드')
 
 
 if __name__ == '__main__':
