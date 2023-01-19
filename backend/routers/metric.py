@@ -345,6 +345,11 @@ class qualitative_indicator:
         k : 만들 추천 리스트의 원소 갯수
 
         return : Diversity, Serendipity, Novelty가 담긴 딕트
+        {
+            'Diversity': Total_diversity한 값(ndarray),
+            'Serendipity': Total_serendipity한 값(ndarray),
+            'Novelty': Total_novelty한 값(ndarray)
+        }
         '''
         total = pd.Series(dtype=object)
         for user in self.pred_item.index:
