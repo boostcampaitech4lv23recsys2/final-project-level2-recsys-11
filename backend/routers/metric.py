@@ -37,6 +37,24 @@ async def total_configs_metrics():
 
     return total_metrics_pd.to_dict(orient='records')
 
+@router.get('/Diversity_for_users')
+async def get_diversity_for_users():
+    from routers.model import model_managers
+    run = model_managers['EASE'].get_all_model_configs()[0]
+    diversity_list = run.qualitative_model.Total_Diversity('jaccard')
+    run_infos = [
+        ("_".join(('EASE', run.string_key))),
+        diversity_list,
+        diversity_list.mean(),
+        # TODO: 인풋으로 받은 color
+    ]
+    run_infos_pd = pd.DataFrame(
+        run_infos, columns=['model', 'diversity', 'mean'] # , 'colors' 색 지정 하면 추가
+    )
+    
+    return run_infos_pd.to_dict(orient='records')
+
+
 @router.get('/qualitative/{model_config}')
 async def get_qualitative_metrics():
     pass
@@ -202,7 +220,7 @@ class qualitative_indicator:
         self.pop_user_per_item = dataset.pop_user_per_item
         self.pop_inter_per_item = dataset.pop_inter_per_item
 
-    def Total_Diversity(self, mode:str='jaccard', pred_item:pd.Series=None) -> List[float]:
+    def Total_Diversity(self, mode:str='jaccard', pred_item:pd.Series=None) -> np.array:
         '''
         모든 유저에 대한 추천 리스트를 받으면 각각의 Diversity 계산하여 리스트로 return
         mode : 사용할 방식. {'jaccard', 'rating', 'latent'}
@@ -213,7 +231,7 @@ class qualitative_indicator:
 
         return DoA
 
-    def Total_Serendipity(self, mode:str='PMI', pred_item:pd.Series=None) -> List[float]:
+    def Total_Serendipity(self, mode:str='PMI', pred_item:pd.Series=None) -> np.array:
         '''
         모든 유저에 대한 추천 리스트를 받으면 각각의 Serendipity를 계산하여 리스트로 return
         mode :  사용할 방식. {'PMI', 'jaccard'}
@@ -224,7 +242,7 @@ class qualitative_indicator:
 
         return SoA
 
-    def Total_Novelty(self, pred_item:pd.Series=None) -> List[float]:
+    def Total_Novelty(self, pred_item:pd.Series=None) -> np.array:
         '''
         모든 유저에 대한 추천 리스트를 받으면 각각의 Novelty를 계산하여 리스트로 return
         '''
