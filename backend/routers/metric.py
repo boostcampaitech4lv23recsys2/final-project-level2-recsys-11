@@ -179,7 +179,7 @@ class qualitative_indicator:
         self.pmi_matrix = dataset.pmi_matrix
         self.jaccard_matrix = dataset.jaccard_matrix
         self.implicit_matrix = dataset.implicit_matrix
-        # self.user_profiles = dataset.user_profiles
+        self.user_profiles = dataset.user_profiles
         # self.item_profiles = dataset.item_profiles
 
         # Diversity - jaccard
@@ -275,7 +275,8 @@ class qualitative_indicator:
 
         return: R의 serendipity
         '''
-        user_pro = self.rating_matrix.T[self.rating_matrix.loc[u] != 0].index
+        user_pro = self.user_profiles[u]
+        # user_pro = self.rating_matrix.T[self.rating_matrix.loc[u] != 0].index
         if mode == 'PMI':
             pmi_lst = self.pmi_matrix[R].loc[user_pro].min()
             return pmi_lst.mean()
@@ -358,6 +359,7 @@ class qualitative_indicator:
         ans['Diversity'] = self.Total_Diversity(pred_item=total) #어느 mode로 할지 정할 수 있게 하는 게 좋을 것 같기는 한데..
         ans['Serendipity'] = self.Total_Serendipity(pred_item=total)
         ans['Novelty'] = self.Total_Novelty(pred_item=total)
+        # 궁극적으로는 total을 반환하고 각 지표는 다른 함수에서 계산하도록 하자.
         return ans
 
     def rerank(self, user:int, alpha= 0.5, obj='Serendipity', mode='PMI', k= 10):
