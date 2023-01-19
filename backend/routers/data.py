@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from scipy.sparse import csr_matrix
 
 class dataset_info:
 
@@ -47,12 +48,17 @@ class dataset_info:
 
         # Serendiptiy - PMI
         self.implicit_matrix = self.rating_matrix.copy()
-        self.implicit_matrix[self.implicit_matrix > 0] = 1
-        self.pmi_df = self.implicit_matrix.T @ self.implicit_matrix
-        self.item_lst = self.pmi_df.columns
+        # self.implicit_matrix[self.implicit_matrix > 0] = 1
+        # self.pmi_df = self.implicit_matrix.T @ self.implicit_matrix
+        # self.item_lst = self.pmi_df.columns
+        
+        train_mat = csr_matrix((np.ones(len(self.train_df)), (self.train_df['user_id'], self.train_df['item_id'])))
+        self.pmi_df = train_mat.T @ train_mat
+        tmp1 = self.pmi_df.toarray()
+        
 
         #PMI지표 행렬 만들기. 모든 아이템 쌍에 대해 PMI값을 구합니다.
-        tmp1 = self.pmi_df.to_numpy() # 행렬 연산 편의를 위해 넘파이로 만듭니다. 위에 item_lst라는 변수를 통해 이후 다시 DataFrame으로 만들어줍니다.
+        # tmp1 = self.pmi_df.to_numpy() # 행렬 연산 편의를 위해 넘파이로 만듭니다. 위에 item_lst라는 변수를 통해 이후 다시 DataFrame으로 만들어줍니다.
         tmp1 = tmp1 + 1e-6 # log에 0이 들어가는 것을 막기 위해 작은 값을 더합니다.
         tmp2 = np.triu(tmp1) * self.n_user + np.triu(np.ones_like(tmp1), k=1).T # 하삼각 행렬은 1로 만들고 나머지에 대해 전체 유저를 곱함
         tmp2 = tmp2 / (tmp2.diagonal() / self.n_user) # 행렬 내 모든 값에 대해 대각 행렬 값을 나눈다. 대각행렬 부분은 한 아이템에 대해 상호작용한 유저수를 나타낸다.
@@ -60,7 +66,10 @@ class dataset_info:
         tmp2 = np.log2(tmp2) / -np.log2(tmp1 / self.n_user) # PMI 최종 계산 -1~1 사이의 값
         tmp2 = (1 - tmp2) / 2 # 0과 1사이의 값으로 바꿔주는 동시에 음수를 취해준다.
         np.fill_diagonal(tmp2, val=0)
-        self.pmi_matrix = pd.DataFrame(tmp2, index=self.item_lst, columns=self.item_lst)
+        # self.pmi_matrix = pd.DataFrame(tmp2, index=self.item_lst, columns=self.item_lst)
+        self.pmi_matrix = pd.DataFrame(tmp2)
+        self.pmi_matrix.columns.name = 'item_id'
+        self.pmi_matrix.index.name = 'item_id'
         #i행 j열에 있는 원소는 아이템 i와 j의 정규화된 PMI 값입니다.
 
         # genre of an item in dictionary
