@@ -41,9 +41,29 @@ async def total_configs_metrics():
 async def get_qualitative_metrics():
     pass
 
-@router.get('/quantitative/{model_config}')
-async def get_quantitative_metrics():
-    pass
+@router.get('/quantitative')
+async def get_quantitative_metrics(model_name:str, str_key:str):
+    '''
+    사용자가 원하는 실험에 대해 정량지표를 계산하고 이를 Return
+
+    model_name(str): 모델 이름 (ex. BPR, EASE)
+    str_key(str): 하이퍼 파라미터 값 (ex. negative_0.1_64_32)
+    return metric_df(pd.DataFrame): columns=('model','recall','map','ndcg','avg_popularity','coverage)
+    '''
+    from routers.model import model_managers
+    run = model_managers[model_name].get_model_config(str_key)
+
+    run_metrics = [(
+                run.quantitative.Recall_K(),
+                run.quantitative.mapk(),
+                run.quantitative.NDCG(),
+                run.quantitative.AveragePopularity(),
+                run.quantitative.Coverage())
+                ]
+    total_metrics_pd = pd.DataFrame(run_metrics,
+                    columns=['recall','map','ndcg','avg_popularity','coverage'
+                            ])
+    return total_metrics_pd.to_dict(orient='records')
 
 
 class quantitative_indicator:
