@@ -37,6 +37,36 @@ async def total_configs_metrics():
 
     return total_metrics_pd.to_dict(orient='records')
 
+
+@router.get('/per_user_qual_metrics')
+async def get_per_user_qual_metrics():
+    from routers.model import model_managers
+    run = model_managers['EASE'].get_all_model_configs()[0]
+
+    Diversity_per_user = run.qualitative.Total_Diversity()
+    Serendipity_per_user = run.qualitative.Total_Serendipity()
+    Novelty_per_user = run.qualitative.Total_Novelty()
+
+    run_metrics = {'Diversity': [Diversity_per_user, Diversity_per_user.mean()],
+                    'Serendipity':[Serendipity_per_user, Serendipity_per_user.mean()],
+                    'Novelty': [Novelty_per_user, Novelty_per_user.mean()]}
+
+    return run_metrics
+
+
+@router.get('/rerank_metrics/{model_config_num}')
+async def get_rerank_metrics(model_config_num: int, alpha: float, obj: str, mode: str, k: int=10):
+    from routers.model import model_managers
+
+    if model_config_num > 3:
+        return ValueError('not a valid model config number')
+
+    run = model_managers['EASE'].get_all_model_configs()[model_config_num]
+
+    run_metrics = run.qualitative.total_rerank(alpha, obj, mode, k) # k
+
+    return run_metrics
+
 @router.get('/qualitative/{model_config}')
 async def get_qualitative_metrics():
     pass
@@ -350,9 +380,9 @@ class qualitative_indicator:
         for user in self.pred_item.index:
             total.loc[user] = self.rerank(user, alpha, obj, mode, k)
         ans = dict()
-        ans['Diversity'] = self.Total_Diversity(pred_item=total) #어느 mode로 할지 정할 수 있게 하는 게 좋을 것 같기는 한데..
-        ans['Serendipity'] = self.Total_Serendipity(pred_item=total)
-        ans['Novelty'] = self.Total_Novelty(pred_item=total)
+        ans['Diversity'] = self.Total_Diversity(pred_item=total).tolist() #어느 mode로 할지 정할 수 있게 하는 게 좋을 것 같기는 한데..
+        ans['Serendipity'] = self.Total_Serendipity(pred_item=total).tolist()
+        ans['Novelty'] = self.Total_Novelty(pred_item=total).tolist()
         return ans
 
     def rerank(self, user:int, alpha= 0.5, obj='Serendipity', mode='PMI', k= 10):
