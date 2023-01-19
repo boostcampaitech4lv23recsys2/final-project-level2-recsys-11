@@ -43,9 +43,9 @@ async def get_per_user_qual_metrics():
     from routers.model import model_managers
     run = model_managers['EASE'].get_all_model_configs()[0]
 
-    Diversity_per_user = run.qualitative.Total_Diversity()
-    Serendipity_per_user = run.qualitative.Total_Serendipity()
-    Novelty_per_user = run.qualitative.Total_Novelty()
+    Diversity_per_user = run.qualitative.Total_Diversity().tolist()
+    Serendipity_per_user = run.qualitative.Total_Serendipity().tolist()
+    Novelty_per_user = run.qualitative.Total_Novelty().tolist()
 
     run_metrics = {'Diversity': [Diversity_per_user, Diversity_per_user.mean()],
                     'Serendipity':[Serendipity_per_user, Serendipity_per_user.mean()],
@@ -66,6 +66,7 @@ async def get_rerank_metrics(model_config_num: int, alpha: float, obj: str, mode
     run_metrics = run.qualitative.total_rerank(alpha, obj, mode, k) # k
 
     return run_metrics
+
 
 @router.get('/qualitative/{model_config}')
 async def get_qualitative_metrics():
