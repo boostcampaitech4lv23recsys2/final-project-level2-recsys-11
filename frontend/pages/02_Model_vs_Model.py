@@ -35,7 +35,10 @@ class Model_Form:
                          key=self.key
         )
         self.key += 1
-        self.color = self.container.color_picker('select color', key=self.key)
+        r = lambda: random.randint(0,255)
+        random_color = '#%02X%02X%02X' % (r(),r(),r())
+        self.color = self.container.color_picker('select color', key=self.key, value=random_color)
+        
         self.key += 1
         n = len(model_hype_type[self.model])
         self.n = n
