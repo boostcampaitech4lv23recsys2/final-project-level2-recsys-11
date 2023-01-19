@@ -33,7 +33,9 @@ class dataset_info:
         # user, item specific information -- profiles: users/items interacted by an item/user
         self.n_user = train_df['user_id'].nunique()
         self.n_item = train_df['item_id'].nunique()
-        # self.user_profiles = {user: train_df[train_df['user_id'] == user]['item_id'].tolist() for user in train_df['user_id'].unique()}
+        tail_df = train_df.groupby('user_id').tail(20)
+
+        self.user_profiles = {user: tail_df[tail_df['user_id'] == user]['item_id'].tolist() for user in tail_df['user_id'].unique()}
         # self.item_profiles = {item : train_df[train_df['item_id'] == item]['user_id'].tolist() for item in train_df['item_id'].unique()}
 
         # Popularity
