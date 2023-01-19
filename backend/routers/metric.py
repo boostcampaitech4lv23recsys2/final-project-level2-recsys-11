@@ -37,6 +37,21 @@ async def total_configs_metrics():
 
     return total_metrics_pd.to_dict(orient='records')
 
+
+@router.get('/rerank_metrics/{model_config_num}')
+async def get_rerank_metrics(model_config_num: int, alpha: float, obj: str, mode: str, k: int=10):
+    from routers.model import model_managers
+
+    if model_config_num > 3:
+        return ValueError('not a valid model config number')
+
+    run = model_managers['EASE'].get_all_model_configs()[model_config_num]
+
+    run_metrics = run.qualitative.total_rerank(alpha, obj, mode, k) # k
+
+    return run_metrics
+
+
 @router.get('/Diversity_for_users')
 async def get_diversity_for_users():
     from routers.model import model_managers
@@ -59,9 +74,29 @@ async def get_diversity_for_users():
 async def get_qualitative_metrics():
     pass
 
-@router.get('/quantitative/{model_config}')
-async def get_quantitative_metrics():
-    pass
+@router.get('/quantitative')
+async def get_quantitative_metrics(model_name:str, str_key:str):
+    '''
+    사용자가 원하는 실험에 대해 정량지표를 계산하고 이를 Return
+
+    model_name(str): 모델 이름 (ex. BPR, EASE)
+    str_key(str): 하이퍼 파라미터 값 (ex. negative_0.1_64_32)
+    return metric_df(pd.DataFrame): columns=('model','recall','map','ndcg','avg_popularity','coverage)
+    '''
+    from routers.model import model_managers
+    run = model_managers[model_name].get_model_config(str_key)
+
+    run_metrics = [(
+                run.quantitative.Recall_K(),
+                run.quantitative.mapk(),
+                run.quantitative.NDCG(),
+                run.quantitative.AveragePopularity(),
+                run.quantitative.Coverage())
+                ]
+    total_metrics_pd = pd.DataFrame(run_metrics,
+                    columns=['recall','map','ndcg','avg_popularity','coverage'
+                            ])
+    return total_metrics_pd.to_dict(orient='records')
 
 
 class quantitative_indicator:
@@ -197,7 +232,7 @@ class qualitative_indicator:
         self.pmi_matrix = dataset.pmi_matrix
         self.jaccard_matrix = dataset.jaccard_matrix
         self.implicit_matrix = dataset.implicit_matrix
-        # self.user_profiles = dataset.user_profiles
+        self.user_profiles = dataset.user_profiles
         # self.item_profiles = dataset.item_profiles
 
         # Diversity - jaccard
@@ -293,7 +328,8 @@ class qualitative_indicator:
 
         return: R의 serendipity
         '''
-        user_pro = self.rating_matrix.T[self.rating_matrix.loc[u] != 0].index
+        user_pro = self.user_profiles[u]
+        # user_pro = self.rating_matrix.T[self.rating_matrix.loc[u] != 0].index
         if mode == 'PMI':
             pmi_lst = self.pmi_matrix[R].loc[user_pro].min()
             return pmi_lst.mean()
@@ -373,9 +409,9 @@ class qualitative_indicator:
         for user in self.pred_item.index:
             total.loc[user] = self.rerank(user, alpha, obj, mode, k)
         ans = dict()
-        ans['Diversity'] = self.Total_Diversity(pred_item=total) #어느 mode로 할지 정할 수 있게 하는 게 좋을 것 같기는 한데..
-        ans['Serendipity'] = self.Total_Serendipity(pred_item=total)
-        ans['Novelty'] = self.Total_Novelty(pred_item=total)
+        ans['Diversity'] = self.Total_Diversity(pred_item=total).tolist() #어느 mode로 할지 정할 수 있게 하는 게 좋을 것 같기는 한데..
+        ans['Serendipity'] = self.Total_Serendipity(pred_item=total).tolist()
+        ans['Novelty'] = self.Total_Novelty(pred_item=total).tolist()
         return ans
 
     def rerank(self, user:int, alpha= 0.5, obj='Serendipity', mode='PMI', k= 10):

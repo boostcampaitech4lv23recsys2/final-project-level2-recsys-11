@@ -19,9 +19,8 @@ class ReRanking_Form:
 
         self.obj_func = self.container.selectbox(label='Select object function and distance function',
                                              options=('Diversity(rating)', 'Diversity(item vector)', 
-                                                      'Diversity(jacard)', 'Serendipity(rating)',
-                                                      'Serendipity(item vector)','Serendipity(jacard)',
-                                                      'Novelty(rating)',
+                                                      'Diversity(jacard)', 'Serendipity(pmi)',
+                                                      'Serendipity(jacard)', 'Novelty(rating)',
                                                       'Novelty(item vector)','Novelty(jacard)'),
                                              key=self.key,
         )

@@ -108,6 +108,8 @@ class ModelManager:
             model_config.set_string_key(self.hyper_keys)
             self.runs[model_config.string_key] = model_config
 
+            break # test only one model config per model type
+
     def get_model_config(self, string_key: str) -> ModelConfig:
         return self.runs[string_key]
 
