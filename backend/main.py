@@ -7,14 +7,12 @@ from collections import defaultdict
 from fastapi import FastAPI, Depends
 from pydantic import BaseModel, Field
 
-
 import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.graph_objs as go
 import plotly.offline as pyo
 import plotly.io as pio
 import os 
-# import json
 
 from routers import data, metric, model
 
