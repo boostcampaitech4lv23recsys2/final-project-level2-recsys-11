@@ -24,7 +24,7 @@ app.include_router(metric.router, prefix='/metric')
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
-
+    
  
 @app.get("/plot/")
 async def create_plot():
