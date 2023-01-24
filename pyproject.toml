@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "mkdir"
+version = "0.1.0"
+description = "mkdir-final"
+authors = ["p-idx <pureindex@naver.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">3.9.7,<4.0"
+
+fastapi = "^0.89.1"
+pandas = "^1.5.3"
+numpy = "^1.24.1"
+matplotlib = "^3.6.3"
+plotly = "^5.13.0"
+uvicorn = "^0.20.0"
+asyncmy = "^0.2.5"
+asyncio = "^3.4.3"
+streamlit = "^1.17.0"
+tqdm = "^4.64.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -13,6 +13,6 @@ saved/
 docs/build/
 wandb/
 /ray_log*
-ml-1m/
-*.csv
 *.ipynb
+
+__pycache__
