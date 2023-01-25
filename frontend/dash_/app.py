@@ -10,13 +10,13 @@ from dash_bootstrap_templates import load_figure_template
 from dash.exceptions import PreventUpdate
 
 app = Dash(
-    __name__, external_stylesheets=[dbc.themes.DARKLY], 
+    __name__, external_stylesheets=[dbc.themes.BOOTSTRAP], 
     use_pages=True, suppress_callback_exceptions=True
 ) # 페이지 스타일 변경
 
 
 username = 'mkdir'
-load_figure_template("darkly") # figure 스타일 변경
+load_figure_template("bootstrap") # figure 스타일 변경
 
 
 app.layout = html.Div([

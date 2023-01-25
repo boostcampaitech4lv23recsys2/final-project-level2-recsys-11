@@ -60,11 +60,14 @@ def create_user(id:str, password:str, email:str) -> bool:
     # print(user_db)
     return True
 
+curruent_user = 'server'
 @app.get('/login_user', description='입력한 유저 정보가 db에 있는지 확인')
-def login_user(id:str, password:str, email:str) -> bool:
+def login_user(id:str, password:str) -> bool:
     global user_db
     
     if len(user_db.query('id==@id and password==@password')) == 1:
+        global curruent_user
+        curruent_user = id
         return True
     else:
         return False

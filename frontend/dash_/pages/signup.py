@@ -18,24 +18,27 @@ model_hype_type = requests.get(url=f'{API_url}/model_hype_type').json()
 layout = html.Div([
     html.H1('Create User Account')
         , dcc.Location(id='create_user', refresh=True)
-        , dcc.Input(id="username"
+        , dbc.Input(id="username"
             , type="text"
             , placeholder="user name"
-            , maxLength =15),
+            , maxLength =15,
+            style={'width':'20%'}),
             html.Br()
-        , dcc.Input(id="password"
+        , dbc.Input(id="password"
             , type="password"
-            , placeholder="password"),
+            , placeholder="password",
+            style={'width':'20%'}),
             html.Br()
-        , dcc.Input(id="email"
+        , dbc.Input(id="email"
             , type="email"
             , placeholder="email"
-            , maxLength = 50),
+            , maxLength = 50,
+            style={'width':'20%'}),
             html.Br()
         ,
-            html.Button('Create User', id='submit-val', n_clicks=0, ),
+            dbc.Button('Create User', id='submit-val', n_clicks=0, ),
             dcc.Link(
-                html.Button('Back', n_clicks=0, style={'margin': 30}),
+                dbc.Button('Back', n_clicks=0, style={'margin': 30}),
                 href='/')
         , html.Div(id='container-button-basic'),
         
