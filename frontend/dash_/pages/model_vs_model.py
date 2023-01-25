@@ -22,15 +22,61 @@ exp_df.loc[2,:] = ['M2',0.1124,0.0777,0.1217,0.0781,'green']
 exp_df.loc[3,:] = ['M3',0.1515,0.1022,0.1195,0.0999,'blue']
 exp_df.loc[4,:] = ['M4',0.0917,0.0698,0.0987,0.0315,'goldenrod']
 
+SIDEBAR_WIDTH = '20rem'
 SIDEBAR_STYLE = {
     "position": "fixed",
     "top": 0,
     "left": 0,
     "bottom": 0,
-    "width": "16rem",
+    "width": SIDEBAR_WIDTH,
     "padding": "2rem 1rem",
     "background-color": "#f8f9fa",
 }
+
+CONTENT_STYLE = {
+    "margin-left": SIDEBAR_WIDTH,
+    "margin-right": "2rem",
+    "padding": "2rem 1rem",
+}
+
+DELETE_BUTTON = {
+    # 'position':'absolute',
+    #  'top':0,
+    #  'right':0,
+    #  'margin':4,
+    #  'width': "2rem",
+    #  'height': "2rem",
+    #  'border': 0,
+    #  'border-radius': 15,
+    'margin-right': "0.5rem",
+    'margin-bottom': "0.5rem",
+    # 'align': 'center',
+    'text-anchor': 'middle',
+}
+FORM_STYLE = {
+    'border': "1px solid",
+    'padding': "1rem",
+    'border-color': "#c3c3c4",
+    'border-radius': 15
+}
+
+model_form = html.Div([html.Div([
+    dbc.Row([
+        dbc.Col([
+            dbc.Button('➖', style=DELETE_BUTTON),
+            
+]
+            ),
+]),
+    dcc.Dropdown(list(model_hype_type.keys())),
+    html.Hr(),
+    html.P(
+        f'''
+        neg_sample: 123
+        '''
+    ),
+], style=FORM_STYLE),
+                       html.Br()])
 
 fig_recall = px.bar(
             exp_df,
@@ -60,82 +106,29 @@ fig_popularity = px.bar(
             color = 'model',
             color_discrete_sequence=exp_df['colors'].values
             )
-sidebar = html.Div([
-    fac.AntdLayout([
-        fac.AntdSider(
-            [
-                html.Div(
-                    fac.AntdMenu(
-                        menuItems=[
-                            {
-                                'component': 'Item',
-                                'props':{
-                                    'key': f'fdjsal',
-                                    'title': f'fdjsal',
-                                    
-                                }
-                            }
-                        ],
-                        mode='inline'
-                    )
-                )
-            ], 
-            collapsible=True,
-            style={
-                        'backgroundColor': 'rgb(240, 242, 245)',
-                        'overflowY': 'auto'
-                    }
-            )
-    ])
-])
 
-sidebar_2 = fac.AntdSpin(
-    html.Div(
-        [
-            fac.AntdLayout(
-                [
-                    fac.AntdSider(
-                        id='sider-custom-trigger-demo',
-                        collapsible=True,
-                        trigger=None,
-                        style={
-                            'backgroundColor': 'rgb(240, 242, 245)'
-                        }
-                    ),
-
-                    fac.AntdContent(
-                        fac.AntdButton(
-                            '❌',
-                            id='sider-custom-trigger-button-demo',
-                            type='primary'
-                        ),
-                        style={
-                            'backgroundColor': 'white'
-                        }
-                    )
-                ],
-                style={
-                    'height': '600px'
-                }
-            )
-        ],
-        style={
-            'height': '600px',
-            'border': '1px solid rgb(241, 241, 241)'
-        }
-    ),
-    text='回调中'
+sidebar = html.Div(
+    [
+        html.H3("Select Expriements",),
+        html.Hr(),
+        html.Div(id='model_form'),
+        
+        *[model_form for _ in range(3)],
+        dbc.Button('➕', style={'position':'absolute', 'right':0, 'margin-right':'2rem'}),
+    ],
+    style=SIDEBAR_STYLE,
 )
 
 layout = html.Div(children=[
-    sidebar_2,
+    sidebar,
+    html.Div([
     html.H1(children='Model vs Model', style={'text-align': 'center','font-weight': 'bold'}),
     html.Hr(),
-    
-    html.H5('How many models you comapre?', style={'margin':10}),
-    n_model := dbc.Input(value=3, type='number', style={'margin':10}),
+
+    n_model := dbc.Input(value=3, type='number', style={'margin':10, 'width':'5%', 'margin-left':20}),
     
     html.Div(id='select_model'),
+    html.Div(id='select_model2'),
     
     html.Hr(),
     html.H3(children='Quantitative Indicator'),
@@ -158,13 +151,9 @@ layout = html.Div(children=[
             html.H4('NDCG'),
           dcc.Graph(figure=fig_popularity)
           ]),
-    ]),
-],style={
-        # 'display': 'flex',
-        # 'height': '100%',
-        # 'justifyContent': 'center',
-        # 'alignItems': 'center'
-        })
+    ])], style=CONTENT_STYLE),
+])
+
 
 @callback(
     Output(component_id='select_model', component_property='children'),
@@ -173,31 +162,34 @@ layout = html.Div(children=[
 def update_city_selected(input_value):
     if input_value == None:
         raise PreventUpdate
-    model_list = [dbc.DropdownMenu([dbc.DropdownMenuItem(key, n_clicks=0) for key in model_hype_type.keys()],
-        # list(model_hype_type.keys()), 
-                                   id=f'model_{i}',className='compare_form',style={'margin':10, 'width':'40%'}) for i in range(input_value)]
-    model_list.append(dbc.Button('Comapre!', id='Compare_btn',type='submit' ,n_clicks=0, className='compare_form', style={'margin':10, }) )
+    
+    model_list = [
+        dbc.Row([
+        dbc.Col([
+            dcc.Dropdown(
+        options =list(model_hype_type.keys()), value=list(model_hype_type.keys())[0],id=f'model_{i}',
+        style={'margin':10, 'width':'40%'}),
+            
+            ]) 
+        for i in range(input_value)])]
+    model_list.append(dbc.Button('Comapre!', id='Compare_btn',type='submit' ,n_clicks=0, style={'margin':10, }) )
     result = html.Form(model_list, className= 'compare_form',) 
-    # print(result.value)
     return result
-
 
 @callback(
         Output('map', 'children'),
         Input('compare_btn', 'n_clicks'),
+        prevent_initial_call=True
 )
 def get_quantative_metrics(form):
     params={'model_name': form['model'], 'str_key': form['values']}
     return requests.get(url=f'{API_url}/metric/quantitative/', params=params).json()[0]
 
 @callback(
-    Output('sider-custom-trigger-demo', 'collapsed'),
-    Input('sider-custom-trigger-button-demo', 'nClicks'),
-    State('sider-custom-trigger-demo', 'collapsed'),
+    Output('select_model2', 'children'),
+    Input('uname-box', 'value'),
     prevent_initial_call=True
 )
-def sider_custom_trigger_demo(nClicks, collapsed):
-    if nClicks:
-        return not collapsed
+def sider_custom_trigger_demo(v):
 
-    return dash.no_update
+    return v

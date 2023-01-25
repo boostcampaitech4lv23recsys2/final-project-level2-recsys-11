@@ -10,17 +10,17 @@ from dash_bootstrap_templates import load_figure_template
 from dash.exceptions import PreventUpdate
 
 app = Dash(
-    __name__, external_stylesheets=[dbc.themes.BOOTSTRAP], 
+    __name__, external_stylesheets=[dbc.themes.JOURNAL], 
     use_pages=True, suppress_callback_exceptions=True
 ) # 페이지 스타일 변경
 
 
 username = 'mkdir'
-load_figure_template("bootstrap") # figure 스타일 변경
+load_figure_template("journal") # figure 스타일 변경
 
 
 app.layout = html.Div([
-	html.H1('Web4Rec'),
+	html.H1('Web4Rec', style={'padding': 10}),
     html.Hr(),
     # html.Div(
     #     [
