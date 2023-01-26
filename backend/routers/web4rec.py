@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, File, UploadFile
 from pandas import pd
 from typing import List, Dict
 
-from schemas.data import Dataset, Experiments
+from schemas.data import Dataset, Experiment
 from routers.database import get_db
 
 router = APIRouter()
@@ -53,9 +53,9 @@ async def check_dataset(user_id: str, connection=Depends(get_db)) -> List:
     # [row['dataset_name'] for row in result]
     return list(result)
 
+
 # https://stackoverflow.com/questions/63048825/how-to-upload-file-using-fastapi/70657621#70657621
 # https://stackoverflow.com/questions/65504438/how-to-add-both-file-and-json-body-in-a-fastapi-post-request/70640522#70640522
-
 
 async def check_dataset(user_id:str, dataset_name:str, connection) -> Dict:
     async with connection as conn:
@@ -68,17 +68,10 @@ async def check_dataset(user_id:str, dataset_name:str, connection) -> Dict:
 
 @router.post("/upload_dataset")
 async def upload_dataset(user_id: str, dataset_name:str, 
-                         files: Dict[str, UploadFile] = File(...),
+                         dataset: Dataset,
                          connection = Depends(get_db)) -> Dataset:
-    
-    ### 1-1. json -> pd로 변환 -> pydantic 
-    dataset = Dataset(train_df = await pd.read_json(files['train_df'].file),
-                      ground_truth = await pd.read_json(files['ground_truth'].file),
-                      user_side = await pd.read_json(files['user_side'].file),
-                      item_side = await pd.read_json(files['item_side'].file)
-                     )
 
-    ### 1-2.  json (library) -> json (s3) 
+    ### TODO: json (library) -> json (s3) 
 
     # s3_locations-> (user_id, dataset_name, train_df, ground_truth, user_side, item_side, item2idx, user2idx)
     # S3 Object Name = 고유 키 값
@@ -95,17 +88,30 @@ async def upload_dataset(user_id: str, dataset_name:str,
 
             # 주어진 dataset 추가
             query_dataset_ins = 'INSERT INTO Datasets (user_id, dataset_name, train_df, ground_truth, \
-                    user_side, item_side, item2idx, user2idx) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)' 
-            cur.execute(query_dataset_ins, (user_id, dataset_name))
+                    user_side, item_side) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)' 
+            cur.execute(query_dataset_ins, (user_id, dataset_name, S3_train_df, ...)) # S3 object 이름 필요
+        
+        await conn.commit()
 
-    DATASETS[user_id] = dataset # 유저는 한번에 데이터셋 하나만 올린다고 가정 
-    return dataset
-    #-> return하면 library 쪽으로 return
+    DATASETS[user_id] = dataset 
+
+    return dataset # library 쪽으로 return (필요 없을수도)
+
 
 async def get_metrics():
     pass
 
+
 async def upload_experiment(user_id: str, dataset_name:str,
-                            file: Dict[str, UploadFile] = File(...),
-                            connection=Depends(get_db)) -> Experiments:
-    pass
+                            experiment: Experiment,
+                            connection=Depends(get_db)) -> Experiment:
+    
+    ### TODO: experiment -> s3, 주소 변수로 저장
+    ### TODO: 지표 계산 (dataset: Dataset 필요)
+
+    async with connection as conn:
+        async with conn.cursor() as cur:
+            query = 'INSERT INTO Experiment (user_id, dataset_name, experiment_name, alpha, objective_fn, ...'
+            cur.exectue(query, (user_id, dataset_name, ...)) # S3 object 이름 필요
+
+        await conn.commit()

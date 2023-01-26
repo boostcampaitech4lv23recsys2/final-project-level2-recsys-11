@@ -11,7 +11,6 @@ class Dataset(BaseModel):
     ground_truth: Dict
     user_side: Dict
     item_side: Dict
-    jaccard_matrix: Dict = None
 
     class Config:
         keep_untouched = ((cached_property,))
@@ -21,11 +20,11 @@ class Dataset(BaseModel):
         return self.train_df['user_id'].nunique()
 
     @property 
-    def n_items(self):
+    def n_item(self):
         return self.train_df['item_id'].nunique()
 
     @cached_property
-    def calculate_Popularity_user(self):   # 유저 관점의 popularity - default
+    def popularity_per_item(self):   # 유저 관점의 popularity - default
         '''
         popularity = (item과 상호작용한 유저 수) / (전체 유저 수) 
 
@@ -34,13 +33,19 @@ class Dataset(BaseModel):
         pop_user_per_item = (self.train_df['item_id'].value_counts() / self.n_user).to_dict()
 
         return pop_user_per_item
+    
+    @cached_property
+    def rating_matrix(self): # = implicit_matrix
+        pass
 
     @cached_property
     def jaccard_matrix(self):
         pass
-
+    
+    @cached_property
     def pmi_matrix(self):
         pass 
+
 
 class Experiment(BaseModel):
     experiment_id: str
@@ -54,7 +59,7 @@ class Experiment(BaseModel):
     hyperparameters: Dict
     pred_item: Dict
     pred_score: Dict
-    item_vector: np.array
+    item_vector: Dict
     
     recall: Dict
     map: Dict
