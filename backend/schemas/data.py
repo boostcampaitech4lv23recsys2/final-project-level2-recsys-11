@@ -1,19 +1,46 @@
 from pydantic import BaseModel
 from typing import TypeVar, Dict
+from functools import cached_property
 import pandas as pd
 import numpy as np
 import numpy.typing as npt
 
-# pd.Dataframe -> 테스트 필요 
-pd_DataFrame = TypeVar('pandas.core.frame.DataFrame')
-
 class Dataset(BaseModel):
     dataset_name: str
-    train_df: pd_DataFrame
-    ground_truth: pd_DataFrame
-    user_side: pd_DataFrame
-    item_side: pd_DataFrame
+    train_df: Dict
+    ground_truth: Dict
+    user_side: Dict
+    item_side: Dict
+    jaccard_matrix: Dict = None
 
+    class Config:
+        keep_untouched = ((cached_property,))
+
+    @property
+    def n_user(self):
+        return self.train_df['user_id'].nunique()
+
+    @property 
+    def n_items(self):
+        return self.train_df['item_id'].nunique()
+
+    @cached_property
+    def calculate_Popularity_user(self):   # 유저 관점의 popularity - default
+        '''
+        popularity = (item과 상호작용한 유저 수) / (전체 유저 수) 
+
+        return: dict('item_id': popularity, 'item_id2': popularity2, ...)
+        '''
+        pop_user_per_item = (self.train_df['item_id'].value_counts() / self.n_user).to_dict()
+
+        return pop_user_per_item
+
+    @cached_property
+    def jaccard_matrix(self):
+        pass
+
+    def pmi_matrix(self):
+        pass 
 
 class Experiment(BaseModel):
     experiment_id: str

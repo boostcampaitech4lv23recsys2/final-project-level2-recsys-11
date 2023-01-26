@@ -8,6 +8,8 @@ from routers.database import get_db
 
 router = APIRouter()
 
+DATASETS = {} # 유저별 데이터셋 in-memory에 따로 저장
+
 
 # 유저가 등록되있는지 여부 확인
 async def check_user(user_id:str, password:str, connection) -> Dict:
@@ -96,8 +98,9 @@ async def upload_dataset(user_id: str, dataset_name:str,
                     user_side, item_side, item2idx, user2idx) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)' 
             cur.execute(query_dataset_ins, (user_id, dataset_name))
 
+    DATASETS[user_id] = dataset # 유저는 한번에 데이터셋 하나만 올린다고 가정 
     return dataset
-    #-> return하면 library 쪽으로 return. 그 대신, 메모리에 보내줘야 할듯 
+    #-> return하면 library 쪽으로 return
 
 async def get_metrics():
     pass
