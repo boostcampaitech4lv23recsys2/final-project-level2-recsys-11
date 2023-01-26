@@ -18,10 +18,9 @@ app = Dash(
 username = 'mkdir'
 load_figure_template("journal") # figure 스타일 변경
 
-
 app.layout = html.Div([
-	html.H1('Web4Rec', style={'padding': 10}),
-    html.Hr(),
+	# html.H1('Web4Rec', style={'padding': 10, 'text-align': 'center'}),
+    # html.Hr(),
     # html.Div(
     #     [
     #         html.Div(

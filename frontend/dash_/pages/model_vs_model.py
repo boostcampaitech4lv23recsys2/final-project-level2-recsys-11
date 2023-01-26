@@ -10,7 +10,7 @@ import feffery_antd_components as fac
 
 API_url = 'http://127.0.0.1:8000'
 
-dash.register_page(__name__)
+dash.register_page(__name__, meta_tags=['sidebar.css'])
 load_figure_template("darkly") # figure 스타일 변경
 
 model_hype_type = requests.get(url=f'{API_url}/model_hype_type').json()
@@ -25,12 +25,13 @@ exp_df.loc[4,:] = ['M4',0.0917,0.0698,0.0987,0.0315,'goldenrod']
 SIDEBAR_WIDTH = '20rem'
 SIDEBAR_STYLE = {
     "position": "fixed",
-    "top": 0,
+    "top": 20,
     "left": 0,
     "bottom": 0,
     "width": SIDEBAR_WIDTH,
     "padding": "2rem 1rem",
     "background-color": "#f8f9fa",
+    "overflow": "scroll",
 }
 
 CONTENT_STYLE = {
@@ -38,6 +39,13 @@ CONTENT_STYLE = {
     "margin-right": "2rem",
     "padding": "2rem 1rem",
 }
+
+NAVBAR_STYLE = {
+    "margin-left": SIDEBAR_WIDTH,
+    "margin-right": "2rem",
+    "padding": "2rem 1rem",
+}
+
 
 DELETE_BUTTON = {
     # 'position':'absolute',
@@ -60,10 +68,25 @@ FORM_STYLE = {
     'border-radius': 15
 }
 
+navbar = dbc.NavbarSimple(
+    children=[
+        dbc.NavItem(dbc.NavLink("Compare Table", href="/compare-table")),
+        dbc.NavItem(dbc.NavLink('Model vs Model', href="#")),
+        dbc.NavItem(dbc.NavLink('Deep Analysis', href="#"))
+    ],
+    brand="𝙒𝙚𝙗𝟰𝙍𝙚𝙘",
+    brand_href="#",
+    color="primary",
+    dark=True,
+    # style=CONTENT_STYLE
+    className= 'content-style'
+)
+
 model_form = html.Div([html.Div([
     dbc.Row([
         dbc.Col([
-            dbc.Button('➖', style=DELETE_BUTTON),
+            dbc.Button('➖', style=DELETE_BUTTON, id='delete_button'),
+            dbc.Popover("Delete this experiment", trigger='hover', target='delete_button', body=True)
             
 ]
             ),
@@ -78,7 +101,7 @@ model_form = html.Div([html.Div([
 ], style=FORM_STYLE),
                        html.Br()])
 
-fig_recall = px.bar(
+fig_total = px.bar(
             exp_df,
             x = 'model',
             y ='recall',
@@ -113,34 +136,29 @@ sidebar = html.Div(
         html.Hr(),
         html.Div(id='model_form'),
         
-        *[model_form for _ in range(3)],
-        dbc.Button('➕', style={'position':'absolute', 'right':0, 'margin-right':'2rem'}),
+        dbc.Button('➕', id='add_button', n_clicks=0, style={'position':'absolute', 'right':0, 'margin-right':'2rem'}),
+        dbc.Popover("Add a new expriement", trigger='hover', target='add_button', body=True),
+        dbc.Button('Compare!', )
     ],
     style=SIDEBAR_STYLE,
 )
 
 layout = html.Div(children=[
+    navbar,
     sidebar,
     html.Div([
     html.H1(children='Model vs Model', style={'text-align': 'center','font-weight': 'bold'}),
     html.Hr(),
-
-    n_model := dbc.Input(value=3, type='number', style={'margin':10, 'width':'5%', 'margin-left':20}),
     
     html.Div(id='select_model'),
     html.Div(id='select_model2'),
     
-    html.Hr(),
-    html.H3(children='Quantitative Indicator'),
+
+    html.H3('Total Metric'),
     dbc.Row([
       dbc.Col([
-          html.H4('Recall'),
-          dcc.Graph(figure=fig_recall)
+          dcc.Graph(figure=fig_total)
             ]),
-      dbc.Col([
-          html.H4('MAP'),
-          dcc.Graph(figure=fig_map)
-    ]),
 ]),
     dbc.Row([
         dbc.Col([
@@ -151,30 +169,13 @@ layout = html.Div(children=[
             html.H4('NDCG'),
           dcc.Graph(figure=fig_popularity)
           ]),
-    ])], style=CONTENT_STYLE),
+    ])], 
+    # style=CONTENT_STYLE,
+    className='content-style'
+    ),
 ])
 
 
-@callback(
-    Output(component_id='select_model', component_property='children'),
-    Input(n_model, component_property='value')
-)
-def update_city_selected(input_value):
-    if input_value == None:
-        raise PreventUpdate
-    
-    model_list = [
-        dbc.Row([
-        dbc.Col([
-            dcc.Dropdown(
-        options =list(model_hype_type.keys()), value=list(model_hype_type.keys())[0],id=f'model_{i}',
-        style={'margin':10, 'width':'40%'}),
-            
-            ]) 
-        for i in range(input_value)])]
-    model_list.append(dbc.Button('Comapre!', id='Compare_btn',type='submit' ,n_clicks=0, style={'margin':10, }) )
-    result = html.Form(model_list, className= 'compare_form',) 
-    return result
 
 @callback(
         Output('map', 'children'),
@@ -193,3 +194,44 @@ def get_quantative_metrics(form):
 def sider_custom_trigger_demo(v):
 
     return v
+
+@callback(
+    Output('model_form', 'children'),
+    Input('add_button', 'n_clicks')
+)
+def add_model_form(n):
+    if n == 0:
+        raise PreventUpdate
+    model_form = html.Div([html.Div([
+    dbc.Row([
+        dbc.Col([
+            dbc.Button('➖', style=DELETE_BUTTON, id=f'{n}_delete_button'),
+            dbc.Popover("Delete this experiment", trigger='hover', target='delete_button', body=True)
+            
+]
+            ),
+]),
+    dcc.Dropdown(list(model_hype_type.keys())),
+    html.Hr(),
+    html.P(
+        f'''
+        neg_sample: 123
+        '''
+    ),
+], style=FORM_STYLE),
+                       html.Br()])
+    
+    form_list = []
+    for _ in range(n):
+        form_list.append(model_form)
+    return form_list
+
+@callback(
+    Output('add_button', 'n_clicks'),
+    [Input('0_delete_button', 'n_clicks'), State('add_button', 'n_clicks')]
+)
+def delete_model_form(dn, an):
+    if dn == 0:
+        raise PreventUpdate
+    an -=1
+    return an 
