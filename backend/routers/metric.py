@@ -101,14 +101,14 @@ async def get_quantitative_metrics(model_name:str, str_key:str):
 
 class quantitative_indicator:
 
-    def __init__(self, dataset:dataset_info, pred_item:pd.Series, pred_score:pd.Series):
+    def __init__(self, dataset:dataset_info, pred_item:pd.Series): #, pred_score:pd.Series
         self.train_df = dataset.train_df
         self.ground_truth = dataset.ground_truth
 
         self.K = dataset.K
 
         self.pred_item = pred_item.apply(lambda x: x[:self.K])
-        self.pred_score = pred_score.apply(lambda x: x[:self.K])
+        # self.pred_score = pred_score.apply(lambda x: x[:self.K])
 
         self.n_user = dataset.n_user
         self.n_item = dataset.n_item
@@ -409,10 +409,10 @@ class qualitative_indicator:
         for user in self.pred_item.index:
             total.loc[user] = self.rerank(user, alpha, obj, mode, k)
         ans = dict()
-        ans['Diversity'] = self.Total_Diversity(pred_item=total).tolist() #어느 mode로 할지 정할 수 있게 하는 게 좋을 것 같기는 한데..
-        ans['Serendipity'] = self.Total_Serendipity(pred_item=total).tolist()
-        ans['Novelty'] = self.Total_Novelty(pred_item=total).tolist()
-        return ans
+        ans['Diversity'] = self.Total_Diversity(pred_item=total) #어느 mode로 할지 정할 수 있게 하는 게 좋을 것 같기는 한데..
+        ans['Serendipity'] = self.Total_Serendipity(pred_item=total)
+        ans['Novelty'] = self.Total_Novelty(pred_item=total)
+        return ans, total
 
     def rerank(self, user:int, alpha= 0.5, obj='Serendipity', mode='PMI', k= 10):
         '''
