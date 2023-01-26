@@ -1,6 +1,6 @@
 from datetime import datetime
 from fastapi import APIRouter, Depends, File, UploadFile
-from pandas import pd
+import pandas as pd
 from typing import List, Dict
 
 from schemas.data import Dataset, Experiment
@@ -48,7 +48,7 @@ async def check_dataset(user_id: str, connection=Depends(get_db)) -> List:
         async with conn.cursor() as cur:
             query = 'SELECT dataset_name FROM Datasets WHERE user_id = %s'
             await cur.execute(query, (user_id,))
-            result = await cur.fetchall() [{'dataset_name': 'ajflkwae'}, {'dataset_name':'afwefd'}]
+            result = await cur.fetchall() 
 
     # [row['dataset_name'] for row in result]
     return list(result)

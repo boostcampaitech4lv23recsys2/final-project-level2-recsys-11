@@ -4,8 +4,8 @@ from pydantic import BaseSettings
 class Settings(BaseSettings):
     host: str
     port: int
-    username: str
-    database: str
+    user: str
+    db: str
     password: str
 
     class Config:
