@@ -8,6 +8,7 @@ from dash_bootstrap_templates import load_figure_template
 from dash.exceptions import PreventUpdate
 import feffery_antd_components as fac
 from . import global_component as gct
+import json
 
 API_url = 'http://127.0.0.1:8000'
 
@@ -139,29 +140,39 @@ def sider_custom_trigger_demo(v):
 
     return v
 
+
 @callback(
-    Output('model_form', 'children'),
-    Input('add_button', 'n_clicks'),
-    State('model_form', 'children')
+    Output("model_form", "children"),
+    [
+        Input("add_button", "n_clicks"),
+        Input({"type": "delete_btn", "index": ALL}, "n_clicks"),
+    ],
+    [State("model_form", "children"), 
+    #  State("country", "value")
+     ],
 )
-def add_model_form(n, children):
-    if n == 0:
-        raise PreventUpdate
-    model_form = html.Div([
-
-            dbc.Button('➖', className='delete-btn', id={'type':'delete_btn', 'index':n}),
+def display_dropdowns(n_clicks, _, children):
+    input_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
+    if "index" in input_id:
+        delete_chart = json.loads(input_id)["index"]
+        children = [
+            chart
+            for chart in children
+            if "'index': " + str(delete_chart) not in str(chart)
+        ]
+    else:
+        
+        model_form = html.Div([
+            dbc.Button('➖', className='delete-btn', id={'type':'delete_btn', 'index':n_clicks}),
             dbc.Popover("Delete this experiment", trigger='hover', target='delete_button', body=True),
-
-    dcc.Dropdown(list(model_hype_type.keys()), value=list(model_hype_type.keys())[0]),
-    html.Hr(),
-    html.P(
-        f'''
-        neg_sample: 123
-        '''
-    ),
-    html.Br()
-], className='form-style'),
-                       
-    children.append(model_form)
+            dcc.Dropdown(list(model_hype_type.keys()), value=list(model_hype_type.keys())[0]),
+            html.Hr(),
+            html.P(
+                    f'''
+                    neg_sample: 123
+                    '''
+                ),
+            html.Br()
+], className='form-style')
+        children.append(model_form)
     return children
-
