@@ -469,7 +469,7 @@ class qualitative_indicator:
                     recommended_lst.append(best_idx)
                     C.remove(best_idx)
             
-            return recommended_lst
+            return np.array(recommended_lst)
 
         elif obj == 'Serendipity':
             if mode == 'PMI':
