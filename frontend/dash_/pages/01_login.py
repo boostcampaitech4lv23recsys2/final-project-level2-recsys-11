@@ -9,7 +9,12 @@ API_url = 'http://127.0.0.1:8000'
 dash.register_page(__name__, path='/')
 
 
-layout =  html.Div([dcc.Location(id='url_login', refresh=True)
+layout =  html.Div([
+        html.H1('Web4Rec', style={
+                                # 'padding': 10, 
+                                'text-align': 'center'}),
+        html.Br(),
+        dcc.Location(id='url_login', refresh=True)
             , html.H5('''Please sign-in to continue:''', id='h1')
             , dbc.Input(placeholder='Enter your username',
                     type='text',
@@ -20,20 +25,23 @@ layout =  html.Div([dcc.Location(id='url_login', refresh=True)
                     type='password',
                     id='pwd-box',
                     style={'width':'20%'}),
-            html.Br()
-            , dbc.Button(children='Sign-in',
+            html.Br(),
+            dbc.Row([
+                    dbc.Col([
+                dbc.Button(children='Sign-in',
                     n_clicks=0,
                     type='submit',
                     id='login-button',
                     style={'margin':10})
-            , html.Div(children='', id='output-state'),
-            html.Div(),
+            , html.Div(children='', id='output-state')]),
+            dbc.Col(
             dcc.Link(
                 children=dbc.Button(children='Sign-up',
                                      style={'margin':10}
                 ),
                     href='/signup'
-            ),
+            )),
+            ]),
             html.H6(id='login-value')
             
         ], style={'padding-left':'45%'}) #end div
