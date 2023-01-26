@@ -148,7 +148,6 @@ def sider_custom_trigger_demo(v):
         Input({"type": "delete_btn", "index": ALL}, "n_clicks"),
     ],
     [State("model_form", "children"), 
-    #  State("country", "value")
      ],
 )
 def display_dropdowns(n_clicks, _, children):
@@ -164,15 +163,24 @@ def display_dropdowns(n_clicks, _, children):
         
         model_form = html.Div([
             dbc.Button('➖', className='delete-btn', id={'type':'delete_btn', 'index':n_clicks}),
-            dbc.Popover("Delete this experiment", trigger='hover', target='delete_button', body=True),
-            dcc.Dropdown(list(model_hype_type.keys()), value=list(model_hype_type.keys())[0]),
+            # dbc.Popover("Delete this experiment", trigger='hover', target={'type':'delete_btn', 'index':ALL}, body=True),
+            dcc.Dropdown(list(model_hype_type.keys()), value=list(model_hype_type.keys())[0], id={'type':'selected_exp', 'index':n_clicks}),
             html.Hr(),
             html.P(
                     f'''
                     neg_sample: 123
                     '''
-                ),
+                , id={'type':"exp's_hype", 'index':n_clicks}),
             html.Br()
 ], className='form-style')
         children.append(model_form)
     return children
+
+@callback(
+    Output({"type": "exp's_hype", "index": MATCH}, "children"),
+    [
+        Input({"type": "selected_exp", "index": MATCH}, "value"),
+    ],
+)
+def display_output(value):
+    return f'{value}"s hype '
