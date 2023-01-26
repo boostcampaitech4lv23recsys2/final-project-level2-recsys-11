@@ -21,5 +21,5 @@ navbar = dbc.NavbarSimple(
     brand_href="#",
     color="primary",
     dark=True,
-    className="content"
+    className="navbar"
 )

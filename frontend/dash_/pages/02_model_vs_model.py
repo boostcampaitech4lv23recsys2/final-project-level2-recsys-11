@@ -1,5 +1,5 @@
 import dash
-from dash import html, dcc, callback, Input, Output, State
+from dash import html, dcc, callback, Input, Output, State,  MATCH, ALL
 import dash_bootstrap_components as dbc
 import requests
 import pandas as pd
@@ -8,6 +8,7 @@ from dash_bootstrap_templates import load_figure_template
 from dash.exceptions import PreventUpdate
 import feffery_antd_components as fac
 from . import global_component as gct
+import json
 
 API_url = 'http://127.0.0.1:8000'
 
@@ -22,6 +23,7 @@ exp_df.loc[1,:] = ['M1',0.1084,0.0847,0.1011,0.0527,'red']
 exp_df.loc[2,:] = ['M2',0.1124,0.0777,0.1217,0.0781,'green']
 exp_df.loc[3,:] = ['M3',0.1515,0.1022,0.1195,0.0999,'blue']
 exp_df.loc[4,:] = ['M4',0.0917,0.0698,0.0987,0.0315,'goldenrod']
+
 
 
 fig_total = px.bar(
@@ -55,7 +57,7 @@ sidebar = html.Div(
     [
         html.H3("Select Expriements",),
         html.Hr(),
-        html.Div(id='model_form'),
+        html.Div(id='model_form', children=[]),
         
         dbc.Button('➕', id='add_button', n_clicks=0, style={'position':'absolute', 'right':0, 'margin-right':'2rem'}),
         dbc.Popover("Add a new expriement", trigger='hover', target='add_button', body=True),
@@ -65,6 +67,7 @@ sidebar = html.Div(
 )
 
 total_graph = html.Div([
+    html.Br(),
     html.H1(children='Model vs Model', style={'text-align': 'center','font-weight': 'bold'}),
     html.Hr(),
     
@@ -96,6 +99,7 @@ specific_metric = html.Div([
             ],
             value='Qual',
                         ),
+            html.Br(),
             dcc.Dropdown(options=['123', '12342'])
             ], width=2),
         dbc.Col([
@@ -136,43 +140,47 @@ def sider_custom_trigger_demo(v):
 
     return v
 
-@callback(
-    Output('model_form', 'children'),
-    Input('add_button', 'n_clicks')
-)
-def add_model_form(n):
-    if n == 0:
-        raise PreventUpdate
-    model_form = html.Div([html.Div([
-    dbc.Row([
-        dbc.Col([
-            dbc.Button('➖', className='delete-btn', id=f'{n}_delete_button'),
-            dbc.Popover("Delete this experiment", trigger='hover', target='delete_button', body=True)
-            
-]
-            ),
-]),
-    dcc.Dropdown(list(model_hype_type.keys()), value=list(model_hype_type.keys())[0]),
-    html.Hr(),
-    html.P(
-        f'''
-        neg_sample: 123
-        '''
-    ),
-], className='form-style'),
-                       html.Br()])
-    
-    form_list = []
-    for _ in range(n):
-        form_list.append(model_form)
-    return form_list
 
 @callback(
-    Output('add_button', 'n_clicks'),
-    [Input('0_delete_button', 'n_clicks'), State('add_button', 'n_clicks')]
+    Output("model_form", "children"),
+    [
+        Input("add_button", "n_clicks"),
+        Input({"type": "delete_btn", "index": ALL}, "n_clicks"),
+    ],
+    [State("model_form", "children"), 
+     ],
 )
-def delete_model_form(dn, an):
-    if dn == 0:
-        raise PreventUpdate
-    an -=1
-    return an 
+def display_dropdowns(n_clicks, _, children):
+    input_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
+    if "index" in input_id:
+        delete_chart = json.loads(input_id)["index"]
+        children = [
+            chart
+            for chart in children
+            if "'index': " + str(delete_chart) not in str(chart)
+        ]
+    else:
+        
+        model_form = html.Div([
+            dbc.Button('➖', className='delete-btn', id={'type':'delete_btn', 'index':n_clicks}),
+            # dbc.Popover("Delete this experiment", trigger='hover', target={'type':'delete_btn', 'index':ALL}, body=True),
+            dcc.Dropdown(list(model_hype_type.keys()), value=list(model_hype_type.keys())[0], id={'type':'selected_exp', 'index':n_clicks}),
+            html.Hr(),
+            html.P(
+                    f'''
+                    neg_sample: 123
+                    '''
+                , id={'type':"exp's_hype", 'index':n_clicks}),
+            html.Br()
+], className='form-style')
+        children.append(model_form)
+    return children
+
+@callback(
+    Output({"type": "exp's_hype", "index": MATCH}, "children"),
+    [
+        Input({"type": "selected_exp", "index": MATCH}, "value"),
+    ],
+)
+def display_output(value):
+    return f'{value}"s hype '

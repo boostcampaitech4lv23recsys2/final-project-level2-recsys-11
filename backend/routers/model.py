@@ -63,8 +63,8 @@ class ModelConfig:
             self.pred_score = infos['PRED_SCORE']
             self.item2idx = infos['ITEM2IDX']
 
-        self.quantitative = quantitative_indicator(data.dataset, self.pred_item,
-                                                    self.pred_score)
+        self.quantitative = quantitative_indicator(data.dataset, self.pred_item
+                                                    ) # self.pred_score
         self.qualitative = qualitative_indicator(data.dataset, self.pred_item,
                                                     self.pred_score, self.item_vector)
 

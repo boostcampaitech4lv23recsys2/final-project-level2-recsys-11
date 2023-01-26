@@ -101,14 +101,14 @@ async def get_quantitative_metrics(model_name:str, str_key:str):
 
 class quantitative_indicator:
 
-    def __init__(self, dataset:dataset_info, pred_item:pd.Series, pred_score:pd.Series):
+    def __init__(self, dataset:dataset_info, pred_item:pd.Series): #, pred_score:pd.Series
         self.train_df = dataset.train_df
         self.ground_truth = dataset.ground_truth
 
         self.K = dataset.K
 
         self.pred_item = pred_item.apply(lambda x: x[:self.K])
-        self.pred_score = pred_score.apply(lambda x: x[:self.K])
+        # self.pred_score = pred_score.apply(lambda x: x[:self.K])
 
         self.n_user = dataset.n_user
         self.n_item = dataset.n_item
@@ -409,10 +409,10 @@ class qualitative_indicator:
         for user in self.pred_item.index:
             total.loc[user] = self.rerank(user, alpha, obj, mode, k)
         ans = dict()
-        ans['Diversity'] = self.Total_Diversity(pred_item=total).tolist() #어느 mode로 할지 정할 수 있게 하는 게 좋을 것 같기는 한데..
-        ans['Serendipity'] = self.Total_Serendipity(pred_item=total).tolist()
-        ans['Novelty'] = self.Total_Novelty(pred_item=total).tolist()
-        return ans
+        ans['Diversity'] = self.Total_Diversity(pred_item=total) #어느 mode로 할지 정할 수 있게 하는 게 좋을 것 같기는 한데..
+        ans['Serendipity'] = self.Total_Serendipity(pred_item=total)
+        ans['Novelty'] = self.Total_Novelty(pred_item=total)
+        return ans, total
 
     def rerank(self, user:int, alpha= 0.5, obj='Serendipity', mode='PMI', k= 10):
         '''
@@ -430,14 +430,46 @@ class qualitative_indicator:
         if k > length:
             raise ValueError('k should not be bigger than C')
         if obj == 'Diversity':
-            if mode == 'rating':
-                pass
-            elif mode == 'jaccard':
-                pass
-            elif mode == 'latent':
-                pass
-            else:
+            if mode not in ['rating', 'jaccard', 'latent']:
                 raise ValueError('only {rating, jaccard, latent} available for mode')
+            if mode == 'rating':
+                dist_function = self.rating_dist
+            elif mode == 'jaccard':
+                dist_function = self.jaccard
+            elif mode == 'latent':
+                dist_function = self.latent
+            user_dict = defaultdict(float)
+            C = list(item)
+            for it, sc in zip(item,score):
+                user_dict[it] = sc
+
+            recommended_lst = []
+            dist_dict = defaultdict(defaultdict)
+            while len(recommended_lst) < k:
+                if len(recommended_lst) == 0:
+                    recommended_lst.append(C.pop(0))
+                else:
+                    best_score = 0
+                    for i in C:
+                        sum_of_dist = 0
+                        for j in recommended_lst:
+                            min_ij, max_ij = min(i,j), max(i,j)
+                            if min_ij in dist_dict and max_ij in dist_dict[min_ij]:
+                                sum_of_dist += dist_dict[min_ij][max_ij]
+                            else:
+                                dij = dist_function(min_ij,max_ij) # rating_dist, jaccard, latent
+                                dist_dict[min_ij][max_ij] = dij
+                                sum_of_dist += dij
+                                # duplicate_cnt += 1
+                        mean_of_dist = sum_of_dist / len(recommended_lst)
+                        fobj = alpha * user_dict[i] + (1-alpha) * mean_of_dist
+                        if fobj > best_score:
+                            best_score, best_idx = fobj, i
+                            
+                    recommended_lst.append(best_idx)
+                    C.remove(best_idx)
+            
+            return np.array(recommended_lst)
 
         elif obj == 'Serendipity':
             if mode == 'PMI':
