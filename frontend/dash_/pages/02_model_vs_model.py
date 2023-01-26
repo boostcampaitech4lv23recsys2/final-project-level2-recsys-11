@@ -12,7 +12,7 @@ from . import global_component as gct
 API_url = 'http://127.0.0.1:8000'
 
 dash.register_page(__name__, path='/model-vs-model')
-load_figure_template("darkly") # figure 스타일 변경
+# load_figure_template("darkly") # figure 스타일 변경
 
 model_hype_type = requests.get(url=f'{API_url}/model_hype_type').json()
 
@@ -23,6 +23,14 @@ exp_df.loc[2,:] = ['M2',0.1124,0.0777,0.1217,0.0781,'green']
 exp_df.loc[3,:] = ['M3',0.1515,0.1022,0.1195,0.0999,'blue']
 exp_df.loc[4,:] = ['M4',0.0917,0.0698,0.0987,0.0315,'goldenrod']
 
+
+fig_total = px.bar(
+            exp_df,
+            x = 'model',
+            y ='recall',
+            color = 'model',
+            color_discrete_sequence=exp_df['colors'].values
+            )
 
 model_form = html.Div([html.Div([
     dbc.Row([
@@ -42,34 +50,6 @@ model_form = html.Div([html.Div([
 ], className='form-style'),
                        html.Br()])
 
-fig_total = px.bar(
-            exp_df,
-            x = 'model',
-            y ='recall',
-            color = 'model',
-            color_discrete_sequence=exp_df['colors'].values
-            )
-fig_ndcg = px.bar(
-            exp_df,
-            x = 'model',
-            y ='ndcg',
-            color = 'model',
-            color_discrete_sequence=exp_df['colors'].values
-            )
-fig_map = px.bar(
-            exp_df,
-            x = 'model',
-            y ='map',
-            color = 'model',
-            color_discrete_sequence=exp_df['colors'].values
-            )
-fig_popularity = px.bar(
-            exp_df,
-            x = 'model',
-            y ='popularity',
-            color = 'model',
-            color_discrete_sequence=exp_df['colors'].values
-            )
 
 sidebar = html.Div(
     [
@@ -79,28 +59,9 @@ sidebar = html.Div(
         
         dbc.Button('➕', id='add_button', n_clicks=0, style={'position':'absolute', 'right':0, 'margin-right':'2rem'}),
         dbc.Popover("Add a new expriement", trigger='hover', target='add_button', body=True),
-        dbc.Button('Compare!', )
+        dbc.Button('Compare!')
     ],
     className='sidebar'
-)
-
-button_group = html.Div(
-    [
-        dbc.RadioItems(
-            id="radios",
-            className="btn-group",
-            inputClassName="btn-check",
-            labelClassName="btn btn-outline-primary",
-            labelCheckedClassName="active",
-            options=[
-                {"label": "Qualitive", "value": 'Qual'},
-                {"label": "Quantitive", "value": 'Quant'},
-            ],
-            value='Qual',
-        ),
-        html.Div(id="output"),
-    ],
-    className="radio-group",
 )
 
 total_graph = html.Div([
@@ -119,12 +80,40 @@ total_graph = html.Div([
             ])
                     ])
 
+specific_metric = html.Div([
+    html.H3('Specific Metric'),
+    dbc.Row([
+        dbc.Col([
+            dbc.RadioItems(
+            id="radios",
+            className="btn-group",
+            inputClassName="btn-check",
+            labelClassName="btn btn-outline-primary",
+            labelCheckedClassName="active",
+            options=[
+                {"label": "Qualitive", "value": 'Qual'},
+                {"label": "Quantitive", "value": 'Quant'},
+            ],
+            value='Qual',
+                        ),
+            dcc.Dropdown(options=['123', '12342'])
+            ], width=2),
+        dbc.Col([
+            dcc.Graph(figure=fig_total),
+        ], width=8)
+    ]),
+
+           
+    ],
+    className="radio-group", 
+)
+
+
 layout = html.Div(children=[
     gct.navbar,
     sidebar,
     total_graph,
-    
-    
+    specific_metric
 ],className='content')
 
 
