@@ -166,6 +166,8 @@ def main(args):
         user_emb = model.user_embedding.weight.data
         item_emb = model.item_embedding.weight.data
         pred_rating_mat = torch.matmul(user_emb, item_emb.T)
+        pred_rating_mat_npy = pred_rating_mat.cpu().numpy()
+        np.save('./data/pred_rating_mat.npy', pred_rating_mat_npy)
         pred_rating_mat[train_data['user_idx'].values, train_data['item_idx'].values] = -999.9
 
         _, recs = torch.sort(pred_rating_mat, dim=-1, descending=True)
