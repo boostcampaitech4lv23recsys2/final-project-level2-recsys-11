@@ -16,9 +16,10 @@ class Model_Form:
     '''
     원하는 실험을 선택할 수 있도록 모델 및 하이퍼 파라미터 값을 나타내주는 form
 
-    key: input(ex. radio, selectbox) 개수가 가변적으로 변할 때 
+    key: [중요하진 않음]
+         input(ex. radio, selectbox) 개수가 가변적으로 변할 때 
          streamlit에서는 input 별로 key를 정해줘야 함.
-         중요하진 않음
+         이를 관리하기 위한 파라미터
     '''
     def __init__(self, key:int) -> None:
         self.key = key

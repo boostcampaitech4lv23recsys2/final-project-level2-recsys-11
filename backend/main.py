@@ -7,14 +7,12 @@ from collections import defaultdict
 from fastapi import FastAPI, Depends
 from pydantic import BaseModel, Field
 
-
 import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.graph_objs as go
 import plotly.offline as pyo
 import plotly.io as pio
 import os 
-# import json
 
 from routers import data, metric, model
 
@@ -26,7 +24,7 @@ app.include_router(metric.router, prefix='/metric')
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
-
+    
  
 @app.get("/plot/")
 async def create_plot():
@@ -50,6 +48,31 @@ def cal_metric(model_name:str, str_key:str) -> dict:
     result[model_name] = model_name
     result[str_key] = str_key
     return result
+
+user_db = pd.DataFrame([['123', '123', '123']],columns=['id','password','email'])
+@app.get('/create_user', description='새로 가입한 유저 정보를 db에 저장')
+def create_user(id:str, password:str, email:str) -> bool:
+    global user_db
+    
+    if id in list(user_db.id.unique()):
+        return False
+    user_db = user_db.append({'id':id, 'password':password, 'email':email}, ignore_index=True)
+    # print(user_db)
+    return True
+
+curruent_user = 'server'
+@app.get('/login_user', description='입력한 유저 정보가 db에 있는지 확인')
+def login_user(id:str, password:str) -> bool:
+    global user_db
+    
+    if len(user_db.query('id==@id and password==@password')) == 1:
+        global curruent_user
+        curruent_user = id
+        return True
+    else:
+        return False
+    
+
 # 클래스
 # TODO: class dataset, model_run, model_manager
 
