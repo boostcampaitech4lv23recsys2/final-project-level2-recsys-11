@@ -13,12 +13,12 @@ import feffery_antd_components as fac
 navbar = dbc.NavbarSimple(
     children=[
         dbc.NavItem(dbc.NavLink("Compare Table", href="/compare-table")),
-        dbc.NavItem(dbc.NavLink('Model vs Model', href="#"))
+        dbc.NavItem(dbc.NavLink('Model vs Model', href="#")),
         dbc.NavItem(dbc.NavLink('Model vs Model', href="#"))
     ],
     brand="𝙒𝙚𝙗𝟰𝙍𝙚𝙘",
     brand_href="#",
     color="primary",
     dark=True,
-    className="content-style"
+    className="content"
 )

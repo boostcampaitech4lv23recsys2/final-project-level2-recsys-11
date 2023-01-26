@@ -1,0 +1,63 @@
+
+:root {
+  --sidebar-width:20rem;
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: var(--sidebar-width);
+  padding : 2rem 1rem;
+  background-color: #f8f9fa;
+  overflow: scroll;
+}
+
+
+.content {
+    margin-left: var(--sidebar-width);
+    margin-right: 2rem;
+    padding: 2rem 1rem;
+}
+
+.delete-btn {
+  /*
+  # 'position':'absolute',
+  #   'top':0,
+  #  'right':0,
+  #  'margin':4,
+  #  'width': "2rem",
+  #  'height': "2rem",
+  #  'border': 0,
+  #  'border-radius': 15,
+  # 'align': 'center',
+  */
+  margin-right: 0.5rem;
+  margin-bottom: 0.5rem;
+  text-anchor: middle;
+}
+
+.form-style {
+  border: 1px solid;
+  padding: 1rem;
+  border-color: #c3c3c4;
+  border-radius: 15;
+}
+
+
+.radio-group .form-check {
+  padding-left: 0;
+  padding-top: 1rem;
+}
+
+.radio-group .btn-group > .form-check:not(:last-child) > .btn {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.radio-group .btn-group > .form-check:not(:first-child) > .btn {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  margin-left: -1px;
+}

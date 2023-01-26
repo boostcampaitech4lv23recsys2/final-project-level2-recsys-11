@@ -7,10 +7,11 @@ import plotly.express as px
 from dash_bootstrap_templates import load_figure_template
 from dash.exceptions import PreventUpdate
 import feffery_antd_components as fac
+from . import global_component as gct
 
 API_url = 'http://127.0.0.1:8000'
 
-dash.register_page(__name__, meta_tags=['sidebar.css'])
+dash.register_page(__name__, path='/model-vs-model')
 load_figure_template("darkly") # figure 스타일 변경
 
 model_hype_type = requests.get(url=f'{API_url}/model_hype_type').json()
@@ -22,72 +23,12 @@ exp_df.loc[2,:] = ['M2',0.1124,0.0777,0.1217,0.0781,'green']
 exp_df.loc[3,:] = ['M3',0.1515,0.1022,0.1195,0.0999,'blue']
 exp_df.loc[4,:] = ['M4',0.0917,0.0698,0.0987,0.0315,'goldenrod']
 
-SIDEBAR_WIDTH = '20rem'
-SIDEBAR_STYLE = {
-    "position": "fixed",
-    "top": 20,
-    "left": 0,
-    "bottom": 0,
-    "width": SIDEBAR_WIDTH,
-    "padding": "2rem 1rem",
-    "background-color": "#f8f9fa",
-    "overflow": "scroll",
-}
-
-CONTENT_STYLE = {
-    "margin-left": SIDEBAR_WIDTH,
-    "margin-right": "2rem",
-    "padding": "2rem 1rem",
-}
-
-NAVBAR_STYLE = {
-    "margin-left": SIDEBAR_WIDTH,
-    "margin-right": "2rem",
-    "padding": "2rem 1rem",
-}
-
-
-DELETE_BUTTON = {
-    # 'position':'absolute',
-    #  'top':0,
-    #  'right':0,
-    #  'margin':4,
-    #  'width': "2rem",
-    #  'height': "2rem",
-    #  'border': 0,
-    #  'border-radius': 15,
-    'margin-right': "0.5rem",
-    'margin-bottom': "0.5rem",
-    # 'align': 'center',
-    'text-anchor': 'middle',
-}
-FORM_STYLE = {
-    'border': "1px solid",
-    'padding': "1rem",
-    'border-color': "#c3c3c4",
-    'border-radius': 15
-}
-
-navbar = dbc.NavbarSimple(
-    children=[
-        dbc.NavItem(dbc.NavLink("Compare Table", href="/compare-table")),
-        dbc.NavItem(dbc.NavLink('Model vs Model', href="#")),
-        dbc.NavItem(dbc.NavLink('Deep Analysis', href="#"))
-    ],
-    brand="𝙒𝙚𝙗𝟰𝙍𝙚𝙘",
-    brand_href="#",
-    color="primary",
-    dark=True,
-    # style=CONTENT_STYLE
-    className= 'content-style'
-)
 
 model_form = html.Div([html.Div([
     dbc.Row([
         dbc.Col([
-            dbc.Button('➖', style=DELETE_BUTTON, id='delete_button'),
+            dbc.Button('➖', className='delete-btn', id='delete_button'),
             dbc.Popover("Delete this experiment", trigger='hover', target='delete_button', body=True)
-            
 ]
             ),
 ]),
@@ -98,7 +39,7 @@ model_form = html.Div([html.Div([
         neg_sample: 123
         '''
     ),
-], style=FORM_STYLE),
+], className='form-style'),
                        html.Br()])
 
 fig_total = px.bar(
@@ -140,13 +81,29 @@ sidebar = html.Div(
         dbc.Popover("Add a new expriement", trigger='hover', target='add_button', body=True),
         dbc.Button('Compare!', )
     ],
-    style=SIDEBAR_STYLE,
+    className='sidebar'
 )
 
-layout = html.Div(children=[
-    navbar,
-    sidebar,
-    html.Div([
+button_group = html.Div(
+    [
+        dbc.RadioItems(
+            id="radios",
+            className="btn-group",
+            inputClassName="btn-check",
+            labelClassName="btn btn-outline-primary",
+            labelCheckedClassName="active",
+            options=[
+                {"label": "Qualitive", "value": 'Qual'},
+                {"label": "Quantitive", "value": 'Quant'},
+            ],
+            value='Qual',
+        ),
+        html.Div(id="output"),
+    ],
+    className="radio-group",
+)
+
+total_graph = html.Div([
     html.H1(children='Model vs Model', style={'text-align': 'center','font-weight': 'bold'}),
     html.Hr(),
     
@@ -159,22 +116,16 @@ layout = html.Div(children=[
       dbc.Col([
           dcc.Graph(figure=fig_total)
             ]),
-]),
-    dbc.Row([
-        dbc.Col([
-            html.H4('NDCG'),
-          dcc.Graph(figure=fig_ndcg)
-          ]),
-        dbc.Col([
-            html.H4('NDCG'),
-          dcc.Graph(figure=fig_popularity)
-          ]),
-    ])], 
-    # style=CONTENT_STYLE,
-    className='content-style'
-    ),
-])
+            ])
+                    ])
 
+layout = html.Div(children=[
+    gct.navbar,
+    sidebar,
+    total_graph,
+    
+    
+],className='content')
 
 
 @callback(
@@ -205,20 +156,20 @@ def add_model_form(n):
     model_form = html.Div([html.Div([
     dbc.Row([
         dbc.Col([
-            dbc.Button('➖', style=DELETE_BUTTON, id=f'{n}_delete_button'),
+            dbc.Button('➖', className='delete-btn', id=f'{n}_delete_button'),
             dbc.Popover("Delete this experiment", trigger='hover', target='delete_button', body=True)
             
 ]
             ),
 ]),
-    dcc.Dropdown(list(model_hype_type.keys())),
+    dcc.Dropdown(list(model_hype_type.keys()), value=list(model_hype_type.keys())[0]),
     html.Hr(),
     html.P(
         f'''
         neg_sample: 123
         '''
     ),
-], style=FORM_STYLE),
+], className='form-style'),
                        html.Br()])
     
     form_list = []
