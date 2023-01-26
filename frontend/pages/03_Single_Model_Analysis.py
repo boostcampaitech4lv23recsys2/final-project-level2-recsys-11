@@ -111,4 +111,4 @@ item_feat.selectbox("Item's feature:", items_feat)
 pbs_plot2.line_chart()
 
 metrics = ('Diversity', 'Novelty', 'Serendipity')
-item_metric.selectbox("Metric: ", metrics)
+item_metric.selectbox("Metric: ", metrics\

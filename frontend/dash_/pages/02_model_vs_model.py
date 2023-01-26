@@ -1,5 +1,5 @@
 import dash
-from dash import html, dcc, callback, Input, Output, State
+from dash import html, dcc, callback, Input, Output, State,  MATCH, ALL
 import dash_bootstrap_components as dbc
 import requests
 import pandas as pd
@@ -22,6 +22,7 @@ exp_df.loc[1,:] = ['M1',0.1084,0.0847,0.1011,0.0527,'red']
 exp_df.loc[2,:] = ['M2',0.1124,0.0777,0.1217,0.0781,'green']
 exp_df.loc[3,:] = ['M3',0.1515,0.1022,0.1195,0.0999,'blue']
 exp_df.loc[4,:] = ['M4',0.0917,0.0698,0.0987,0.0315,'goldenrod']
+
 
 
 fig_total = px.bar(
@@ -55,7 +56,7 @@ sidebar = html.Div(
     [
         html.H3("Select Expriements",),
         html.Hr(),
-        html.Div(id='model_form'),
+        html.Div(id='model_form', children=[]),
         
         dbc.Button('➕', id='add_button', n_clicks=0, style={'position':'absolute', 'right':0, 'margin-right':'2rem'}),
         dbc.Popover("Add a new expriement", trigger='hover', target='add_button', body=True),
@@ -65,6 +66,7 @@ sidebar = html.Div(
 )
 
 total_graph = html.Div([
+    html.Br(),
     html.H1(children='Model vs Model', style={'text-align': 'center','font-weight': 'bold'}),
     html.Hr(),
     
@@ -96,6 +98,7 @@ specific_metric = html.Div([
             ],
             value='Qual',
                         ),
+            html.Br(),
             dcc.Dropdown(options=['123', '12342'])
             ], width=2),
         dbc.Col([
@@ -138,20 +141,17 @@ def sider_custom_trigger_demo(v):
 
 @callback(
     Output('model_form', 'children'),
-    Input('add_button', 'n_clicks')
+    Input('add_button', 'n_clicks'),
+    State('model_form', 'children')
 )
-def add_model_form(n):
+def add_model_form(n, children):
     if n == 0:
         raise PreventUpdate
-    model_form = html.Div([html.Div([
-    dbc.Row([
-        dbc.Col([
-            dbc.Button('➖', className='delete-btn', id=f'{n}_delete_button'),
-            dbc.Popover("Delete this experiment", trigger='hover', target='delete_button', body=True)
-            
-]
-            ),
-]),
+    model_form = html.Div([
+
+            dbc.Button('➖', className='delete-btn', id={'type':'delete_btn', 'index':n}),
+            dbc.Popover("Delete this experiment", trigger='hover', target='delete_button', body=True),
+
     dcc.Dropdown(list(model_hype_type.keys()), value=list(model_hype_type.keys())[0]),
     html.Hr(),
     html.P(
@@ -159,20 +159,9 @@ def add_model_form(n):
         neg_sample: 123
         '''
     ),
+    html.Br()
 ], className='form-style'),
-                       html.Br()])
-    
-    form_list = []
-    for _ in range(n):
-        form_list.append(model_form)
-    return form_list
+                       
+    children.append(model_form)
+    return children
 
-@callback(
-    Output('add_button', 'n_clicks'),
-    [Input('0_delete_button', 'n_clicks'), State('add_button', 'n_clicks')]
-)
-def delete_model_form(dn, an):
-    if dn == 0:
-        raise PreventUpdate
-    an -=1
-    return an 
