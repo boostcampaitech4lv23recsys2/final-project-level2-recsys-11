@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, File, UploadFile
 from pandas import pd
 from typing import List, Dict
 
-from schemas.data import Dataset 
+from schemas.data import Dataset, Experiments
 from routers.database import get_db
 
 router = APIRouter()
@@ -70,10 +70,10 @@ async def upload_dataset(user_id: str, dataset_name:str,
                          connection = Depends(get_db)) -> Dataset:
     
     ### 1-1. json -> pd로 변환 -> pydantic 
-    dataset = Dataset(train_df = pd.read_json(files['train_df']),
-                      ground_truth = pd.read_json(files['ground_truth']),
-                      user_side = pd.read_json(files['user_side']),
-                      item_side = pd.read_json(files['item_side'])
+    dataset = Dataset(train_df = await pd.read_json(files['train_df'].file),
+                      ground_truth = await pd.read_json(files['ground_truth'].file),
+                      user_side = await pd.read_json(files['user_side'].file),
+                      item_side = await pd.read_json(files['item_side'].file)
                      )
 
     ### 1-2.  json (library) -> json (s3) 
@@ -96,8 +96,13 @@ async def upload_dataset(user_id: str, dataset_name:str,
                     user_side, item_side, item2idx, user2idx) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)' 
             cur.execute(query_dataset_ins, (user_id, dataset_name))
 
-
     return dataset
+    #-> return하면 library 쪽으로 return. 그 대신, 메모리에 보내줘야 할듯 
 
-# TODO:
-# Retrieve current user, dataset_name => dependecy for post requests
+async def get_metrics():
+    pass
+
+async def upload_experiment(user_id: str, dataset_name:str,
+                            file: Dict[str, UploadFile] = File(...),
+                            connection=Depends(get_db)) -> Experiments:
+    pass
