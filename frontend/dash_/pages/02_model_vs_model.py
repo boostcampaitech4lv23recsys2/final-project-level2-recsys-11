@@ -75,7 +75,7 @@ total_graph = html.Div([
     html.H3('Total Metric'),
     dbc.Row([
       dbc.Col([
-          dcc.Graph(figure=fig_total)
+          dcc.Graph(figure=fig_total, id='total_metric')
             ]),
             ])
                     ])
@@ -99,6 +99,7 @@ specific_metric = html.Div([
             dcc.Dropdown(options=['123', '12342'])
             ], width=2),
         dbc.Col([
+            dcc.Graph(figure=fig_total),
             dcc.Graph(figure=fig_total),
         ], width=8)
     ]),
