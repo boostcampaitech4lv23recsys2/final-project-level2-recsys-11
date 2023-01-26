@@ -430,14 +430,46 @@ class qualitative_indicator:
         if k > length:
             raise ValueError('k should not be bigger than C')
         if obj == 'Diversity':
-            if mode == 'rating':
-                pass
-            elif mode == 'jaccard':
-                pass
-            elif mode == 'latent':
-                pass
-            else:
+            if mode not in ['rating', 'jaccard', 'latent']:
                 raise ValueError('only {rating, jaccard, latent} available for mode')
+            if mode == 'rating':
+                dist_function = self.rating_dist
+            elif mode == 'jaccard':
+                dist_function = self.jaccard
+            elif mode == 'latent':
+                dist_function = self.latent
+            user_dict = defaultdict(float)
+            C = list(item)
+            for it, sc in zip(item,score):
+                user_dict[it] = sc
+
+            recommended_lst = []
+            dist_dict = defaultdict(defaultdict)
+            while len(recommended_lst) < k:
+                if len(recommended_lst) == 0:
+                    recommended_lst.append(C.pop(0))
+                else:
+                    best_score = 0
+                    for i in C:
+                        sum_of_dist = 0
+                        for j in recommended_lst:
+                            min_ij, max_ij = min(i,j), max(i,j)
+                            if min_ij in dist_dict and max_ij in dist_dict[min_ij]:
+                                sum_of_dist += dist_dict[min_ij][max_ij]
+                            else:
+                                dij = dist_function(min_ij,max_ij) # rating_dist, jaccard, latent
+                                dist_dict[min_ij][max_ij] = dij
+                                sum_of_dist += dij
+                                # duplicate_cnt += 1
+                        mean_of_dist = sum_of_dist / len(recommended_lst)
+                        fobj = alpha * user_dict[i] + (1-alpha) * mean_of_dist
+                        if fobj > best_score:
+                            best_score, best_idx = fobj, i
+                            
+                    recommended_lst.append(best_idx)
+                    C.remove(best_idx)
+            
+            return recommended_lst
 
         elif obj == 'Serendipity':
             if mode == 'PMI':
