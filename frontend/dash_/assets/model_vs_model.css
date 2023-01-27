@@ -30,6 +30,10 @@
   /* padding: 2rem 1rem; */
 }
 
+.nosidebar-navbar {
+  margin-left: 0;
+  height: 5rem;
+}
 
 .delete-btn {
   /*

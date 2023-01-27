@@ -58,7 +58,7 @@ def login(n_click, uname, pwd):
         params = {'id': uname, 'password': pwd}
         resospnse = requests.get(f'{API_url}/login_user', params=params)
         if resospnse:
-                return dcc.Location(pathname='model-vs-model', id='mvsm')
+                return dcc.Location(pathname='compare-table', id='mvsm')
         else:
                 return dbc.Modal([
             dbc.ModalBody("Invalid ID or password."),
