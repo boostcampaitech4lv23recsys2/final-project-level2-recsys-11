@@ -17,9 +17,19 @@
 
 .content {
     margin-left: var(--sidebar-width);
-    margin-right: 2rem;
+    /* margin-right: 2rem; */
     padding: 2rem 1rem;
 }
+
+.navbar {
+
+  /* margin-left: var(--sidebar-width); */
+  margin-left: -10rem;
+  height: 5rem;
+  /* margin-right: 2rem; */
+  /* padding: 2rem 1rem; */
+}
+
 
 .delete-btn {
   /*
@@ -43,6 +53,7 @@
   padding: 1rem;
   border-color: #c3c3c4;
   border-radius: 15;
+  margin-top: 50;
 }
 
 
@@ -60,4 +71,4 @@
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
   /* margin-left: -1px; */
-}
+} 
