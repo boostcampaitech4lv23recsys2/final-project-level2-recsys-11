@@ -104,7 +104,7 @@ class quantitative_indicator:
     def __init__(self, dataset:dataset_info, pred_item:pd.Series): #, pred_score:pd.Series
         self.train_df = dataset.train_df
         self.ground_truth = dataset.ground_truth
-
+        self.total_user = pred_item.index # 초기에 전체 유저
         self.K = dataset.K
 
         self.pred_item = pred_item.apply(lambda x: x[:self.K])
@@ -118,6 +118,9 @@ class quantitative_indicator:
         self.pop_inter_per_item = dataset.pop_inter_per_item
 
         self.popularity_df = self.pred_item.apply(lambda R: [self.pop_user_per_item[int(item)] for item in R])
+
+    # def change_pred_item(self, pred_item:pd.Series): # Reranking 후 pred_item이 바꾸고 싶을 때 사용하는 함수
+    #     self.pred_item = pred_item
 
     def AveragePopularity(self) -> float:
         '''
@@ -162,7 +165,9 @@ class quantitative_indicator:
 
         return score / min(len(actual), k)
 
-    def mapk(self):
+    def mapk(self,
+        # TODO: users:np.array
+        ):
         """
         Computes the mean average precision at k.
         This function computes the mean average prescision at k between two lists
@@ -170,18 +175,21 @@ class quantitative_indicator:
         """
         return np.mean([self.apk(a, p, self.K) for a, p in zip(self.ground_truth.values, self.pred_item.values)])
 
-    def NDCG(self):
+    def NDCG(self, users=None) -> dict:
         '''
         NDCG = DCG / IDCG
         DCG = rel(i) / log2(i + 1)
         '''
-        ndcg = 0
-        for i in self.pred_item.index:
-            k = min(self.K, len(self.ground_truth['item_id'].loc[1]))
+        if users is None:
+            users = self.total_user
+        ndcg = {}
+        for i in self.pred_item.loc[users].index: # TODO:self.pred_item.index -> self.pred_item.loc[self.selected_user].index
+            k = min(self.K, len(self.ground_truth.loc[users,'item_id'].loc[i])) # TODO:len(self.ground_truth['item_id'].loc[1]) -> len(self.ground_truth.loc[self.selected_user,'item_id'].loc[i]) 
             idcg = sum([1 / np.log2(j + 2) for j in range(k)]) # 최대 dcg. +2는 range가 0에서 시작해서
             dcg = sum([int(self.pred_item[i][j] in set(self.ground_truth['item_id'].loc[i])) / np.log2(j + 2) for j in range(self.K)])
-            ndcg += dcg / idcg
-        return ndcg / len(self.pred_item)
+            ndcg[i] = dcg / idcg
+
+        return ndcg
 
     def Coverage(self):
         '''
@@ -205,20 +213,23 @@ class quantitative_indicator:
                             for idx in self.pred_item.index])
         return Tp
 
-    def Recall_K(self):
-        actual = self.ground_truth['item_id']
-        predicted = self.pred_item
-        sum_recall = 0.0
-        true_users = 0
+    def Recall_K(self, users=None) -> dict:
+        if users is None:
+            users = self.total_user
+
+        actual = self.ground_truth.loc[users,'item_id']  # selected user만 Recall 계산
+        predicted = self.pred_item.loc[users]
+        recall = {}
+        # true_users = 0
 
         for idx in actual.index:
             act_set = set(actual[idx].flatten())
             pred_set = set(predicted[idx][:self.K].flatten())
             if len(act_set) != 0:
-                sum_recall += len(act_set & pred_set) / min(len(act_set), len(pred_set))
-                true_users += 1
+                recall[idx] = len(act_set & pred_set) / min(len(act_set), len(pred_set))
+                # true_users += 1
 
-        return sum_recall / true_users
+        return recall
 
 
 class qualitative_indicator:
