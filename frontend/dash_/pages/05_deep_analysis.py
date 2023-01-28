@@ -44,8 +44,11 @@ sidebar = html.Div(
                 html.Hr(),
                 # 년도, 장르, 제목?, 인기도
                 html.P('장르'),
-                dcc.Checklist(
+                dcc.Dropdown(
                     options=[*uniq_genre],
+                    value=['Drama'],
+                    multi=True,
+                    id='selected_genre'
                 ),
                 html.P('년도'),
                 dcc.RangeSlider(
@@ -58,7 +61,8 @@ sidebar = html.Div(
                         item['release_year'].max():str(item['release_year'].max()),
                     },
                     tooltip={"placement": "bottom", "always_visible": True},
-                    allowCross=False
+                    allowCross=False,
+                    id='selected_year'
                 ),
                 html.Br(),
             ],
@@ -66,12 +70,14 @@ sidebar = html.Div(
         html.Div(
             children=[
                 html.P('아니면 아이템 아이디(or 제목)를 입력해보라'),
+                html.P('특정 유저를 선택해서 그에 대한 추천리스트 자체를 고를 수도 있게 하자'),
                 html.Hr(),
                 html.Br(),
             ],
             className='form-style'),
+        dcc.Store(id='item_selected', storage_type='session') #데이터를 저장하는 부분
     ],
-    className='sidebar'
+    # className='sidebar'
 )
 
 embedding = html.Div(
@@ -86,10 +92,9 @@ side = html.Div(
     children=[
         html.H3('사이드인포'),
         html.Br(),
-        dcc.Graph(
-            id='basic-interactions',
-            figure=fig,
-        ),
+        html.Div(
+            id='side_graph'
+        )
     ]
 )
 
@@ -107,3 +112,26 @@ layout = html.Div(children=[
     side,
     related_users,
 ],className='content')
+
+@callback(
+    Output('item_selected', 'data'),
+    Input('selected_genre', 'value'), Input('selected_year', 'value'),
+)
+def store_selected_item(genre, year):
+    if genre is None:
+        raise PreventUpdate
+    tmp = item.copy()
+    tmp = tmp[tmp['genre'].str.contains(
+        ''.join([*map(lambda x: f'(?=.*{x})', genre)]) + '.*', regex=True)]
+    tmp = tmp[(tmp['release_year'] >= year[0]) & (tmp['release_year'] <= year[1])]
+    return tmp.index.to_list()
+
+@callback(
+    Output('side_graph', 'children'),
+    Input('item_selected', 'data')
+)
+def change_side_graph(item_id):
+    tmp = item.loc[item_id]
+    year = px.histogram(tmp, x='release_year')
+    genre = px.histogram(tmp, x='genre')
+    return dcc.Graph(figure=year), dcc.Graph(figure=genre)
