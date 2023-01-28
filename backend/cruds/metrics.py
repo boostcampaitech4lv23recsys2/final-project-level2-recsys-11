@@ -7,21 +7,21 @@ from schemas.data import Dataset
 class Quant_Metrics:
     '''
     Quantitative Metrics:
-        - Recall_K
-        - MAP_K
-        - NDCG
-        - Coverage
-        - TailPercentage
-        - AveragePopularity 
+        - Recall_K: Dict
+        - MAP_K: Dict
+        - NDCG: Dict
+        - AveragePopularity: Dict
+        - Coverage: float
+        - TailPercentage: float
     '''
-    def __init__(self, dataset:Dataset, pred_item:Dict, pred_score:Dict, K:int = 10):
+    def __init__(self, dataset:Dataset, pred_item:Dict, K:int = 10):
         self.train_df = pd.DataFrame(dataset.train_df)
         self.ground_truth = pd.DataFrame(dataset.ground_truth)
 
         self.pred_item = pd.Series(pred_item.values(), index=[int(k) for k in pred_item.keys()], 
                                     name='item_id').apply(lambda x: x.astype(int))
-        self.pred_score = pd.Series(pred_score.values(), index=[int(k) for k in pred_score.keys()], 
-                                    name='item_id') 
+
+        self.total_users = self.ground_truth.index
 
         self.n_user = dataset.n_user
         self.n_item = dataset.n_item 
@@ -31,19 +31,24 @@ class Quant_Metrics:
     
         self.K = K
     
-    def Recall_K(self) -> float:
-        actual = self.ground_truth['item_id']
-        predicted = self.pred_item
-        sum_recall = 0.0; true_users = 0
+    def Recall_K(self, users: None, predict: None) -> Dict:
+        if users == None:
+            users = self.total_users
 
-        for idx in actual.index:
-            act_set = set(actual[idx].flatten())
-            pred_set = set(predicted[idx][:self.K].flatten())
-            if len(act_set) != 0:
-                sum_recall += len(act_set & pred_set) / min(len(act_set), len(pred_set))
-                true_users += 1
+        if predict == None:
+            self.pred_item.loc[users]
 
-        return sum_recall / true_users
+        actual = self.ground_truth.loc[users, 'item_id']
+        # recall = {}
+
+        # for user in actual.index:
+        #     act_set = set(actual[user].flatten())
+        #     pred_set = set(predicted[user][:self.K].flatten())
+        #     if len(act_set) != 0:
+        #         recall[user] = len(act_set & pred_set) / min(len(act_set), len(pred_set))
+
+        return {user: len(set(actual[user].flatten(), set(predicted[user][:self.K].flatten())))
+                  for user in actual.index if len(set(actual[user].flatten())) != 0}
     
     def apk(self, actual, predicted, k) -> float:
         """
@@ -82,27 +87,49 @@ class Quant_Metrics:
 
         return score / min(len(actual), k)
 
-    def MAP_K(self) -> float:
+    def MAP_K(self, users: None) -> Dict:
         """
         Computes the mean average precision at k.
         This function computes the mean average prescision at k between two lists
         of lists of items.
         """
-        return np.mean([self.apk(a, p, self.K) for a, p in zip(self.ground_truth.values, self.pred_item.values)])
+        if users == None:
+            users = self.total_users
+                    
+        actual = self.ground_truth.loc[users, 'item_id']
+        predicted = self.pred_item.loc[users]
 
-    def NDCG(self) -> float:
+        return {user: self.apk(a, p, self.K) for user, a, p in zip(users, actual, predicted)}
+        
+    def NDCG(self, users: np.array) -> Dict:
         '''
         NDCG = DCG / IDCG
         DCG = rel(i) / log2(i + 1)
         '''
-        ndcg = 0
-        for i in self.pred_item.index:
+        if users == None:
+            users = self.total_users
+                    
+        ndcg = {} 
+        for user in users:
             k = min(self.K, len(self.ground_truth['item_id'].loc[1]))
             idcg = sum([1 / np.log2(j + 2) for j in range(k)]) # 최대 dcg. +2는 range가 0에서 시작해서
-            dcg = sum([int(self.pred_item[i][j] in set(self.ground_truth['item_id'].loc[i])) / np.log2(j + 2) for j in range(self.K)])
-            ndcg += dcg / idcg
+            dcg = sum([int(self.pred_item[user][j] in set(self.ground_truth['item_id'].loc[user])) 
+                       / np.log2(j + 2) for j in range(self.K)])
+            ndcg[user] = dcg / idcg
 
-        return ndcg / len(self.pred_item)
+        return ndcg 
+
+    def AveragePopularity(self, users:None) -> Dict:
+        '''
+        유저별로 주어진 추천 아이템 리스트의 평균 아이템 인기도 (self.popularity_df)
+        -> 유저별 평균 추천 아이템 인기도 (popularity_metric)
+        '''
+        if users == None:
+            users = self.total_users
+
+        popularity_metric = self.popularity_df.loc[users].apply(lambda R: np.mean(R))
+
+        return popularity_metric.to_dict()
     
     def Coverage(self) -> float:
         '''
@@ -114,7 +141,7 @@ class Quant_Metrics:
 
         return len(total_n_unique) / self.n_item
     
-    def TailPercentage(self, tail_ratio=0.1):
+    def TailPercentage(self, tail_ratio=0.1) -> float:
         item_count = self.train_df.groupby('item_id').agg('count')
         item_count.drop(['rating', 'timestamp','origin_timestamp'], axis=1, inplace=True)
         item_count.columns = ['item_count']
@@ -126,24 +153,16 @@ class Quant_Metrics:
         Tp = np.mean([sum([1 if item in T else 0 for item in self.pred_item[idx]]) / self.K
                             for idx in self.pred_item.index])
         return Tp
-
-    def AveragePopularity(self) -> float:
-        '''
-        유저별로 주어진 추천 아이템 리스트의 평균 아이템 인기도 (self.popularity_df)
-        -> 모든 유저들에 대한 평균 추천 아이템 인기도 (popularity_metric)
-        '''
-        popularity_metric = self.popularity_df.apply(lambda R: sum(R)).mean() / self.K
-
-        return popularity_metric 
     
-    def get_total_metrics(self) -> Dict:
-        return {'Recall_K': self.Recall_K(),
-                'MAP_K': self.MAP_K(),
-                'Coverage': self.Coverage(),
-                'TailPercentage': self.TailPercentage(),
-                'AveragePopularity': self.AveragePopularity()
-                }
+    def get_total_metrics(self, users: None) -> Dict:
+        if users == None:
+            users = self.total_users
 
+        return {'Recall_K': self.Recall_K(users),
+                'MAP_K': self.MAP_K(users),
+                'NDCG': self.NDCG(users),
+                'AveragePopularity': self.AveragePopularity(users)
+                }
 
 class Qual_Metrics:
     '''
