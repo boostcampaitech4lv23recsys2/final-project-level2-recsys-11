@@ -3,6 +3,7 @@ from dash import html, dcc, callback, Input, Output, State
 import dash_bootstrap_components as dbc
 import requests
 from dash.exceptions import PreventUpdate
+import hashlib
 
 API_url = 'http://127.0.0.1:8000'
 
