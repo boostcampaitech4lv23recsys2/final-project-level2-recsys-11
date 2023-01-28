@@ -115,7 +115,7 @@ specific_metric = html.Div([
 
 
 layout = html.Div(children=[
-    gct.navbar,
+    gct.get_navbar(),
     sidebar,
     total_graph,
     specific_metric

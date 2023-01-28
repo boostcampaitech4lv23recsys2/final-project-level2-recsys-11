@@ -101,7 +101,7 @@ related_users = html.Div(
 )
 
 layout = html.Div(children=[
-    gct.navbar,
+    gct.get_navbar(),
     sidebar,
     embedding,
     side,

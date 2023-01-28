@@ -7,7 +7,8 @@ import pandas as pd
 from dash.exceptions import PreventUpdate
 from . import global_component as gct
 import json
-
+# AgGrid docs:
+# https://www.ag-grid.com/javascript-data-grid/column-pinning/
 
 API_url = 'http://127.0.0.1:8000'
 
@@ -15,52 +16,90 @@ user_df = pd.read_csv('/opt/ml/user.csv', index_col='user_id')[:100]
 
 dash.register_page(__name__, path='/compare-table')
 
+pinned_column_name = 'age'
+pinned_column_setting = dict(
+                        pinned='left',
+                        checkboxSelection=True,
+                        # rowDrag=True,
+                        )
+
+
 compare_table = html.Div([
-    dash_table.DataTable(
-    # dag.AgGrid(
-        data=user_df.to_dict('records'),
+    html.H3('Total experiments'),
+    dag.AgGrid(
+        rowData=user_df.to_dict('records'),
         id='compare_table',
-        columns=[
-            {'name': column, 'id':column} for column in user_df.columns
+        columnDefs=[
+             {'headerName': column, 'field':column, 'pinned':'left', 'checkboxSelection':True, 'rowDrag':True, 'headerCheckboxSelection':True} if column == pinned_column_name else {'headerName': column, 'field':column, } for column in user_df.columns 
         ],
-        filter_action='native',
-        sort_action='native',
-        column_selectable="multi",
-        row_selectable="multi",
-        selected_rows=[],
-        selected_columns=[],
-        page_action='native',
-        page_current=0,
-        page_size=10,
-        fixed_columns={
-            'headers': True, 
-            'data': 1,
-            },
-        style_table={'minWidth':'100%'},
-        # style_cell={
-        #     'overflow': 'hidden',
-        # }
+        columnSize="sizeToFit",
+        defaultColDef=dict(
+                resizable= True,
+                sortable=True,
+                filter=True,
+                floatingFilter=True,
+                headerCheckboxSelectionFilteredOnly=True,
+        ),
+        dashGridOptions=dict(
+            rowSelection="multiple", 
+            ),
+        rowDragManaged=True,
+        animateRows=True,
     ),
-    html.P('fjia432314이건 테스트', className='dbc')
+    html.Br(),
+    html.H3('Selected experiments'),
+    dag.AgGrid(
+        id = 'selected_table',
+        rowData=[],
+        columnDefs=[
+             {'headerName': column, 'field':column, 'pinned':'left', 'checkboxSelection':True, 'rowDrag':True, 'headerCheckboxSelection':True} if column == pinned_column_name else {'headerName': column, 'field':column, } for column in user_df.columns 
+        ],
+        columnSize="sizeToFit",
+        defaultColDef=dict(
+                resizable= True,
+                sortable=True,
+                filter=True,
+                floatingFilter=True,
+                headerCheckboxSelectionFilteredOnly=True,
+        ),
+        dashGridOptions=dict(
+            rowSelection="multiple", 
+            ),
+        rowDragManaged=True,
+        animateRows=True,
+    )
 ])
 
 selected_table = html.Div(children=[],id='selected_table',)
 
 layout = html.Div([
-    gct.noside_navbar,
+    gct.get_navbar(has_sidebar=False),
     compare_table,
-    selected_table
+    selected_table,
+    html.H3( id='output_test')
 ])
 
 @callback(
-    Output('selected_table', 'children'),
-    Input('compare_table', 'selected_rows'),
-    # State('compare_table', 'selected_row'),
-    # State('selected_table', 'children')
+    Output('selected_table', 'rowData'),
+    # Output('output_test', 'children'),
+    Input('compare_table', 'selectionChanged'),
+    State('compare_table', 'selectionChanged'),
+    prevent_initial_call=True
 )
-def select(selected_row, ) -> str:
+def test_output(r, r2):
+    r2.append(r)
+    # return str(r2) + str(user_df.to_dict('records'))
+    return r2
+
+# @callback(
+#     Output('selected_table', 'children'),
+#     Input('compare_table', 'selected_rows'),
+#     # State('compare_table', 'selected_row'),
+#     # State('selected_table', 'children')
+# )
+# def select(selected_row, ) -> str:
     
-    return str(selected_row)
+#     return str(selected_row)
 
 # @callback(
 #     Output('selected_table', 'style_data_conditional'),
