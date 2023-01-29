@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 import uvicorn
 
-from .routers import database, frontend, web4rec
+from routers import database, frontend, web4rec
 
 
 app = FastAPI()
