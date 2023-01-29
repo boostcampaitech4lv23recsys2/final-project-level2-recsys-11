@@ -15,4 +15,5 @@ wandb/
 /ray_log*
 *.ipynb
 
-__pycache__
+*/__pycache__
+*.env
