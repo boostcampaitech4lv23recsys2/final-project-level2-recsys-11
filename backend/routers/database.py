@@ -39,16 +39,20 @@ def get_db_dep():
 
 
 async def send_to_s3(data: Dict, key_name: str) -> str:
-    json_body = data.json()
+    json_body = json.dumps(data)
     hash_object = hashlib.sha256(key_name.encode('utf-8'))
+    key_hash = hash_object.hexdigest() + '.json'
 
-    client.put_object(Body=json_body, Bucket='mkdir-bucket', Key=hash_object)
+    if len(key_hash) > 100:
+        raise ValueError('Hash String Length Has Exceeded 100')
 
-    return hash_object 
+    client.put_object(Body=json_body, Bucket='mkdir-bucket', Key=key_hash)
+
+    return key_hash 
 
 
 async def get_from_s3(key_hash: str) -> JSON:   # key_hash = key_name.encode('utf-8')
-    obj = client.get_object(Bucket='mkdir-bucket', Key=key_hash) 
+    obj = await client.get_object(Bucket='mkdir-bucket', Key=key_hash) 
 
     return json.dumps(json.loads(obj['Body'].read().decode('utf-8')))
 
@@ -60,7 +64,7 @@ async def s3_transmission(cls: Union[Dataset, Experiment], primary_key: str) -> 
     for attribute, value in vars(cls).items():
         if isinstance(value, dict): 
             key_hash = await send_to_s3(data = value, key_name = primary_key+attribute)
-            row_dict[attribute] = key_hash
+            row_dict[attribute] = str(key_hash)
     
     return row_dict
 
@@ -71,6 +75,7 @@ async def insert_from_dict(row: Dict, table: str) -> Tuple:
     query = "INSERT INTO %s ( %s ) VALUES ( %s )" % (table, columns, placeholders)
 
     return query, tuple(row.values())
+
 
 
 

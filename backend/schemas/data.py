@@ -11,17 +11,14 @@ class Dataset(BaseModel):
     dataset_name: str
     upload_time: datetime = Field(default_factory=datetime.now)
 
-    train_df: Dict
+    train_interaction: Dict
     ground_truth: Dict
-    user_side_df: Dict
-    item_side_df: Dict
-    desc: str='' 
+    user_side: Dict
+    item_side: Dict
+    dataset_desc: str
 
-    item_popularity: Dict 
-    item_name: Dict 
     item_vectors: Dict[str, Dict[str, List]] 
 
-    
     @property
     def n_user(self):
         return self.train_df['user_id'].nunique()
