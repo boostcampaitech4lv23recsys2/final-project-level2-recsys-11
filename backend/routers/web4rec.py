@@ -1,144 +1,121 @@
 from datetime import datetime
-from fastapi import APIRouter, Depends, File, UploadFile
-import pandas as pd
+from fastapi import APIRouter, Depends, Response
 from typing import List, Dict
 
 from schemas.data import Dataset, Experiment
-from routers.database import get_db, send_to_s3, get_from_s3, s3_transmission, insert_from_dict
+from routers.database import get_db, s3_transmission, insert_from_dict
+from fastapi.responses import JSONResponse
 
 router = APIRouter()
 
-DATASETS = {} # 유저별 데이터셋 in-memory에 따로 저장
+# DATASETS = {} # 유저별 데이터셋 in-memory에 따로 저장
 
 
 # 유저가 등록되있는지 여부 확인
-async def check_user(user_id:str, password:str, connection) -> Dict:
+async def check_user(ID:str, password:str, connection) -> Dict:
     async with connection as conn:
         async with conn.cursor() as cur:
-            query = "SELECT user_id FROM Users WHERE user_id = %s AND user_password = %s"
-            await cur.execute(query, (user_id, password))
+            query = "SELECT ID FROM Users WHERE ID = %s AND password = %s"
+            await cur.execute(query, (ID, password))
             result = await cur.fetchone()
-            return result
+    return result
 
 
+# 유저 아이디랑 비번이 쿼리에..?? 이게맞나
 @router.get("/login")
-async def login(user_id:str, password:str, connection=Depends(get_db)) -> str:
-    user = await check_user(user_id, password, connection) 
-
-    # TODO;
-    # access time (insert)
+async def login(ID:str, password:str, connection=Depends(get_db)) -> List:
+    user = await check_user(ID, password, connection) 
 
     # 데이터에서 유저 확인
     if user:
-        return list(user)
+        async with connection as conn:
+            async with conn.cursor() as cur:
+                curr_time = datetime.now()
+                query = "UPDATE Users SET access_time=%s WHERE ID=%s and password=%s"
+                await cur.execute(query, (curr_time, ID, password))
+            conn.commit()
+        
+        return list(user) # [{'ID': (ID)}]
+    
     else:
         return None
 
 
 @router.post("/add_user")
-async def add_user(user_id: str, password:str, connection=Depends(get_db)):
+async def add_user(ID: str, password:str, connection=Depends(get_db)): 
     async with connection as conn:
         async with conn.cursor() as cur:
             curr_time = datetime.now()
-            query = "INSERT INTO Users (user_id, user_password, access_time) VALUES (%s, %s, %s)"
-            await cur.execute(query, (user_id, password, curr_time))
+            query = "INSERT INTO Users (ID, user_password, access_time) VALUES (%s, %s, %s)"
+            await cur.execute(query, (ID, password, curr_time))
         await conn.commit()
+    
+    return {'message': f"User: {ID} has been ADDED"}
 
 
-async def check_dataset(user_id: str, connection=Depends(get_db)) -> List:
+@router.get("/check_dataset")
+async def check_dataset(ID: str, connection=Depends(get_db)) -> List:
     async with connection as conn:
         async with conn.cursor() as cur:
-            query = 'SELECT dataset_name FROM Datasets WHERE user_id = %s'
-            await cur.execute(query, (user_id,))
+            query = 'SELECT dataset_name FROM Datasets WHERE ID = %s'
+            await cur.execute(query, (ID,))
             result = await cur.fetchall() 
 
-    # [row['dataset_name'] for row in result]
-    return list(result)
+    return [row['dataset_name'] for row in result]
 
 
-# https://stackoverflow.com/questions/63048825/how-to-upload-file-using-fastapi/70657621#70657621
-# https://stackoverflow.com/questions/65504438/how-to-add-both-file-and-json-body-in-a-fastapi-post-request/70640522#70640522
-
-async def check_dataset(user_id:str, dataset_name:str, connection) -> bool:
+# password도 필요하게 해주는게 좋을까
+@router.delete('/delete_dataset')
+async def delete_dataset(ID:str, dataset_name: str, connection=Depends(get_db)):
     async with connection as conn:
         async with conn.cursor() as cur:
-            query = 'SELECT EXISTS(SELECT * FROM Datasets WHERE user_id = %s and dataset_name = %s'
-            await cur.execute(query, (user_id, dataset_name))
-            result = await cur.fetchone()
-            return result
+            query_dataset_del = 'DELETE FROM Datasets WHERE ID = %s and dataset_name = %s'
+            query_exp_del = 'DELETE FROM Experiments WHERE ID = %s and dataset_name = %s'
+            await cur.execute(query_dataset_del, (ID, dataset_name))
+            await cur.execute(query_exp_del, (ID, dataset_name)) 
+        await conn.commit() 
+
+    return {'message': f"Dataset:{dataset_name} (User: {ID}) has been DELETED"}
 
 
-@router.post("/upload_dataset")
+@router.post("/upload_dataset", status_code=202)
 async def upload_dataset(dataset: Dataset,
                          connection = Depends(get_db)) -> Dataset:
 
-    primary_key = dataset.user_id + dataset.dataset_name # str 
+    primary_key = dataset.ID + dataset.dataset_name # str 
     row_dict = s3_transmission(dataset, primary_key)
-    row_dict['user_id'] = dataset.user_id
+    row_dict['ID'] = dataset.ID
     row_dict['dataset_name'] = dataset.dataset_name
+
+    query, values = await insert_from_dict(row=row_dict, table='Datasets') 
 
     async with connection as conn:
         async with conn.cursor() as cur:
-
-            if not check_dataset(dataset.user_id, dataset.dataset_name, connection):
-                # 고유값이 중복인 dataset 제거 - if check_dataset
-                # query_dataset_del = 'DELETE FROM Datasets WHERE user_id = %s and dataset_name = %s'
-                # query_exp_del = 'DELETE FROM Experiments WHERE user_id = %s and dataset_name = %s'
-                # cur.execute(query_dataset_del, (dataset.user_id, dataset.dataset_name))
-                # cur.execute(query_exp_del, (dataset.user_id, dataset.dataset_name)) 
-                
-                # 주어진 dataset 추가 
-                query, values = await insert_from_dict(row=row_dict, table='Datasets') 
-                await cur.execute(query, values)
-                result = dataset
-            
-            else: 
-                result = 'DATASET ALREADY EXISTS!'
+            await cur.execute(query, values)
         await conn.commit()
 
-    # DATASETS[dataset.user_id] = dataset 
+    # DATASETS[dataset.ID] = dataset 
 
-    return result # library 쪽으로 return (필요 없을수도)
+    return row_dict # library 쪽으로 return (필요 없을수도)
 
 
+@router.post("/upload_experiment", status_code=202)
 async def upload_experiment(experiment: Experiment,
                             connection=Depends(get_db)) -> Experiment:
     
-    ### TODO: experiment -> s3, 주소 변수로 저장
-    ### TODO: 지표 계산 (dataset: Dataset 필요) 
-
-    primary_values = (experiment.user_id, experiment.dataset_name, experiment.experiment_name, 
-                                experiment.alpha, experiment.objective_fn)
+    primary_keys = ('ID', 'dataset_name', 'experiment_name', 'alpha', 'objective_fn')
+    primary_values = (experiment.ID, experiment.dataset_name, experiment.experiment_name, 
+                                experiment.alpha, experiment.objective_fn) # 개별 experimentd의 고유 string 값들
     
-    # experiment id (auto_increment) 값 얻기 위한 insert
+    s3_dict = s3_transmission(experiment, "#".join(primary_values))
+    row_dict = dict(s3_dict) # dict of experiment
+    row_dict.update({attribute: value for attribute, value in zip(primary_keys, primary_values)})
+    
+    query, values = await insert_from_dict(row=row_dict, table='Experiments')
+
     async with connection as conn:
         async with conn.cursor() as cur:
-            init_query = 'INSERT INTO Experiments (user_id, dataset_name, experiment_name, alpha, objective_fn) \
-                    VALUES (%s, %s, %s, %s, %s)'
-            await cur.execute(init_query, primary_values) 
-
+            await cur.execute(query, values) 
         await conn.commit()
 
-    async with connection as conn:
-        async with conn.cursor() as cur:
-            id_query = 'SELECT experiment_id FROM Experiments WHERE \
-                    user_id=%s, dataset_name=%s, experiment_name=%s, alpha=%s, objective_fn=%s'
-            await cur.execute(id_query, primary_values)
-            result = await cur.fetchone()
-
-    # experiment_id로 s3에 저장
-    exp_key = str(result['experiment_id'])
-    row_dict = s3_transmission(experiment, exp_key)
-
-    # 나머지 항목들 null 에서 s3 이름으로 업데이트
-    placeholders = ', '.join('{}=%s'.format(k) for k in row_dict.keys())
-
-    async with connection as conn:
-        async with conn.curosr() as cur:
-            s3_insert_query = 'UPDATE Experiment SET {}'.format(placeholders)
-            await cur.execute(s3_insert_query, tuple(row_dict.values()))
-
-
-async def get_metrics():
-    pass
-
+    return row_dict

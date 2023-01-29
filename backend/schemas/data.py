@@ -1,25 +1,28 @@
-from pydantic import BaseModel
-from typing import TypeVar, Dict, Union
+from datetime import datetime
+from pydantic import BaseModel, Field
+from typing import Dict, Union, List
 from functools import cached_property
 import pandas as pd
 import numpy as np
 import numpy.typing as npt
 
 class Dataset(BaseModel):
-    user_id: str
+    ID: str
     dataset_name: str
     train_df: Dict
     ground_truth: Dict
     user_side_df: Dict
     item_side_df: Dict
-    user2idx: Dict
-    item2idx: Dict
+    # user2idx: Dict
+    # item2idx: Dict
     desc: str='' 
 
-    popularity_per_item: Dict
-    jaccard_matrix: Union[Dict, None] 
-    distance_matrix: Dict
+    popularity_per_item: Dict # {item_id: popularity (float)}
+    item_name: Dict # {item_id: (movie_title)}
+    item_vectors: Dict[Dict[str, List]] # 장르스 같은 자카드
 
+    upload_time: datetime = Field(default_factory=datetime.now())
+    
     @property
     def n_user(self):
         return self.train_df['user_id'].nunique()
@@ -32,7 +35,7 @@ class Dataset(BaseModel):
 class Experiment(BaseModel):
     experiment_id: str
 
-    user_id: str
+    ID: str
     dataset_name: str
     experiment_name: str
     alpha: float = 1.0
@@ -42,6 +45,8 @@ class Experiment(BaseModel):
     pred_item: Dict
     pred_score: Dict
     item_vector: Dict
+    distance_matrix: Dict
+    jaccard_matrice: Union[Dict, None] 
     
     recall: Dict
     map: Dict
