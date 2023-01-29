@@ -1,5 +1,6 @@
 from tqdm import tqdm
 import random
+import pickle
 import os
 import argparse
 
@@ -91,7 +92,14 @@ def main(args):
 
     idx2user = {k: v for k, v in enumerate(ratings['user_id'].unique())}
     idx2item = {k: v for k, v in enumerate(ratings['item_id'].unique())}
-    
+
+    # save data
+    with open('./data/idx2user.pickle','wb') as fw:
+        pickle.dump(idx2user, fw)
+
+    with open('./data/idx2item.pickle','wb') as fw:
+        pickle.dump(idx2item, fw)
+
     ratings['user_idx'] = ratings['user_id'].map(user2idx)
     ratings['item_idx'] = ratings['item_id'].map(item2idx)
 
