@@ -66,7 +66,7 @@ class ModelConfig:
         self.quantitative = quantitative_indicator(data.dataset, self.pred_item
                                                     ) # self.pred_score
         self.qualitative = qualitative_indicator(data.dataset, self.pred_item,
-                                                    self.pred_score, self.item_vector)
+                                                    self.pred_score) #, self.item_vector
 
     def set_string_key(self, hyper_keys: list):
         # 하이퍼 파라미터 순으로 'uniform_5_0.0' 과 같은 키 생성
