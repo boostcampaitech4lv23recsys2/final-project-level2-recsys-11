@@ -12,4 +12,4 @@ app.include_router(web4rec.router, prefix='/web4rec-lib')
 
 
 if __name__=='__main__':
-    uvicorn.run(app)
+    uvicorn.run(app, host='0.0.0.0', port=30004)
