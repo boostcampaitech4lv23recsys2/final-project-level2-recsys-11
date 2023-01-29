@@ -20,12 +20,12 @@ layout =  html.Div([
             , dbc.Input(placeholder='Enter your username',
                     type='text',
                     id='uname-box',
-                    style={'width':'20%'}),
+                    className='login-form'),
             html.Br()
             , dbc.Input(placeholder='Enter your password',
                     type='password',
                     id='pwd-box',
-                    style={'width':'20%'}),
+                    className='login-form'),
             html.Br(),
             dbc.Row([
                     dbc.Col([

@@ -22,19 +22,19 @@ layout = html.Div([
             , type="text"
             , placeholder="user name"
             , maxLength =15,
-            style={'width':'20%'}),
+            className='login-form'),
             html.Br()
         , dbc.Input(id="password"
             , type="password"
             , placeholder="password",
-            style={'width':'20%'}),
+            className='login-form'),
             html.Br()
         , dbc.Input(id="email"
             , type="email"
             , inputmode='email'
             , placeholder="email"
             , maxLength = 50,
-            style={'width':'20%'}),
+            className='login-form'),
             html.Br()
         ,
             dbc.Button('Create User', id='submit-val', n_clicks=0, ),
