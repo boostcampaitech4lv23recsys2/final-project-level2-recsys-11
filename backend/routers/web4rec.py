@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Response
 from typing import List, Dict
 
 from schemas.data import Dataset, Experiment
-from routers.database import get_db, s3_transmission, insert_from_dict
+from routers.database import get_db_inst, get_db_dep, s3_transmission, insert_from_dict
 from fastapi.responses import JSONResponse
 
 router = APIRouter()
@@ -12,8 +12,10 @@ router = APIRouter()
 
 
 # 유저가 등록되있는지 여부 확인
-async def check_user(ID:str, password:str, connection) -> Dict:
-    async with connection as conn:
+async def check_user(ID:str, password:str) -> Dict:
+    conn2 = get_db_inst()
+    
+    async with conn2 as conn:
         async with conn.cursor() as cur:
             query = "SELECT ID FROM Users WHERE ID = %s AND password = %s"
             await cur.execute(query, (ID, password))
@@ -23,8 +25,8 @@ async def check_user(ID:str, password:str, connection) -> Dict:
 
 # 유저 아이디랑 비번이 쿼리에..?? 이게맞나
 @router.get("/login")
-async def login(ID:str, password:str, connection=Depends(get_db)) -> List:
-    user = await check_user(ID, password, connection) 
+async def login(ID:str, password:str, connection=Depends(get_db_dep)) -> List:
+    user = await check_user(ID, password) 
 
     # 데이터에서 유저 확인
     if user:
@@ -33,16 +35,17 @@ async def login(ID:str, password:str, connection=Depends(get_db)) -> List:
                 curr_time = datetime.now()
                 query = "UPDATE Users SET access_time=%s WHERE ID=%s and password=%s"
                 await cur.execute(query, (curr_time, ID, password))
-            conn.commit()
+            await conn.commit()
         
-        return list(user) # [{'ID': (ID)}]
+        return user # [{'ID': (ID)}]
     
     else:
-        return None
-
+        content = {'message': f"Username: {ID} Not Found"}
+        return JSONResponse(content, status_code=404)
+    
 
 @router.post("/add_user")
-async def add_user(ID: str, password:str, connection=Depends(get_db)): 
+async def add_user(ID: str, password:str, connection=Depends(get_db_dep)): 
     async with connection as conn:
         async with conn.cursor() as cur:
             curr_time = datetime.now()
@@ -54,7 +57,7 @@ async def add_user(ID: str, password:str, connection=Depends(get_db)):
 
 
 @router.get("/check_dataset")
-async def check_dataset(ID: str, connection=Depends(get_db)) -> List:
+async def check_dataset(ID: str, connection=Depends(get_db_dep)) -> List:
     async with connection as conn:
         async with conn.cursor() as cur:
             query = 'SELECT dataset_name FROM Datasets WHERE ID = %s'
@@ -66,7 +69,7 @@ async def check_dataset(ID: str, connection=Depends(get_db)) -> List:
 
 # password도 필요하게 해주는게 좋을까
 @router.delete('/delete_dataset')
-async def delete_dataset(ID:str, dataset_name: str, connection=Depends(get_db)):
+async def delete_dataset(ID:str, dataset_name: str, connection=Depends(get_db_dep)):
     async with connection as conn:
         async with conn.cursor() as cur:
             query_dataset_del = 'DELETE FROM Datasets WHERE ID = %s and dataset_name = %s'
@@ -80,7 +83,7 @@ async def delete_dataset(ID:str, dataset_name: str, connection=Depends(get_db)):
 
 @router.post("/upload_dataset", status_code=202)
 async def upload_dataset(dataset: Dataset,
-                         connection = Depends(get_db)) -> Dataset:
+                         connection = Depends(get_db_dep)) -> Dataset:
 
     primary_key = dataset.ID + dataset.dataset_name # str 
     row_dict = s3_transmission(dataset, primary_key)
@@ -101,7 +104,7 @@ async def upload_dataset(dataset: Dataset,
 
 @router.post("/upload_experiment", status_code=202)
 async def upload_experiment(experiment: Experiment,
-                            connection=Depends(get_db)) -> Experiment:
+                            connection=Depends(get_db_dep)) -> Experiment:
     
     primary_keys = ('ID', 'dataset_name', 'experiment_name', 'alpha', 'objective_fn')
     primary_values = (experiment.ID, experiment.dataset_name, experiment.experiment_name, 

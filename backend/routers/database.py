@@ -21,7 +21,11 @@ client = boto3.client('s3', **s3_config)
 router = APIRouter()
 
 
-def get_db():
+def get_db_inst():
+    return connect(**rds_config)
+
+
+def get_db_dep():
     db = connect(**rds_config)
     try:
         yield db
@@ -67,7 +71,6 @@ async def insert_from_dict(row: Dict, table: str) -> Tuple:
     query = "INSERT INTO %s ( %s ) VALUES ( %s )" % (table, columns, placeholders)
 
     return query, tuple(row.values())
-    # cursor.execute(sql, list(myDict.values())) 
 
 
 
