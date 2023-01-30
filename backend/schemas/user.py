@@ -5,7 +5,7 @@ class UserCreate(BaseModel):
     password1: str
     password2: str
 
-    @validator('username', 'password1', 'password2')
+    @validator('ID', 'password1', 'password2')
     def not_empty(cls, v):
         if not v or not v.strip():
             raise ValueError('빈 값은 허용되지 않습니다.')
