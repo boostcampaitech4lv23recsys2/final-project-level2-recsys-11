@@ -234,7 +234,7 @@ class quantitative_indicator:
 
 class qualitative_indicator:
 
-    def __init__(self, dataset:dataset_info, pred_item:pd.Series, pred_score:pd.Series, item_h_matrix:np.array):  # dataset_info: class
+    def __init__(self, dataset:dataset_info, pred_item:pd.Series, pred_score:pd.Series):  #, item_h_matrix:np.array
         self.pred_item = pred_item
         self.pred_score = pred_score
         self.n_user = dataset.n_user
@@ -254,8 +254,8 @@ class qualitative_indicator:
         self.item_mean_df = dataset.item_mean_df
 
         # Diversity - latent
-        self.item_h_matrix = item_h_matrix
-        self.item_item_matrix = self.item_h_matrix @ self.item_h_matrix.T
+        # self.item_h_matrix = item_h_matrix
+        # self.item_item_matrix = self.item_h_matrix @ self.item_h_matrix.T
 
         # Diversity - dist dictionary
         self.rating_dist_dict = defaultdict(defaultdict)
@@ -387,25 +387,26 @@ class qualitative_indicator:
 
         return result
 
-    def latent(self, i:int, j:int):
+    # def latent(self, i:int, j:int):
+    #     '''
+    #     아이템 i,j latent vector들의 cosine similarity
+    #     '''
+    #     # if i == j:
+    #     #     raise ValueError('i and j must be different items')
+
+    #     norm_i = np.sqrt(np.square(self.item_h_matrix[i]).sum())
+    #     norm_j = np.sqrt(np.square(self.item_h_matrix[j]).sum())
+    #     similarity = self.item_item_matrix[i][j] / (norm_i * norm_j)
+
+    #     return 1 - similarity
+
+
+
+    def total_rerank(self, user_sample:list=None, alpha=0.5, obj='Serendipity', mode='PMI', k= 10):
         '''
-        아이템 i,j latent vector들의 cosine similarity
-        '''
-        # if i == j:
-        #     raise ValueError('i and j must be different items')
-
-        norm_i = np.sqrt(np.square(self.item_h_matrix[i]).sum())
-        norm_j = np.sqrt(np.square(self.item_h_matrix[j]).sum())
-        similarity = self.item_item_matrix[i][j] / (norm_i * norm_j)
-
-        return 1 - similarity
-
-
-
-    def total_rerank(self, alpha= 0.5, obj='Serendipity', mode='PMI', k= 10):
-        '''
-        alpha : rel과 obj 간의 가중치
-        obj : 사용할 목적함수 {'Diversity', 'Serendipity', 'Novelty'}
+        user_sample : reranking 할 user sample, default=None이면 전체 유저에 대해 실행
+        alpha : [0,1] rel과 obj 간의 가중치
+        obj : {'Diversity', 'Serendipity', 'Novelty'} 사용할 목적함수 
         mode : 사용할 모드. obj에 따라 값이 다름
         k : 만들 추천 리스트의 원소 갯수
 
@@ -417,8 +418,12 @@ class qualitative_indicator:
         }
         '''
         total = pd.Series(dtype=object)
-        for user in self.pred_item.index:
-            total.loc[user] = self.rerank(user, alpha, obj, mode, k)
+        if user_sample is None:
+            for user in self.pred_item.index:
+                total.loc[user] = self.rerank(user, alpha, obj, mode, k)
+        else:
+            for user in user_sample:
+                total.loc[user] = self.rerank(user, alpha, obj, mode, k)
         ans = dict()
         ans['Diversity'] = self.Total_Diversity(pred_item=total) #어느 mode로 할지 정할 수 있게 하는 게 좋을 것 같기는 한데..
         ans['Serendipity'] = self.Total_Serendipity(pred_item=total)
