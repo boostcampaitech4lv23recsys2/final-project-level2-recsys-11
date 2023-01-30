@@ -16,4 +16,6 @@ wandb/
 *.ipynb
 
 */__pycache__
-*.env
+rds.env
+s3.env
+test/
