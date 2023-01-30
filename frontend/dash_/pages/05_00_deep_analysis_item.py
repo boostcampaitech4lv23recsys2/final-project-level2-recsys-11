@@ -62,6 +62,7 @@ selection = html.Div(
                         dcc.Store(id='items_selected_by_embed', storage_type='session') #데이터를 저장하는 부분
                     ],
                     className='form-style'),
+                width=3,
             ),
             dbc.Col(
                 html.Div(
@@ -73,8 +74,9 @@ selection = html.Div(
                             id='emb_graph',
                             style={'config.responsive': True}
                         )
-                    ]
-                )
+                    ],
+                ),
+                width=6,
             ),
             dbc.Col(
                 html.Div(
@@ -82,8 +84,9 @@ selection = html.Div(
                         html.H3('사이드인포'),
                         html.Br(),
                         html.Div(id='side_graph')
-                    ]
-                )
+                    ],
+                ),
+                width=3,
             ),]
         )
     ]
