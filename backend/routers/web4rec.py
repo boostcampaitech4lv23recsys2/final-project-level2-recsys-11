@@ -5,8 +5,8 @@ from fastapi.responses import JSONResponse
 from typing import List, Dict
 
 from cruds.database import check_user
-from schemas.data import Dataset, Experiment
-from routers.database import get_db_dep, s3_transmission, insert_from_dict
+from schemas.data import Dataset, CoreDataset, Experiment
+from routers.database import get_db_dep, get_from_s3, s3_transmission, insert_from_dict
 
 router = APIRouter()
 
@@ -97,9 +97,38 @@ async def upload_dataset(dataset: Dataset,
     return row_dict # library 쪽으로 return (필요 없을수도)
 
 
+@router.get('/download_core_dataset', status_code=202)
+async def download_core_dataset(
+    ID: str,
+    dataset_name: str,
+    connection=Depends(get_db_dep)
+):
+    """
+    익스퍼리먼트는 train_interaction + ground_truth 가 필요하다.
+    이들을 데이터셋 이름을 받고 던져준다. 로직상 이렇게 하겟다 알겠나? 단결
+    """
+    async with connection as conn:
+        async with conn.cursor(cursor=DictCursor) as cur:
+            query = "SELECT train_interaction, ground_truth FROM Datasets WHERE ID = %s AND dataset_name = %s"
+            await cur.execute(query, (ID, dataset_name))
+            result = await cur.fetchone()
+            
+    train_interaction_hash = result['train_interaction']
+    train_interaction = await get_from_s3(train_interaction_hash)
+
+    ground_truth_hash = result['ground_truth']
+    ground_truth = await get_from_s3(ground_truth_hash)
+
+    ret = {
+        'train_interaction': train_interaction,
+        'ground_truth': ground_truth
+    }
+    return ret
+
+
 @router.post("/upload_experiment", status_code=202)
 async def upload_experiment(experiment: Experiment,
-                            connection=Depends(get_db_dep)) -> Experiment:
+                            connection=Depends(get_db_dep)) -> Experiment: #?
     
     primary_keys = ('ID', 'dataset_name', 'experiment_name', 'alpha', 'objective_fn')
     primary_values = (experiment.ID, experiment.dataset_name, experiment.experiment_name, 
@@ -113,7 +142,7 @@ async def upload_experiment(experiment: Experiment,
 
     async with connection as conn:
         async with conn.cursor() as cur:
-            await cur.execute(query, values) 
+            await cur.execute(query, values)
         await conn.commit()
 
     return row_dict
