@@ -1,5 +1,8 @@
 from fastapi import FastAPI
 import uvicorn
+import pyximport
+
+pyximport.install()
 
 from routers import database, frontend, web4rec
 
