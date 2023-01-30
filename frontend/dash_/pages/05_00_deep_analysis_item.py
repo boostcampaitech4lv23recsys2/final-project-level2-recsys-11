@@ -31,11 +31,27 @@ fig.update_traces()
 
 selection = html.Div(
     children=[
+        dbc.Row([
+            html.Div('유저가 장바구니에 넣은 실험들'),
+            dbc.DropdownMenu(
+                children=[
+                    dbc.DropdownMenuItem(id = '1', children="실험1",),
+                    dbc.DropdownMenuItem(id = '2', children="실험2"),
+                    dbc.DropdownMenuItem(id = '3', children="실험3"),],
+                ),
+            ]),
+        dbc.Row([
+            html.Div('해당 실험의 아이템, 유저 페이지'),
+            dbc.ButtonGroup([
+                    dbc.Button("유저", outline=True, color="primary"),
+                    dbc.Button("아이템", outline=True, color="primary"),])
+            ]),
         dbc.Row(
             [dbc.Col(
                 html.Div(
                     children=[
                         # 년도, 장르, 제목?, 인기도
+                        html.H3('옵션을 통한 선택'),
                         html.P('장르'),
                         dcc.Dropdown(
                             options=[*uniq_genre],
@@ -57,7 +73,9 @@ selection = html.Div(
                             allowCross=False,
                             id='selected_year'
                         ),
+                        html.P('인기도'),
                         html.Br(),
+                        dbc.Button("초기화", color="primary"),
                         dcc.Store(id='items_selected_by_option', storage_type='session'), #데이터를 저장하는 부분
                         dcc.Store(id='items_selected_by_embed', storage_type='session') #데이터를 저장하는 부분
                     ],
@@ -164,27 +182,27 @@ def update_graph(store1, store2):
 
         return (dcc.Graph(figure=year), dcc.Graph(figure=genre)), emb
     else:
-        item['selected'] = 'Not Selected'
+        # item['selected'] = 'Not Selected'
         if not store2:
             raise PreventUpdate
-        emb = px.scatter(
-            item, x = 'xs', y = 'ys', color='selected', # 갯수에 따라 색깔이 유동적인 것 같다..
-            opacity=0.9,
-            marginal_x="histogram",
-            marginal_y="histogram",
-            )
-        emb.update_layout(
-            datarevision="emb_graph",
-            uirevision="emb_graph",
-            editrevision='emb_graph',
-            selectionrevision='emb_graph',
-            clickmode='event+select'
-            )
+        # emb = px.scatter(
+        #     item, x = 'xs', y = 'ys', color='selected', # 갯수에 따라 색깔이 유동적인 것 같다..
+        #     opacity=0.9,
+        #     marginal_x="histogram",
+        #     marginal_y="histogram",
+        #     )
+        # emb.update_layout(
+        #     datarevision="emb_graph",
+        #     uirevision="emb_graph",
+        #     editrevision='emb_graph',
+        #     selectionrevision='emb_graph',
+        #     clickmode='event+select'
+        #     )
 
         tmp = item.loc[store2]
         year = px.histogram(tmp, x='release_year')
         genre = px.histogram(tmp, x='genre')
-        return (dcc.Graph(figure=year), dcc.Graph(figure=genre)), emb
+        return (dcc.Graph(figure=year), dcc.Graph(figure=genre)), None
 
 
 # 임베딩에서 아이템 선택 시 옵션은 비활성화
