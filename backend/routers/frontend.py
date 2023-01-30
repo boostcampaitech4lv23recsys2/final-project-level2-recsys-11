@@ -12,9 +12,10 @@ from routers.database import get_db_dep
 router = APIRouter()  
 
 
-@router.post("/create_user", status_code=202)
+@router.post("/create_user")
 async def create_user(_user_create: UserCreate, connection=Depends(get_db_dep)):
-    user = await check_user(UserCreate.ID) 
+    print('1023ukvdfljvhoire;')
+    user = await check_user(_user_create.ID) 
 
     if user:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,

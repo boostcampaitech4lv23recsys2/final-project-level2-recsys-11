@@ -14,9 +14,9 @@ API_url = 'http://127.0.0.1:8000'
 
 dash.register_page(__name__, path='/signup')
 
-username = requests.get(f'{API_url}/username').json()
+# username = requests.get(f'{API_url}/username').json()
 
-model_hype_type = requests.get(url=f'{API_url}/model_hype_type').json()
+
 
 error_modal = html.Div(
     dbc.Modal([
@@ -73,8 +73,8 @@ def create_user(n_click, username, password1, password2):
     password1=pwd_context.hash(password1, salt=salt_value)
     password2=pwd_context.hash(password2, salt=salt_value)
     
-    data={'username':username, 'password1':password1, 'password2': password2,}
-    response = requests.post(f'{API_url}/user/create', json=data)
+    data={'ID':username, 'password1':password1, 'password2': password2,}
+    response = requests.post(f'{API_url}/frontend/create_user', json=data)
     
     if response.status_code == 422:
         return dbc.Alert(response.json()['detail'][0]['msg'], color="primary"),
