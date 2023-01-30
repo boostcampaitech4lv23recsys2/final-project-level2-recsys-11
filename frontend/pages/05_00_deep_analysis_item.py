@@ -115,9 +115,22 @@ selection = html.Div(
     ]
 )
 
+#그림 카드 만드는 함수
+def make_card(num):
+    card = dbc.Col(
+        id=f'item_{num}',
+
+    )
+    return card
+
 top = html.Div(
     children=[
-        html.H3('top pop 10, top rec 10'),
+        html.H3('top pop 10'),
+        dbc.Row(
+            id='top_pop_10',
+            # [make_card(i) for i in range(10)],
+        ),
+        html.H3('top rec 10'),
         html.Br(),
         html.P(id='test')
     ]
@@ -231,14 +244,42 @@ def reset_selection(value):
 
 #### run 실행 시 실행될 함수들 #####
 
-#
+# 테스팅
 @callback(
     Output('test', 'children'),
     Input('item_run', 'n_clicks'),
-    State('items_for_analysis', 'data')
+    State('items_for_analysis', 'data'),
+    prevent_initial_call=True
 )
 def prepare_analysis(value, data):
     if value != 1:
         raise PreventUpdate
     else:
         return data
+
+# top pop 10
+@callback(
+    Output('top_pop_10', 'children'),
+    Input('item_run', 'n_clicks'),
+    State('items_for_analysis', 'data'),
+    prevent_initial_call=True
+)
+def draw_toppop_card(value, data):
+    if value != 1:
+        raise PreventUpdate
+    else:
+        def make_card():
+            card = dbc.Col(
+                children=dbc.Card([
+                    dbc.CardImg(top=True),
+                    dbc.CardBody([
+                        html.H6('Title'),
+                        html.P('genre, year'),
+                        html.P('popularity'),
+                        html.P('rec_num'),
+                    ],),
+                ],),
+            )
+            return card
+        lst = [make_card() for i in range(10)]
+        return lst
