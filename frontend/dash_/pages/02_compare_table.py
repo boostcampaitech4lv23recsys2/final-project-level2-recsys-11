@@ -16,12 +16,26 @@ user_df = pd.read_csv('/opt/ml/user.csv', index_col='user_id')[:100]
 
 dash.register_page(__name__, path='/compare-table')
 
+# TODO: dataset_list 넘겨주는 API 필요
+# dataset_list = requests.get('/dataset_list', params={'user_id': 'smth'})
+
 pinned_column_name = 'age'
 pinned_column_setting = dict(
                         pinned='left',
                         checkboxSelection=True,
                         )
 
+select_dataset = html.Div([
+    html.H3('Select a dataset'),
+    dcc.Dropdown(
+        # TODO: dataset_list 넘겨주는 API 필요
+        # dataset_list,
+        # dataset_list[0],
+                 id='dataset-list',
+                 style={'width':'40%'},
+                 ),
+    html.Hr()
+])
 
 compare_table = html.Div([
     html.H3('Total experiments'),
@@ -56,10 +70,17 @@ selected_table = html.Div(children=[],id='selected_table',)
 
 layout = html.Div([
     gct.get_navbar(has_sidebar=False),
+    select_dataset,
     compare_table,
     selected_table,
     html.H3( id='output_test')
 ])
+
+# @callback(
+#     Output('dataset-list', 'children'),
+#     Input()
+# )
+
 
 @callback(
     Output('table-container', 'children'),
