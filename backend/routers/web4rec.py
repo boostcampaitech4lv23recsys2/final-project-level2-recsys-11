@@ -35,7 +35,7 @@ async def login(ID:str, password:str, connection=Depends(get_db_dep)) -> List:
         return ['unknown']
     
 
-@router.post("/add_user, "status_code=202)
+@router.post("/add_user", status_code=202)
 async def add_user(ID: str, password:str, connection=Depends(get_db_dep)): 
     async with connection as conn:
         async with conn.cursor() as cur:
