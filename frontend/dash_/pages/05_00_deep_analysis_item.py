@@ -75,7 +75,7 @@ selection = html.Div(
                         ),
                         html.P('인기도'),
                         html.Br(),
-                        dbc.Button("초기화", color="primary"),
+                        dbc.Button(id='reset_selection', children="초기화", color="primary"),
                         dcc.Store(id='items_selected_by_option', storage_type='session'), #데이터를 저장하는 부분
                         dcc.Store(id='items_selected_by_embed', storage_type='session') #데이터를 저장하는 부분
                     ],
@@ -153,64 +153,52 @@ def save_items_selected_by_embed(emb):
     item_lst = item.iloc[item_idx]
     return item_lst.index.to_list()
 
-#어느 store든 최근에 저장된 store 기준으로 임베딩과 사이드 그래프를 그림
+
+#최근에 저장된 store 기준으로 임베딩 그래프를 그림
+@callback(
+    Output('emb_graph', 'figure'),
+    Input('items_selected_by_option', 'data'),
+)
+def update_graph(store1):
+    item['selected'] = 'Not Selected'
+    item.loc[store1, 'selected'] = 'Selected'
+    emb = px.scatter(
+        item, x = 'xs', y = 'ys', color='selected', # 갯수에 따라 색깔이 유동적인 것 같다..
+        opacity=0.9,
+        marginal_x="histogram",
+        marginal_y="histogram",
+    )
+    emb.update_layout(clickmode='event+select')
+    return emb
+
+#최근에 저장된 store 기준으로 사이드 그래프를 그림
 @callback(
     Output('side_graph', 'children'),
-    Output('emb_graph', 'figure'),
     Input('items_selected_by_option', 'data'),
     Input('items_selected_by_embed', 'data'),
 )
 def update_graph(store1, store2):
     if ctx.triggered_id == 'items_selected_by_option':
-
         tmp = item.loc[store1]
         year = px.histogram(tmp, x='release_year')
         genre = px.histogram(tmp, x='genre')
-
-        item['selected'] = 'Not Selected'
-        item.loc[store1, 'selected'] = 'Selected'
-        emb = px.scatter(
-            item, x = 'xs', y = 'ys', color='selected', # 갯수에 따라 색깔이 유동적인 것 같다..
-            opacity=0.9,
-            marginal_x="histogram",
-            marginal_y="histogram",
-            )
-        emb.update_layout(
-            uirevision="emb_graph",
-            clickmode='event+select'
-            )
-
-        return (dcc.Graph(figure=year), dcc.Graph(figure=genre)), emb
+        return (dcc.Graph(figure=year), dcc.Graph(figure=genre))
     else:
-        # item['selected'] = 'Not Selected'
         if not store2:
             raise PreventUpdate
-        # emb = px.scatter(
-        #     item, x = 'xs', y = 'ys', color='selected', # 갯수에 따라 색깔이 유동적인 것 같다..
-        #     opacity=0.9,
-        #     marginal_x="histogram",
-        #     marginal_y="histogram",
-        #     )
-        # emb.update_layout(
-        #     datarevision="emb_graph",
-        #     uirevision="emb_graph",
-        #     editrevision='emb_graph',
-        #     selectionrevision='emb_graph',
-        #     clickmode='event+select'
-        #     )
-
         tmp = item.loc[store2]
+        tmp = tmp[tmp['selected'] == 'Selected']
         year = px.histogram(tmp, x='release_year')
         genre = px.histogram(tmp, x='genre')
-        return (dcc.Graph(figure=year), dcc.Graph(figure=genre)), None
+        return (dcc.Graph(figure=year), dcc.Graph(figure=genre))
 
 
-# 임베딩에서 아이템 선택 시 옵션은 비활성화
+
+# # 초기화 버튼 누를 때 선택 초기화
 @callback(
-    Output('selected_genre', 'disabled'),
-    Output('selected_year', 'disabled'),
-    Input('items_selected_by_embed', 'data'),
+    Output('selected_genre', 'value'),
+    Output('selected_year', 'value'),
+    Input('reset_selection', 'n_clicks'),
 )
-def disable_options(value):
-    return False, False
-    return True, True
+def reset_selection(value):
+    return [], [item['release_year'].min(), item['release_year'].max()]
