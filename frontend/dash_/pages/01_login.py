@@ -3,6 +3,7 @@ from dash import html, dcc, callback, Input, Output, State
 import dash_bootstrap_components as dbc
 import requests
 from dash.exceptions import PreventUpdate
+import hashlib
 
 API_url = 'http://127.0.0.1:8000'
 
@@ -58,7 +59,7 @@ def login(n_click, uname, pwd):
         params = {'id': uname, 'password': pwd}
         resospnse = requests.get(f'{API_url}/login_user', params=params)
         if resospnse:
-                return dcc.Location(pathname='model-vs-model', id='mvsm')
+                return dcc.Location(pathname='compare-table', id='mvsm')
         else:
                 return dbc.Modal([
             dbc.ModalBody("Invalid ID or password."),

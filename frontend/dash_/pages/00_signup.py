@@ -31,6 +31,7 @@ layout = html.Div([
             html.Br()
         , dbc.Input(id="email"
             , type="email"
+            , inputmode='email'
             , placeholder="email"
             , maxLength = 50,
             style={'width':'20%'}),
@@ -42,7 +43,9 @@ layout = html.Div([
                 href='/')
         , html.Div(id='container-button-basic'),
         
-    ])#end div
+    ], 
+                #   className='form-group'
+                  )#end div
 
 @callback(
     Output(component_id='container-button-basic', component_property='children'),

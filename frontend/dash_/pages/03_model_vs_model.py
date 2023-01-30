@@ -88,7 +88,7 @@ specific_metric = html.Div([
     dbc.Row([
         dbc.Col([
             dbc.RadioItems(
-            id="radios",
+            id="sort_of_metric",
             className="btn-group",
             inputClassName="btn-check",
             labelClassName="btn btn-outline-primary",
@@ -100,7 +100,7 @@ specific_metric = html.Div([
             value='Qual',
                         ),
             html.Br(),
-            dcc.Dropdown(options=['123', '12342'])
+            dcc.Dropdown(options=['123', '12342'], id='metric_list')
             ], width=2),
         dbc.Col([
             dcc.Graph(figure=fig_total),
@@ -115,7 +115,7 @@ specific_metric = html.Div([
 
 
 layout = html.Div(children=[
-    gct.navbar,
+    gct.get_navbar(),
     sidebar,
     total_graph,
     specific_metric
@@ -163,7 +163,7 @@ def display_dropdowns(n_clicks, _, children):
         
         model_form = html.Div([
             dbc.Button('➖', className='delete-btn', id={'type':'delete_btn', 'index':n_clicks}),
-            # dbc.Popover("Delete this experiment", trigger='hover', target={'type':'delete_btn', 'index':ALL}, body=True),
+            # dbc.Popover("Delete this experiment", trigger='hover', target={'type':'delete_btn', 'index':ALL}, body=True), # 동적 컴포넌트에는 어떻게 적용해야 할지 모르겠음
             dcc.Dropdown(list(model_hype_type.keys()), value=list(model_hype_type.keys())[0], id={'type':'selected_exp', 'index':n_clicks}),
             html.Hr(),
             html.P(
@@ -182,5 +182,15 @@ def display_dropdowns(n_clicks, _, children):
         Input({"type": "selected_exp", "index": MATCH}, "value"),
     ],
 )
-def display_output(value):
-    return f'{value}"s hype '
+def display_output(selected_exp:str) -> str:
+    return f'{selected_exp}"s hype '
+
+@callback(
+    Output('metric_list', 'options'),
+    Input('sort_of_metric', 'value'),
+)
+def load_metric_list(sort_of_metric:str) -> list:
+    # metric_list = requests.get(f'{API_url}/metric_list').json()
+    
+    metric_list = ['fdsa', '123','fdsavcx']
+    return metric_list
