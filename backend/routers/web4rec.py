@@ -1,27 +1,16 @@
 from asyncmy.cursors import DictCursor
 from datetime import datetime
 from fastapi import APIRouter, Depends, Response
+from fastapi.responses import JSONResponse
 from typing import List, Dict
 
-from schemas.data import Dataset, Experiment
-from routers.database import get_db_inst, get_db_dep, s3_transmission, insert_from_dict
-from fastapi.responses import JSONResponse
+from cruds.database import check_user
+from schemas.data import Dataset, CoreDataset, Experiment
+from routers.database import get_db_dep, get_from_s3, s3_transmission, insert_from_dict
 
 router = APIRouter()
 
-# DATASETS = {} # 유저별 데이터셋 in-memory에 따로 저장
-
-
-# 유저가 등록되있는지 여부 확인
-async def check_user(ID:str, password:str) -> Dict:
-    conn2 = get_db_inst()
-    
-    async with conn2 as conn:
-        async with conn.cursor(cursor=DictCursor) as cur:
-            query = "SELECT ID FROM Users WHERE ID = %s AND password = %s"
-            await cur.execute(query, (ID, password))
-            result = await cur.fetchone()
-    return result
+# DATASETS = {} # 유저별 데이터셋 in-memory에 따로 저장`    `
 
 
 # 유저 아이디랑 비번이 쿼리에..?? 이게맞나
@@ -46,7 +35,7 @@ async def login(ID:str, password:str, connection=Depends(get_db_dep)) -> List:
         return ['unknown']
     
 
-@router.post("/add_user")
+@router.post("/add_user", status_code=202)
 async def add_user(ID: str, password:str, connection=Depends(get_db_dep)): 
     async with connection as conn:
         async with conn.cursor() as cur:
@@ -108,9 +97,38 @@ async def upload_dataset(dataset: Dataset,
     return row_dict # library 쪽으로 return (필요 없을수도)
 
 
+@router.get('/download_core_dataset', status_code=202)
+async def download_core_dataset(
+    ID: str,
+    dataset_name: str,
+    connection=Depends(get_db_dep)
+):
+    """
+    익스퍼리먼트는 train_interaction + ground_truth 가 필요하다.
+    이들을 데이터셋 이름을 받고 던져준다. 로직상 이렇게 하겟다 알겠나? 단결
+    """
+    async with connection as conn:
+        async with conn.cursor(cursor=DictCursor) as cur:
+            query = "SELECT train_interaction, ground_truth FROM Datasets WHERE ID = %s AND dataset_name = %s"
+            await cur.execute(query, (ID, dataset_name))
+            result = await cur.fetchone()
+            
+    train_interaction_hash = result['train_interaction']
+    train_interaction = await get_from_s3(train_interaction_hash)
+
+    ground_truth_hash = result['ground_truth']
+    ground_truth = await get_from_s3(ground_truth_hash)
+
+    ret = {
+        'train_interaction': train_interaction,
+        'ground_truth': ground_truth
+    }
+    return ret
+
+
 @router.post("/upload_experiment", status_code=202)
 async def upload_experiment(experiment: Experiment,
-                            connection=Depends(get_db_dep)) -> Experiment:
+                            connection=Depends(get_db_dep)) -> Experiment: #?
     
     primary_keys = ('ID', 'dataset_name', 'experiment_name', 'alpha', 'objective_fn')
     primary_values = (experiment.ID, experiment.dataset_name, experiment.experiment_name, 
@@ -124,7 +142,7 @@ async def upload_experiment(experiment: Experiment,
 
     async with connection as conn:
         async with conn.cursor() as cur:
-            await cur.execute(query, values) 
+            await cur.execute(query, values)
         await conn.commit()
 
     return row_dict

@@ -26,6 +26,24 @@ class Dataset(BaseModel):
     @property 
     def n_item(self):
         return self.train_df['item_id'].nunique()
+
+# class TrainInteraction(BaseModel):
+#     user_id: Union[str, int]
+#     item_id: Union[str, int]
+#     score: Union[int, float, None]
+#     timestamp: Union[int, None]
+
+
+# class GroundTruth(BaseModel):
+#     user_id: Union[str, int]
+#     item_id: Union[str, int]
+    
+
+class CoreDataset(BaseModel):
+    dataset_name: str
+    train_interaction: Dict
+    ground_truth: Dict
+
     
 
 class Experiment(BaseModel):
@@ -50,7 +68,7 @@ class Experiment(BaseModel):
     coverage: Dict
 
     diversity_cos: Dict
-    diversity_jac: Dict
+    diversity_jac: Union[Dict, None]
     serendipity_pmi: Dict
-    serendipity_jac: Dict
+    serendipity_jac: Union[Dict, None]
     novelty: Dict 
