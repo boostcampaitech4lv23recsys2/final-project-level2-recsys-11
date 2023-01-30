@@ -77,9 +77,13 @@ selection = html.Div(
                         html.Br(),
                         dbc.Button(id='reset_selection', children="초기화", color="primary"),
                         dcc.Store(id='items_selected_by_option', storage_type='session'), #데이터를 저장하는 부분
-                        dcc.Store(id='items_selected_by_embed', storage_type='session') #데이터를 저장하는 부분
+                        dcc.Store(id='items_selected_by_embed', storage_type='session'), #데이터를 저장하는 부분
+                        dcc.Store(id='items_for_analysis', storage_type='session'), #데이터를 저장하는 부분
+                        html.P(id='n_items'),
+                        dbc.Button(id='item_run',children='RUN')
                     ],
-                    className='form-style'),
+                    # className='form-style'
+                ),
                 width=3,
 
             ),
@@ -111,9 +115,17 @@ selection = html.Div(
     ]
 )
 
+top = html.Div(
+    children=[
+        html.H3('top pop 10, top rec 10'),
+        html.Br(),
+        html.P(id='test')
+    ]
+)
+
 related_users = html.Div(
     children=[
-        html.H3('아이템 프로필, 아이템을 추천받은 유저'),
+        html.H3('유저 프로필, 유저 추천 리스트'),
         html.Br(),
     ]
 )
@@ -123,7 +135,8 @@ layout = html.Div(
     children=[
         gct.get_navbar(has_sidebar=False),
         selection,
-        related_users,
+        top,
+        related_users
     ],
     # className='content'
 )
@@ -152,6 +165,19 @@ def save_items_selected_by_embed(emb):
     item_idx = [i['pointNumber'] for i in emb['points']]
     item_lst = item.iloc[item_idx]
     return item_lst.index.to_list()
+
+# 최근에 선택한 아이템을 최종 store에 저장
+@callback(
+    Output('items_for_analysis', 'data'),
+    Output('n_items', 'children'),
+    Input('items_selected_by_option', 'data'),
+    Input('items_selected_by_embed', 'data'),
+)
+def prepare_analysis(val1, val2):
+    if ctx.triggered_id == 'items_selected_by_option':
+        return val1, f'selected items: {len(val1)}'
+    else:
+        return val2, f'selected items: {len(val2)}'
 
 
 #최근에 저장된 store 기준으로 임베딩 그래프를 그림
@@ -193,12 +219,26 @@ def update_graph(store1, store2):
         return (dcc.Graph(figure=year), dcc.Graph(figure=genre))
 
 
-
-# # 초기화 버튼 누를 때 선택 초기화
+# 초기화 버튼 누를 때 선택 초기화
 @callback(
     Output('selected_genre', 'value'),
     Output('selected_year', 'value'),
+    Output('item_run', 'n_clicks'),
     Input('reset_selection', 'n_clicks'),
 )
 def reset_selection(value):
-    return [], [item['release_year'].min(), item['release_year'].max()]
+    return [], [item['release_year'].min(), item['release_year'].max()], 0
+
+#### run 실행 시 실행될 함수들 #####
+
+#
+@callback(
+    Output('test', 'children'),
+    Input('item_run', 'n_clicks'),
+    State('items_for_analysis', 'data')
+)
+def prepare_analysis(value, data):
+    if value != 1:
+        raise PreventUpdate
+    else:
+        return data
