@@ -1,5 +1,8 @@
 from fastapi import FastAPI
 import uvicorn
+import pyximport
+
+pyximport.install()
 
 import pyximport
 pyximport.install()
