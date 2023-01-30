@@ -1,27 +1,16 @@
 from asyncmy.cursors import DictCursor
 from datetime import datetime
 from fastapi import APIRouter, Depends, Response
+from fastapi.responses import JSONResponse
 from typing import List, Dict
 
+from cruds.database import check_user
 from schemas.data import Dataset, Experiment
-from routers.database import get_db_inst, get_db_dep, s3_transmission, insert_from_dict
-from fastapi.responses import JSONResponse
+from routers.database import get_db_dep, s3_transmission, insert_from_dict
 
 router = APIRouter()
 
-# DATASETS = {} # 유저별 데이터셋 in-memory에 따로 저장
-
-
-# 유저가 등록되있는지 여부 확인
-async def check_user(ID:str, password:str) -> Dict:
-    conn2 = get_db_inst()
-    
-    async with conn2 as conn:
-        async with conn.cursor(cursor=DictCursor) as cur:
-            query = "SELECT ID FROM Users WHERE ID = %s AND password = %s"
-            await cur.execute(query, (ID, password))
-            result = await cur.fetchone()
-    return result
+# DATASETS = {} # 유저별 데이터셋 in-memory에 따로 저장`    `
 
 
 # 유저 아이디랑 비번이 쿼리에..?? 이게맞나
@@ -46,7 +35,7 @@ async def login(ID:str, password:str, connection=Depends(get_db_dep)) -> List:
         return ['unknown']
     
 
-@router.post("/add_user")
+@router.post("/add_user, "status_code=202)
 async def add_user(ID: str, password:str, connection=Depends(get_db_dep)): 
     async with connection as conn:
         async with conn.cursor() as cur:
