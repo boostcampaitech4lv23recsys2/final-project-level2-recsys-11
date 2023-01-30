@@ -11,7 +11,7 @@ from . import global_component as gct
 
 API_url = 'http://127.0.0.1:8000'
 
-dash.register_page(__name__, path='/deep_analysis')
+dash.register_page(__name__, path='/deep_analysis_item')
 # load_figure_template("darkly") # figure 스타일 변경
 
 user = pd.read_csv('/opt/ml/user.csv', index_col='user_id')
@@ -63,6 +63,7 @@ selection = html.Div(
                     ],
                     className='form-style'),
                 width=3,
+
             ),
             dbc.Col(
                 html.Div(
@@ -102,7 +103,7 @@ related_users = html.Div(
 
 layout = html.Div(
     children=[
-        gct.navbar,
+        gct.get_navbar(has_sidebar=False),
         selection,
         related_users,
     ],
@@ -116,7 +117,6 @@ layout = html.Div(
     Input('selected_genre', 'value'), Input('selected_year', 'value'),
 )
 def save_items_selected_by_option(genre, year):
-    print('storing by options')
     item_lst = item.copy()
     item_lst = item_lst[item_lst['genre'].str.contains(
         ''.join([*map(lambda x: f'(?=.*{x})', genre)]) + '.*', regex=True)]
@@ -129,7 +129,6 @@ def save_items_selected_by_option(genre, year):
     Input('emb_graph', 'selectedData')
 )
 def save_items_selected_by_embed(emb):
-    print('storing by embed')
     if emb is None:
         raise PreventUpdate
     item_idx = [i['pointNumber'] for i in emb['points']]
@@ -144,7 +143,6 @@ def save_items_selected_by_embed(emb):
     Input('items_selected_by_embed', 'data'),
 )
 def update_graph(store1, store2):
-    print(ctx.triggered_id)
     if ctx.triggered_id == 'items_selected_by_option':
 
         tmp = item.loc[store1]
@@ -163,7 +161,6 @@ def update_graph(store1, store2):
             uirevision="emb_graph",
             clickmode='event+select'
             )
-        emb.update_traces()
 
         return (dcc.Graph(figure=year), dcc.Graph(figure=genre)), emb
     else:
@@ -183,8 +180,6 @@ def update_graph(store1, store2):
             selectionrevision='emb_graph',
             clickmode='event+select'
             )
-        # emb.update_traces()
-        print(store2)
 
         tmp = item.loc[store2]
         year = px.histogram(tmp, x='release_year')

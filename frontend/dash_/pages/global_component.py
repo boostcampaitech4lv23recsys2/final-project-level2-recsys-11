@@ -20,7 +20,7 @@ def get_navbar(has_sidebar=True):
             dbc.NavItem(dbc.NavLink("Compare Table", href="/compare-table")),
             dbc.NavItem(dbc.NavLink('Model vs Model', href="model-vs-model")),
             dbc.NavItem(dbc.NavLink('Reranking', href="#")),
-            dbc.NavItem(dbc.NavLink('Deep Anal', href="/deep_analysis"))
+            dbc.NavItem(dbc.NavLink('Deep Anal', href="/deep_analysis_item"))
         ],
         brand="𝙒𝙚𝙗𝟰𝙍𝙚𝙘",
         brand_href="#",
