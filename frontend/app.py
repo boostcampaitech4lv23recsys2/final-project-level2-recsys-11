@@ -20,6 +20,7 @@ username = 'mkdir'
 # load_figure_template("journal") # figure 스타일 변경
 
 app.layout = html.Div([
+    dcc.Store(id='user_state', storage_type='session'),
 	dash.page_container
 ])
 

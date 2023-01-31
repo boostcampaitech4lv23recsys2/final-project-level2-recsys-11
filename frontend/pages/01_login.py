@@ -40,14 +40,16 @@ layout =  html.Div([
             dbc.Col(
             dcc.Link(
                 children=dbc.Button(children='Sign-up',
-                                     style={'margin':10}
+                                #      style={'margin':10}
                 ),
                     href='/signup'
             )),
             ]),
             html.Div(id='login-value')
             
-        ], style={'padding-left':'45%'}) #end div
+        ], 
+        style={'width':"40%"}
+        ) #end div
 
 @callback(
         Output(component_id='login-value', component_property='children'),
@@ -69,4 +71,12 @@ def login(n_click, uname, pwd):
                 return dbc.Alert("Invalid ID or password.", color="primary")
         else:
                 return dbc.Alert(f"{response.status_code} Error.", color="primary")
-                
+
+# @callback(
+#         Output(component_id='login-value', component_property='children'),
+#         Input('login-button', 'n_clicks'),
+#         State('uname-box', 'value'),
+#         State('pwd-box', 'value'),
+#         prevent_initial_call=True
+# )
+# def login_state(n_click, uname, pwd):

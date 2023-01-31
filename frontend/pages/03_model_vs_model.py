@@ -110,11 +110,12 @@ specific_metric = html.Div([
 
 
 layout = html.Div(children=[
-    gct.get_navbar(),
+    gct.get_navbar(has_sidebar=False),
+    html.Div([
     sidebar,
     total_graph,
-    specific_metric
-],className='content')
+    specific_metric])
+], className="content")
 
 
 @callback(
