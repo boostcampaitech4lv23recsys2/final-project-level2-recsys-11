@@ -8,7 +8,7 @@ from dash_bootstrap_templates import load_figure_template
 from dash.exceptions import PreventUpdate
 import feffery_antd_components as fac
 
-
+API_URL = 'http://127.0.0.1:30004'
 
 def get_navbar(has_sidebar=True):
     if has_sidebar:

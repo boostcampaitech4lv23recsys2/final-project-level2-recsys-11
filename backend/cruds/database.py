@@ -12,3 +12,13 @@ async def check_user(ID:str) -> Dict:
             await cur.execute(query, (ID,))
             result = await cur.fetchone()
     return result 
+
+async def check_password(ID:str, password:str) -> Dict:
+    conn2 = get_db_inst()
+    
+    async with conn2 as conn: 
+        async with conn.cursor(cursor=DictCursor) as cur:
+            query = "SELECT ID, password FROM Users WHERE ID = %s AND password = %s"
+            await cur.execute(query, (ID, password,))
+            result = await cur.fetchone()
+    return result
