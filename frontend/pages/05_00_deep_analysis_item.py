@@ -217,7 +217,11 @@ def update_graph(store1):
         marginal_x="histogram",
         marginal_y="histogram",
     )
-    emb.update_layout(clickmode='event+select')
+    emb.update_layout(
+        clickmode='event+select',
+        width=700,
+        height=700,
+    )
     return emb
 
 #최근에 저장된 store 기준으로 사이드 그래프를 그림
