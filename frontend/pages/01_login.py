@@ -61,7 +61,12 @@ layout =  html.Div([
         prevent_initial_call=True
 )
 def login(n_click, uname, pwd):
-        pwd = pwd_context.hash(pwd, salt=salt_value)
+        if n_click == 0:
+                return None, None
+        try:
+                pwd = pwd_context.hash(pwd, salt=salt_value)
+        except TypeError as e:
+                pass
         header = {'Content-Type': 'application/x-www-form-urlencoded'}
         data = {'username': uname, 'password': pwd}
         response = requests.post(f'{gct.API_URL}/user/login', data, header)

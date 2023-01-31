@@ -10,7 +10,8 @@ from dash.exceptions import PreventUpdate
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
 app = Dash(
     __name__, external_stylesheets=[dbc.themes.JOURNAL, dbc_css], 
-    use_pages=True, suppress_callback_exceptions=True,
+    use_pages=True, 
+    suppress_callback_exceptions=True,
 ) # 페이지 스타일 변경
 
 
