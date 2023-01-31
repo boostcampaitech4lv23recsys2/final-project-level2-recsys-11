@@ -1,35 +1,70 @@
 import dash
-from dash import html, dcc, callback, Input, Output, State,  MATCH, ALL
-import dash_bootstrap_components as dbc
+import json
 import requests
+import numpy as np
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
+import plotly.figure_factory as ff
+import dash_bootstrap_components as dbc
+
+from dash import html, dcc, callback, Input, Output, State,  MATCH, ALL
 from dash_bootstrap_templates import load_figure_template
 from dash.exceptions import PreventUpdate
-import feffery_antd_components as fac
 from . import global_component as gct
-import json
 
 API_url = 'http://127.0.0.1:8000'
 
 dash.register_page(__name__, path='/model-vs-model')
 
-exp_df = pd.DataFrame(columns = ['model','recall','ndcg','map','popularity','colors'])
-
-exp_df.loc[1,:] = ['M1',0.1084,0.0847,0.1011,0.0527,'red']
-exp_df.loc[2,:] = ['M2',0.1124,0.0777,0.1217,0.0781,'green']
-exp_df.loc[3,:] = ['M3',0.1515,0.1022,0.1195,0.0999,'blue']
-exp_df.loc[4,:] = ['M4',0.0917,0.0698,0.0987,0.0315,'goldenrod']
 
 
 
-fig_total = px.bar(
-            exp_df,
-            x = 'model',
-            y ='recall',
-            color = 'model',
-            color_discrete_sequence=exp_df['colors'].values
-            )
+def plot_qual_metrics(df:pd.DataFrame):
+    # 모델간 정량, 정성 지표 plot (Compare Table에 있는 모든 정보들 활용)
+    metrics = list(df.columns[1:])
+    colors = ['#A56CC1', '#A6ACEC', '#63F5EF', '#425FEF'] # 사용자 입력으로 받을 수 있어야 함
+    
+    fig = go.Figure()
+
+    for i in df.index:
+        fig.add_bar(name=df['Name'][i], x=metrics, y=list(df.iloc[i,1:].apply(eval).apply(np.mean)), text=list(df.iloc[i,1:].apply(eval).apply(np.mean)), marker={'color' : colors[i]})
+        # .apply(eval)은 np.array나 list를 문자열로 인식할 때만 활용해주면 됨
+        # 아니면 TypeError: eval() arg 1 must be a string, bytes or code object 발생
+    fig.update_layout(
+        barmode='group',
+        bargap=0.15, # gap between bars of adjacent location coordinates.
+        bargroupgap=0.1, # gap between bars of the same location coordinate.)
+        title_text='Metric indicators'
+    )
+    fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
+
+    return fig
+
+
+def plot_dist_for_metrics(qual_df:pd.DataFrame, metric:str):
+    assert metric in qual_df.columns, 'Metric is not in the column'
+    hist_data = [eval(each)[0] for each in qual_df['Diversity(jaccard)']]
+    group_labels = qual_df['Name'].values
+    colors = ['#A56CC1', '#A6ACEC', '#63F5EF', '#425FEF'] # 사용자 입력으로 받을 수 있어야 함
+    # colors = qual_df['colors]
+    # Create distplot with curve_type set to 'normal'
+    fig = ff.create_distplot(hist_data, group_labels, colors=colors,
+                            bin_size=0.025, show_rug=True, curve_type='kde')
+
+    # Add title
+    fig.update_layout(title_text='Distribution of metrics')
+
+    return fig
+# 옵션으로 선택된 실험들을 불러옴
+# 불러온 실험들로 df를 제작함
+# 만약 새로운 실험이 + 되면 그 실험 정보를 df에 추가함 e.g.,) df.loc[] = ...
+total_metrics = pd.read_csv('/opt/ml/total_metrics_df.csv')
+qual_metrics = pd.read_csv('/opt/ml/qual_metrics_df.csv')
+
+# fig_total = plot_total_metrics(total_metrics)
+fig_qual = plot_qual_metrics(qual_metrics)
+fig_dist = plot_dist_for_metrics(qual_metrics, 'Diversity(jaccard)')
 
 model_form = html.Div([html.Div([
     dbc.Row([
@@ -58,7 +93,7 @@ sidebar = html.Div(
         
         dbc.Button('➕', id='add_button', n_clicks=0, style={'position':'absolute', 'right':0, 'margin-right':'2rem'}),
         dbc.Popover("Add a new expriement", trigger='hover', target='add_button', body=True),
-        dbc.Button('Compare!')
+        dbc.Button('Compare!', id='compare_btn')
     ],
     className='sidebar'
 )
@@ -75,10 +110,10 @@ total_graph = html.Div([
     html.H3('Total Metric'),
     dbc.Row([
       dbc.Col([
-          dcc.Graph(figure=fig_total, id='total_metric')
+          dcc.Graph(id='total_metric') # figure=fig_total,
             ]),
             ])
-                    ])
+    ])
 
 specific_metric = html.Div([
     html.H3('Specific Metric'),
@@ -100,8 +135,8 @@ specific_metric = html.Div([
             dcc.Dropdown(options=['123', '12342'], id='metric_list')
             ], width=2),
         dbc.Col([
-            dcc.Graph(figure=fig_total),
-            dcc.Graph(figure=fig_total),
+            dcc.Graph(figure=fig_qual),
+            dcc.Graph(figure=fig_dist),
         ], width=8)
     ]),
 
@@ -119,14 +154,35 @@ layout = html.Div(children=[
 ],className='content')
 
 
-@callback(
-        Output('map', 'children'),
+@callback(  # compare 버튼 누름
+        Output('total_metric', 'figure'),
         Input('compare_btn', 'n_clicks'),
         prevent_initial_call=True
 )
-def get_quantative_metrics(form):
-    params={'model_name': form['model'], 'str_key': form['values']}
-    return requests.get(url=f'{API_url}/metric/quantitative/', params=params).json()[0]
+def plot_total_metrics(tmp): # df:pd.DataFrame
+    # 모델간 정량, 정성 지표 plot (Compare Table에 있는 모든 정보들 활용)
+    metrics = list(total_metrics.columns[1:])
+    colors = ['#A56CC1', '#A6ACEC', '#63F5EF', '#425FEF'] # 사용자 입력으로 받을 수 있어야 함
+    
+    fig = go.Figure()
+
+    for i in total_metrics.index:
+        fig.add_bar(name=total_metrics['Name'][i], x=metrics, y=list(total_metrics.iloc[i,1:].apply(np.mean)), text=list(total_metrics.iloc[i,1:].apply(np.mean)), marker={'color' : colors[i]})
+        # .apply(eval)은 np.array나 list를 문자열로 인식할 때만 활용해주면 됨
+        # 아니면 TypeError: eval() arg 1 must be a string, bytes or code object 발생
+    fig.update_layout(
+        barmode='group',
+        bargap=0.15, # gap between bars of adjacent location coordinates.
+        bargroupgap=0.1, # gap between bars of the same location coordinate.)
+        title_text='Metric indicators'
+    )
+    fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
+
+    return fig
+# TODO: get request(selected user) and plot total_metrics
+# def get_quantative_metrics(form): 
+#     params={'model_name': form['model'], 'str_key': form['values']}
+#     return requests.get(url=f'{API_url}/metric/quantitative/', params=params).json()[0]
 
 @callback(
     Output('select_model2', 'children'),
