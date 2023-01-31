@@ -1,14 +1,20 @@
 import boto3
+from functools import lru_cache
 import hashlib
 import json
 from typing import Dict, Union 
 
 from schemas.data import Dataset, Experiment
-from schemas.config import get_s3_settings
+from schemas.config import S3_Settings
+
+
+@lru_cache(maxsize=1)
+def get_s3_settings():
+    return S3_Settings(_env_file='s3.env', _env_file_encoding='utf-8')
 
 s3_config = get_s3_settings().dict() # S3 정보
-
 client = boto3.client('s3', **s3_config)
+
 
 async def send_to_s3(data: Dict, key_name: str) -> str:
     json_body = json.dumps(data)
@@ -26,6 +32,10 @@ async def send_to_s3(data: Dict, key_name: str) -> str:
 async def get_from_s3(key_hash: str) -> Dict:   # key_hash = key_name.encode('utf-8') + json
     obj = client.get_object(Bucket='mkdir-bucket', Key=key_hash) 
     return json.loads(obj['Body'].read().decode('utf-8'))
+
+
+def s3_dict_to_pd(s3_dict: Dict):
+    return pd.DataFrame.from_dict(s3_dict, orient='tight')
 
 
 async def s3_transmission(cls: Union[Dataset, Experiment], primary_key: str) -> Dict:
