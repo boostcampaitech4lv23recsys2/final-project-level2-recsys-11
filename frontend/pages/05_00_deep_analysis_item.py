@@ -21,7 +21,7 @@ item = pd.read_csv('/opt/ml/item.csv', index_col='item_id')
 item.fillna(value='[]', inplace=True)
 item['item_profile_user'] = item['item_profile_user'].apply(eval)
 item['recommended_users'] = item['recommended_users'].apply(eval)
-#지금은 리스트가 담긴 행이 문자열로 저장되기에 수정하는 작업이 필요하다.
+#리스트와 같은 객체는 json으로 넘어올 때 문자열로 들어올 가능성이 있으니 이 코드가 필요할 수도 있다. 상황에 따라 판단하기.
 item['selected'] = 0
 item['len']  = item['recommended_users'].apply(len)
 
