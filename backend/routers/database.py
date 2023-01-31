@@ -30,6 +30,10 @@ def get_db_dep():
     try:
         yield db
 
+    except ValueError:
+        logging.error("Validation Error: ValueError - DB Connection")
+        return None
+
     except:
         logging.error("RDS Not Connected")
         sys.exit(1)
