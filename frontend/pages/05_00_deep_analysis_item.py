@@ -55,8 +55,7 @@ selection = html.Div(
             ]),
         dbc.Row(
             [dbc.Col(
-                html.Div(
-                    children=[
+                [
                         # 년도, 장르, 제목?, 인기도
                         html.H3('옵션을 통한 선택'),
                         html.P('장르'),
@@ -90,7 +89,7 @@ selection = html.Div(
                         dbc.Button(id='item_run',children='RUN')
                     ],
                     # className='form-style'
-                ),
+                
                 width=3,
 
             ),
@@ -115,7 +114,7 @@ selection = html.Div(
                         html.Br(),
                         html.Div(id='side_graph')
                     ],
-                ),
+                 style={'overflow': 'scroll', 'height':700}),
                 width=3,
             ),]
         )
@@ -155,14 +154,16 @@ related_users = html.Div(
 
 
 layout = html.Div(
+    [gct.get_navbar(has_sidebar=False),
+    html.Div(
     children=[
-        gct.get_navbar(has_sidebar=False),
+        
         selection,
         top,
         related_users
     ],
-    # className='content'
-)
+    className='container')
+])
 
 
 # 옵션으로 선택한 아이템을 store1에 저장
