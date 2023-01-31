@@ -16,6 +16,10 @@ dash.register_page(__name__, path='/deep_analysis_item')
 
 user = pd.read_csv('/opt/ml/user.csv', index_col='user_id')
 item = pd.read_csv('/opt/ml/item.csv', index_col='item_id')
+item.fillna(value='[]', inplace=True)
+item['item_profile_user'] = item['item_profile_user'].apply(eval)
+item['recommended_users'] = item['recommended_users'].apply(eval)
+#지금은 리스트가 담긴 행이 문자열로 저장되기에 수정하는 작업이 필요하다.
 item['selected'] = 0
 
 uniq_genre = set()
@@ -126,11 +130,9 @@ def make_card(num):
 top = html.Div(
     children=[
         html.H3('top pop 10'),
-        dbc.Row(
-            id='top_pop_10',
-            # [make_card(i) for i in range(10)],
-        ),
+        dbc.Row(id='top_pop_10',),
         html.H3('top rec 10'),
+        dbc.Row(id='top_rec_10',),
         html.Br(),
         html.P(id='test')
     ]
@@ -268,18 +270,58 @@ def draw_toppop_card(value, data):
     if value != 1:
         raise PreventUpdate
     else:
-        def make_card():
+        def make_card(element):
+            tmp = item.loc[element]
             card = dbc.Col(
                 children=dbc.Card([
                     dbc.CardImg(top=True),
                     dbc.CardBody([
-                        html.H6('Title'),
-                        html.P('genre, year'),
-                        html.P('popularity'),
-                        html.P('rec_num'),
+                        html.H6(tmp['movie_title']),
+                        html.P(tmp['genre']),
+                        html.P(tmp['release_year']),
+                        html.P(tmp['item_pop']),
                     ],),
                 ],),
             )
             return card
-        lst = [make_card() for i in range(10)]
+        pop = item.loc[data].sort_values(by=['item_pop'], ascending=False).head(10).index
+        lst = [make_card(item) for item in pop] # 보여줄 카드 갯수 지정 가능
         return lst
+    
+# top rec 10
+@callback(
+    Output('top_rec_10', 'children'),
+    Input('item_run', 'n_clicks'),
+    State('items_for_analysis', 'data'),
+    prevent_initial_call=True
+)
+def draw_toprec_card(value, data):
+    if value != 1:
+        raise PreventUpdate
+    else:
+        def make_card(element):
+            tmp = item.loc[element]
+            card = dbc.Col(
+                children=dbc.Card([
+                    dbc.CardImg(top=True),
+                    dbc.CardBody([
+                        html.H6(tmp['movie_title']),
+                        html.P(tmp['genre']),
+                        html.P(tmp['release_year']),
+                        html.P(tmp['item_pop']),
+                    ],),
+                ],),
+            )
+            return card
+        
+        item['len']  = item['recommended_users'].apply(len)
+        
+        rec = item.loc[data].sort_values(by=['len'], ascending=False).head(10).index
+        lst = [make_card(item) for item in rec] # 보여줄 카드 갯수 지정 가능
+        
+        item.drop('len', axis=1, inplace=True)
+        return lst
+
+#pd.DataFrame.from_dict(data=data, orient='tight')데이터프래임
+# request.get().json
+# 저장
