@@ -9,8 +9,6 @@ from dash.exceptions import PreventUpdate
 import feffery_antd_components as fac
 from . import global_component as gct
 
-API_url = 'http://127.0.0.1:8000'
-
 dash.register_page(__name__, path='/deep_analysis_item')
 # load_figure_template("darkly") # figure 스타일 변경
 

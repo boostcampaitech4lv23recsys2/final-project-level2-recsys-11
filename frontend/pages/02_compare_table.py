@@ -10,8 +10,6 @@ import json
 # AgGrid docs:
 # https://www.ag-grid.com/javascript-data-grid/column-pinning/
 
-API_url = 'http://127.0.0.1:8000'
-
 user_df = pd.read_csv('/opt/ml/user.csv', index_col='user_id')[:100]
 
 dash.register_page(__name__, path='/compare-table')
