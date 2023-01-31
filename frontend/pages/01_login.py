@@ -66,7 +66,6 @@ def login(n_click, uname, pwd):
         data = {'username': uname, 'password': pwd}
         response = requests.post(f'{gct.API_URL}/user/login', data, header)
         if response.status_code == 200:
-                print(response.json())
                 return dcc.Location(pathname='compare-table', id='mvsm'), response.json()
         elif response.status_code == 401:
                 return dbc.Alert("Invalid ID or password.", color="primary"), None
