@@ -20,20 +20,6 @@ username = 'mkdir'
 load_figure_template("journal") # figure 스타일 변경
 
 app.layout = html.Div([
-	# html.H1('Web4Rec', style={'padding': 10, 'text-align': 'center'}),
-    # html.Hr(),
-    # html.Div(
-    #     [
-    #         html.Div(
-    #             dcc.Link(
-    #                 f"{page['name']}", href=page["relative_path"]
-    #             ),
-    #             style={'font-size':30}
-    #         )
-    #         for page in dash.page_registry.values()
-    #     ]
-    # ),
-
 	dash.page_container
 ])
 

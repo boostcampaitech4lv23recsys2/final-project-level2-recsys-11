@@ -10,10 +10,6 @@ API_url = 'http://127.0.0.1:8000'
 
 dash.register_page(__name__, path='/signup')
 
-username = requests.get(f'{API_url}/username').json()
-
-model_hype_type = requests.get(url=f'{API_url}/model_hype_type').json()
-
 
 layout = html.Div([
     html.H1('Create User Account')
@@ -79,5 +75,3 @@ def create_user(n_click, username, password, email):
                 dbc.Button("Close")
                 )
         ], is_open=True)
-    # TODO: DB에 이미 유저가 있는 경우 로그인 페이지가 아니라 경고 띄우고 그대로 있어야 함
-    return f'{username} {password} {email}'
