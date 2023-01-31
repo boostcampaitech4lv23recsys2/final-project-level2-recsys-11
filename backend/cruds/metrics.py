@@ -31,25 +31,24 @@ class Quant_Metrics:
     
         self.K = K
     
-    def Recall_K(self, users: None, predict: None) -> Dict:
+    def Recall_K(self, users: None, predicted: None) -> Dict:
         if users == None:
             users = self.total_users
 
-        if predict == None:
+        if predicted == None:
             self.pred_item.loc[users]
 
         actual = self.ground_truth.loc[users, 'item_id']
-        # recall = {}
+        recall = {}
 
-        # for user in actual.index:
-        #     act_set = set(actual[user].flatten())
-        #     pred_set = set(predicted[user][:self.K].flatten())
-        #     if len(act_set) != 0:
-        #         recall[user] = len(act_set & pred_set) / min(len(act_set), len(pred_set))
+        for user in actual.index:
+            act_set = set(actual[user].flatten())
+            pred_set = set(predicted[user][:self.K].flatten())
+            if len(act_set) != 0:
+                recall[user] = len(act_set & pred_set) / min(len(act_set), len(pred_set))
 
-        return {user: len(set(actual[user].flatten(), set(predicted[user][:self.K].flatten())))
-                  for user in actual.index if len(set(actual[user].flatten())) != 0}
-    
+        return recall
+        
     def apk(self, actual, predicted, k) -> float:
         """
         Source:
