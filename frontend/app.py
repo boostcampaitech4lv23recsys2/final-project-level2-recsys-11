@@ -1,12 +1,12 @@
 # manage user
-from flask_login import login_user, logout_user, current_user, LoginManager, UserMixin
+# from flask_login import login_user, logout_user, current_user, LoginManager, UserMixin
 import os
 # manage password hahsing
 from werkzeug.security import generate_password_hash, check_password_hash
 import dash
 from dash import Dash, dcc, html, Input, Output
 import dash_bootstrap_components as dbc
-from dash_bootstrap_templates import load_figure_template
+# from dash_bootstrap_templates import load_figure_template
 from dash.exceptions import PreventUpdate
 
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
@@ -17,7 +17,7 @@ app = Dash(
 
 
 username = 'mkdir'
-load_figure_template("journal") # figure 스타일 변경
+# load_figure_template("journal") # figure 스타일 변경
 
 app.layout = html.Div([
 	# html.H1('Web4Rec', style={'padding': 10, 'text-align': 'center'}),

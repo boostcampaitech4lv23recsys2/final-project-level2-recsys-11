@@ -10,7 +10,7 @@ from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 salt_value = 'zFICaaUesOyNBJW4MHuUpV'
-API_url = 'http://127.0.0.1:8000'
+API_url = 'http://127.0.0.1:30004'
 
 dash.register_page(__name__, path='/signup')
 
