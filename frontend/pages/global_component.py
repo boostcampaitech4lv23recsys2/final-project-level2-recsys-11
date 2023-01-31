@@ -14,13 +14,13 @@ def get_navbar(has_sidebar=True):
             dbc.NavItem(dbc.NavLink('Model vs Model', href="/model-vs-model")),
             dbc.NavItem(dbc.NavLink('Reranking', href="#")),
             dbc.DropdownMenu(
-            children=[
-                dbc.DropdownMenuItem("User", href="/deep_analysis_user"),
-                dbc.DropdownMenuItem("Item", href="/deep_analysis_item"),
-            ],
-            nav=True,
-            in_navbar=True,
-            label="Deep Analysis",
+                children=[
+                    dbc.DropdownMenuItem("User", href="/deep_analysis_user"),
+                    dbc.DropdownMenuItem("Item", href="/deep_analysis_item"),
+                ],
+                nav=True,
+                in_navbar=True,
+                label="Deep Analysis",
             ),
             dbc.DropdownMenu(
             children=[
