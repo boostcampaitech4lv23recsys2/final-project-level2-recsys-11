@@ -53,30 +53,22 @@ layout =  html.Div([
 
 @callback(
         Output(component_id='login-value', component_property='children'),
+        Output(component_id='user_state', component_property='data'),
+        
         Input('login-button', 'n_clicks'),
         State('uname-box', 'value'),
         State('pwd-box', 'value'),
         prevent_initial_call=True
 )
 def login(n_click, uname, pwd):
-        pwd =pwd_context.hash(pwd, salt=salt_value)
-        print(pwd)
+        pwd = pwd_context.hash(pwd, salt=salt_value)
         header = {'Content-Type': 'application/x-www-form-urlencoded'}
         data = {'username': uname, 'password': pwd}
         response = requests.post(f'{gct.API_URL}/user/login', data, header)
         if response.status_code == 200:
-                # dcc.Store(id='user_info')
-                return dcc.Location(pathname='compare-table', id='mvsm')
-        elif response.status_code == 200:
-                return dbc.Alert("Invalid ID or password.", color="primary")
+                print(response.json())
+                return dcc.Location(pathname='compare-table', id='mvsm'), response.json()
+        elif response.status_code == 401:
+                return dbc.Alert("Invalid ID or password.", color="primary"), None
         else:
-                return dbc.Alert(f"{response.status_code} Error.", color="primary")
-
-# @callback(
-#         Output(component_id='login-value', component_property='children'),
-#         Input('login-button', 'n_clicks'),
-#         State('uname-box', 'value'),
-#         State('pwd-box', 'value'),
-#         prevent_initial_call=True
-# )
-# def login_state(n_click, uname, pwd):
+                return dbc.Alert(f"{response.status_code} Error.", color="primary"), None
