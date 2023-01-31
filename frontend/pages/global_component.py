@@ -11,13 +11,13 @@ def get_navbar(has_sidebar=True):
     navbar = dbc.NavbarSimple(
         children=[
             dbc.NavItem(dbc.NavLink("Compare Table", href="/compare-table")),
-            dbc.NavItem(dbc.NavLink('Model vs Model', href="model-vs-model")),
+            dbc.NavItem(dbc.NavLink('Model vs Model', href="/model-vs-model")),
             dbc.NavItem(dbc.NavLink('Reranking', href="#")),
             dbc.NavItem(dbc.NavLink('Deep Analysis', href="/deep_analysis_item")),
             dbc.DropdownMenu(
             children=[
                 dbc.DropdownMenuItem("Get API Key", href="#"),
-                dbc.DropdownMenuItem("Logout", href="#"),
+                dbc.DropdownMenuItem("Logout", href="/login"),
                 html.Hr(),
                 dbc.DropdownMenuItem("About", href="#"),
             ],
