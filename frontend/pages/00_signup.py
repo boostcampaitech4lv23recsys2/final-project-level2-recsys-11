@@ -14,19 +14,6 @@ API_url = 'http://127.0.0.1:30004'
 
 dash.register_page(__name__, path='/signup')
 
-# username = requests.get(f'{API_url}/username').json()
-
-
-
-error_modal = html.Div(
-    dbc.Modal([
-            dbc.ModalBody(id='error-modal-body'),
-            dbc.ModalFooter(
-                dbc.Button("Close", id='close-modal'),
-                )
-        ], is_open=False, id='error-modal')
-)
-            
 
 layout = html.Div([
     html.H1('Create User Account')
@@ -77,13 +64,13 @@ def create_user(n_click, username, password1, password2):
     response = requests.post(f'{API_url}/frontend/create_user', json=data)
     
     if response.status_code == 422:
-        return dbc.Alert(response.json()['detail'][0]['msg'], color="primary"),
+        return dbc.Alert("Password doesn't match. Please check agian.", color="primary"),
 
     elif response.status_code == 200:
         return dcc.Location(pathname='/', id='mvsm')
     
     elif response.status_code == 409:
-        return dbc.Alert(response.json()['detail'], color="primary"),
+        return dbc.Alert("Already exist ID.", color="primary"),
     
 
 @callback(

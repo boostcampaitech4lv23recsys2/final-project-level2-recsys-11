@@ -60,9 +60,9 @@ layout =  html.Div([
 def login(n_click, uname, pwd):
         pwd =pwd_context.hash(pwd, salt=salt_value)
         params = {'id': uname, 'password': pwd}
-        response = requests.post(f'{API_url}/login', json=params)
-        if response.status_code == 422:
-                return dbc.Alert(response.json()['detail'][0]['msg'], color="primary")
-        
-        else:
-                return dcc.Location(pathname='compare-table', id='mvsm')
+        # response = requests.post(f'{API_url}/frontend/login', json=params)
+        # if response.status_code == 422:
+                # return dbc.Alert(response.json()['detail'][0]['msg'], color="primary")
+        return dcc.Location(pathname='compare-table', id='mvsm')
+        # else:
+        #         return dcc.Location(pathname='compare-table', id='mvsm')

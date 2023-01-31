@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Union, Tuple
 JSON = Union[str, int, float, bool, None, Dict[str, Any], List[Any]]
 
 
-from fastapi import APIRouter,
+from fastapi import APIRouter
 from schemas.data import Dataset, Experiment
 from schemas.config import get_rds_settings, get_s3_settings
 

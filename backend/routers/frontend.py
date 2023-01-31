@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
 from schemas.user import UserCreate
 from typing import Dict
+from fastapi.responses import JSONResponse
 
 from cruds.database import check_user
 from routers.database import get_db_inst, get_db_dep
@@ -12,14 +13,15 @@ from routers.database import get_db_inst, get_db_dep
 router = APIRouter()  
 
 
-@router.post("/create_user")
+@router.post("/create_user",)
 async def create_user(_user_create: UserCreate, connection=Depends(get_db_dep)):
     print('1023ukvdfljvhoire;')
     # connection = get_db_inst()
     user = await check_user(_user_create.ID) 
 
     if user:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+        return JSONResponse({'msg':'error'},status_code=status.HTTP_409_CONFLICT)
+        return HTTPException(status_code=409,
                             detail="이미 존재하는 사용자입니다.")
     else:
         async with connection as conn:
