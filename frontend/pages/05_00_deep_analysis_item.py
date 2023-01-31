@@ -108,13 +108,14 @@ selection = html.Div(
                 width=6,
             ),
             dbc.Col(
+                html.Div([
+                    html.H3('사이드인포'),
                 html.Div(
                     children=[
-                        html.H3('사이드인포'),
                         html.Br(),
                         html.Div(id='side_graph')
                     ],
-                 style={'overflow': 'scroll', 'height':700}),
+                 style={'overflow': 'scroll', 'height':700})]),
                 width=3,
             ),]
         )
@@ -132,7 +133,7 @@ def make_card(num):
 top = html.Div(
     children=[
         html.H3('top pop 10'),
-        dbc.Row(id='top_pop_10',),
+        dbc.Row(id='top_pop_10', style={'overflow':'scroll', 'height': 200}),
         html.H3('top rec 10'),
         dbc.Row(id='top_rec_10',),
         html.Br(),
