@@ -23,15 +23,15 @@ def get_navbar(has_sidebar=True):
                 label="Deep Analysis",
             ),
             dbc.DropdownMenu(
-            children=[
-                dbc.DropdownMenuItem("Get API Key", href="#"),
-                dbc.DropdownMenuItem("Logout", href="/login"),
-                html.Hr(),
-                dbc.DropdownMenuItem("About", href="#"),
-            ],
-            nav=True,
-            in_navbar=True,
-            label="Settings",
+                children=[
+                    dbc.DropdownMenuItem("Get API Key", href="#"),
+                    dbc.DropdownMenuItem("Logout", href="/login"),
+                    html.Hr(),
+                    dbc.DropdownMenuItem("About", href="#"),
+                ],
+                nav=True,
+                in_navbar=True,
+                label="Settings",
             ),
 
         ],
