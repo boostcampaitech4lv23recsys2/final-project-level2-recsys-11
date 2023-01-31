@@ -1,12 +1,5 @@
-import dash
 from dash import html, dcc, callback, Input, Output, State
 import dash_bootstrap_components as dbc
-import requests
-import pandas as pd
-import plotly.express as px
-from dash_bootstrap_templates import load_figure_template
-from dash.exceptions import PreventUpdate
-import feffery_antd_components as fac
 
 API_URL = 'http://127.0.0.1:30004'
 
