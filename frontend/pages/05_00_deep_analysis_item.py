@@ -8,6 +8,10 @@ from dash_bootstrap_templates import load_figure_template
 from dash.exceptions import PreventUpdate
 import feffery_antd_components as fac
 from . import global_component as gct
+from collections import Counter
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
+
 
 API_url = 'http://127.0.0.1:8000'
 
@@ -21,6 +25,7 @@ item['item_profile_user'] = item['item_profile_user'].apply(eval)
 item['recommended_users'] = item['recommended_users'].apply(eval)
 #지금은 리스트가 담긴 행이 문자열로 저장되기에 수정하는 작업이 필요하다.
 item['selected'] = 0
+item['len']  = item['recommended_users'].apply(len)
 
 uniq_genre = set()
 for i in item['genre']:
@@ -141,6 +146,11 @@ top = html.Div(
 related_users = html.Div(
     children=[
         html.H3('유저 프로필, 유저 추천 리스트'),
+        dbc.Row([
+            dbc.Col(id='related_user_age'),
+            dbc.Col(id='related_user_gender'),
+            dbc.Col(id='related_user_occupation'),
+        ]),
         html.Br(),
     ]
 )
@@ -313,14 +323,138 @@ def draw_toprec_card(value, data):
                 ],),
             )
             return card
-        
-        item['len']  = item['recommended_users'].apply(len)
-        
         rec = item.loc[data].sort_values(by=['len'], ascending=False).head(10).index
         lst = [make_card(item) for item in rec] # 보여줄 카드 갯수 지정 가능
-        
-        item.drop('len', axis=1, inplace=True)
         return lst
+    
+    
+# 관련 유저 그래프 시각화
+@callback(
+    Output('related_user_age', 'children'),
+    Output('related_user_gender', 'children'),
+    Output('related_user_occupation', 'children'),
+    Input('item_run', 'n_clicks'),
+    State('items_for_analysis', 'data'),
+    prevent_initial_call=True
+)
+def draw_user_graph(value, data):
+    if value != 1:
+        raise PreventUpdate
+    else:
+        
+        def get_user_side_by_items(selected_item: list) -> tuple:
+            '''
+            선택된 item들의 idx를 넣어주면, 그 아이템들을 사용한 유저, 추천받은 유저들의 인구통계학적 정보 수집
+            총 6개의 Counter가 return, 앞에서 부터 2개씩 age, gender, occupation 정보
+            e.g., 앞의 age는 사용한 유저, 뒤의 age는 추천받은 유저들 ...
+            '''
+            # Counter 세팅
+            age_Counter_profile, gender_Counter_profile, occupation_Counter_profile = Counter(), Counter(), Counter()
+            age_Counter_rec, gender_Counter_rec, occupation_Counter_rec = Counter(), Counter(), Counter()
+
+            for idx in selected_item:
+                one_item = item.loc[idx]
+
+                # profile Counter
+                tmp = user.loc[one_item['item_profile_user'], ['age','gender','occupation']]
+                age_Counter_profile += Counter(tmp['age'])
+                gender_Counter_profile += Counter(tmp['gender'])
+                occupation_Counter_profile += Counter(tmp['occupation'])
+
+                # profile Counter
+                if one_item.isnull()['recommended_users']:
+                    continue
+                tmp = user.loc[one_item['recommended_users'], ['age','gender','occupation']]
+                age_Counter_rec += Counter(tmp['age'])
+                gender_Counter_rec += Counter(tmp['gender'])
+                occupation_Counter_rec += Counter(tmp['occupation'])
+
+            age_Counter_profile = dict(sorted(age_Counter_profile.items(), key=lambda x : x[1], reverse=True))
+            age_Counter_rec = dict(sorted(age_Counter_rec.items(), key=lambda x : x[1], reverse=True))
+
+            gender_Counter_profile = dict(sorted(gender_Counter_profile.items(), key=lambda x : x[1], reverse=True))
+            gender_Counter_rec = dict(sorted(gender_Counter_rec.items(), key=lambda x : x[1], reverse=True))
+
+            occupation_Counter_profile = dict(sorted(occupation_Counter_profile.items(), key=lambda x : x[1], reverse=True))
+            occupation_Counter_rec = dict(sorted(occupation_Counter_rec.items(), key=lambda x : x[1], reverse=True))
+
+            return age_Counter_profile, age_Counter_rec, gender_Counter_profile, gender_Counter_rec, occupation_Counter_profile, occupation_Counter_rec
+        
+        
+        def plot_age_counter(age_Counter_profile: Counter, age_Counter_rec: Counter):
+            age_Counter_profile_labels = list(age_Counter_profile.keys())
+            age_Counter_profile_values = list(age_Counter_profile.values())
+            age_Counter_rec_labels = list(age_Counter_rec.keys())
+            age_Counter_rec_values = list(age_Counter_rec.values())
+            fig = make_subplots(
+                rows=1, cols=2, specs=[[{'type':'domain'}, {'type':'domain'}]],
+                subplot_titles=("Age rtio(profile)", "Age ratio(rec)")
+            )
+            fig.add_trace(go.Pie(labels=age_Counter_profile_labels, values=age_Counter_profile_values, name="Age(profile)", pull=[0.07]+[0]*(len(age_Counter_profile_values)-1)), # textinfo='label+percent', pull=[0.2]+[0]*(len(total_item_genre_values)-1)
+                    1, 1)
+            fig.add_trace(go.Pie(labels=age_Counter_rec_labels, values=age_Counter_rec_values, name="Age(rec)", pull=[0.07]+[0]*(len(age_Counter_rec_values)-1)), # textinfo='label+percent', pull=[0.2]+[0]*(len(user_profile_values)-1)
+                    1, 2)
+
+            fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
+            fig.update_layout(
+                title_text="Selected Item profile vs Selected Item rec list (Age)",
+            #     width=1000,
+            #     height=500
+            )
+
+            return fig
+
+        def plot_gender_counter(gender_Counter_profile: Counter, gender_Counter_rec: Counter):
+            gender_Counter_profile_labels = list(gender_Counter_profile.keys())
+            gender_Counter_profile_values = list(gender_Counter_profile.values())
+            gender_Counter_rec_labels = list(gender_Counter_rec.keys())
+            gender_Counter_rec_values = list(gender_Counter_rec.values())
+
+            fig = make_subplots(
+                rows=1, cols=2, specs=[[{'type':'domain'}, {'type':'domain'}]],
+                subplot_titles=("Gender ratio(profile)", "Gender ratio(rec)")
+            )
+            fig.add_trace(go.Pie(labels=gender_Counter_profile_labels, values=gender_Counter_profile_values, name="user Rec list genre", pull=[0.07]+[0]*(len(gender_Counter_profile_values)-1)), # textinfo='label+percent', pull=[0.2]+[0]*(len(user_rec_values)-1)
+                    1, 1)
+            fig.add_trace(go.Pie(labels=gender_Counter_rec_labels, values=gender_Counter_rec_values, name="user rerank", pull=[0.07]+[0]*(len(gender_Counter_rec_values)-1)), # textinfo='label+percent', pull=[0.2]+[0]*(len(user_rerank_values)-1)
+                    1, 2)
+            fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
+            fig.update_layout(
+                title_text="Selected Item profile vs Selected Item rec list (Gender)",
+                # width=1000,
+                # height=500
+            )
+
+            return fig
+
+        def plot_occupation_counter(occupation_Counter_profile: Counter, occupation_Counter_rec: Counter):
+            occupation_Counter_profile_labels = list(occupation_Counter_profile.keys())
+            occupation_Counter_profile_values = list(occupation_Counter_profile.values())
+            occupation_Counter_rec_labels = list(occupation_Counter_rec.keys())
+            occupation_Counter_rec_values = list(occupation_Counter_rec.values())
+            fig = make_subplots(
+                rows=1, cols=2, specs=[[{'type':'domain'}, {'type':'domain'}]],
+                subplot_titles=("Occupation ratio(profile)", "Occupation ratio(rec)")
+            )
+            fig.add_trace(go.Pie(labels=occupation_Counter_profile_labels, values=occupation_Counter_profile_values, name="user Rec list genre", pull=[0.07]+[0]*(len(occupation_Counter_profile_values)-1)), # textinfo='label+percent', pull=[0.2]+[0]*(len(user_rec_values)-1)
+                    1, 1)
+            fig.add_trace(go.Pie(labels=occupation_Counter_rec_labels, values=occupation_Counter_rec_values, name="user rerank", pull=[0.07]+[0]*(len(occupation_Counter_rec_values)-1)), # textinfo='label+percent', pull=[0.2]+[0]*(len(user_rerank_values)-1)
+                    1, 2)
+            fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
+            fig.update_layout(
+                title_text="Selected Item profile vs Selected Item rec list (Occupation)",
+                # width=1000,
+                # height=500
+            )
+
+            return fig
+        
+        age_Counter_profile, age_Counter_rec, gender_Counter_profile, gender_Counter_rec, occupation_Counter_profile, occupation_Counter_rec = get_user_side_by_items(data)
+        age = dcc.Graph(figure=plot_age_counter(age_Counter_profile, age_Counter_rec))
+        gender = dcc.Graph(figure=plot_gender_counter(gender_Counter_profile, gender_Counter_rec))
+        occupation = dcc.Graph(figure=plot_occupation_counter(occupation_Counter_profile, occupation_Counter_rec))
+        
+        return age, gender, occupation
 
 #pd.DataFrame.from_dict(data=data, orient='tight')데이터프래임
 # request.get().json
