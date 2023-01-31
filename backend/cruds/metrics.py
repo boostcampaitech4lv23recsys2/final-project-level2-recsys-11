@@ -3,6 +3,7 @@ from pandas import pd
 from numpy import np
 
 from schemas.data import Dataset
+from database.s3 import get_from_s3
 
 class Quant_Metrics:
     '''
@@ -184,3 +185,18 @@ class Qual_Metrics:
         self.implicit_matrix = dataset.implicit_matrix 
 
         self.user_profiles = dataset.user_profiles #?? 
+
+
+def avg_metric(rows: Dict) -> Dict:
+    metrics = ['recall', 'ap', 'ndcg', 'tail_percentage', 'avg_popularity', 'coverage', \
+                'diversity_cos', 'diversity_jac', 'serendipity_pmi', 'serendipity_jac', 'novelty']
+    
+    for row in rows: # row = experiment(dict)
+        for key, value in row.items(): # key = column  # value = column value
+            if key in metrics: # key = metric
+                # get from s3 
+                dict_of_per_user = get_from_s3(value) # {user1: (float),}
+                row[key] = sum(dict_of_per_user.values()) / len(dict_of_per_user.values())
+    
+    return rows
+    
