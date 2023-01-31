@@ -14,6 +14,10 @@ dash.register_page(__name__, path='/deep_analysis_item')
 
 user = pd.read_csv('/opt/ml/user.csv', index_col='user_id')
 item = pd.read_csv('/opt/ml/item.csv', index_col='item_id')
+item.fillna(value='[]', inplace=True)
+item['item_profile_user'] = item['item_profile_user'].apply(eval)
+item['recommended_users'] = item['recommended_users'].apply(eval)
+#지금은 리스트가 담긴 행이 문자열로 저장되기에 수정하는 작업이 필요하다.
 item['selected'] = 0
 
 uniq_genre = set()
@@ -75,9 +79,13 @@ selection = html.Div(
                         html.Br(),
                         dbc.Button(id='reset_selection', children="초기화", color="primary"),
                         dcc.Store(id='items_selected_by_option', storage_type='session'), #데이터를 저장하는 부분
-                        dcc.Store(id='items_selected_by_embed', storage_type='session') #데이터를 저장하는 부분
+                        dcc.Store(id='items_selected_by_embed', storage_type='session'), #데이터를 저장하는 부분
+                        dcc.Store(id='items_for_analysis', storage_type='session'), #데이터를 저장하는 부분
+                        html.P(id='n_items'),
+                        dbc.Button(id='item_run',children='RUN')
                     ],
-                    className='form-style'),
+                    # className='form-style'
+                ),
                 width=3,
 
             ),
@@ -109,9 +117,28 @@ selection = html.Div(
     ]
 )
 
+#그림 카드 만드는 함수
+def make_card(num):
+    card = dbc.Col(
+        id=f'item_{num}',
+
+    )
+    return card
+
+top = html.Div(
+    children=[
+        html.H3('top pop 10'),
+        dbc.Row(id='top_pop_10',),
+        html.H3('top rec 10'),
+        dbc.Row(id='top_rec_10',),
+        html.Br(),
+        html.P(id='test')
+    ]
+)
+
 related_users = html.Div(
     children=[
-        html.H3('아이템 프로필, 아이템을 추천받은 유저'),
+        html.H3('유저 프로필, 유저 추천 리스트'),
         html.Br(),
     ]
 )
@@ -121,7 +148,8 @@ layout = html.Div(
     children=[
         gct.get_navbar(has_sidebar=False),
         selection,
-        related_users,
+        top,
+        related_users
     ],
     # className='content'
 )
@@ -150,6 +178,19 @@ def save_items_selected_by_embed(emb):
     item_idx = [i['pointNumber'] for i in emb['points']]
     item_lst = item.iloc[item_idx]
     return item_lst.index.to_list()
+
+# 최근에 선택한 아이템을 최종 store에 저장
+@callback(
+    Output('items_for_analysis', 'data'),
+    Output('n_items', 'children'),
+    Input('items_selected_by_option', 'data'),
+    Input('items_selected_by_embed', 'data'),
+)
+def prepare_analysis(val1, val2):
+    if ctx.triggered_id == 'items_selected_by_option':
+        return val1, f'selected items: {len(val1)}'
+    else:
+        return val2, f'selected items: {len(val2)}'
 
 
 #최근에 저장된 store 기준으로 임베딩 그래프를 그림
@@ -191,12 +232,94 @@ def update_graph(store1, store2):
         return (dcc.Graph(figure=year), dcc.Graph(figure=genre))
 
 
-
-# # 초기화 버튼 누를 때 선택 초기화
+# 초기화 버튼 누를 때 선택 초기화
 @callback(
     Output('selected_genre', 'value'),
     Output('selected_year', 'value'),
+    Output('item_run', 'n_clicks'),
     Input('reset_selection', 'n_clicks'),
 )
 def reset_selection(value):
-    return [], [item['release_year'].min(), item['release_year'].max()]
+    return [], [item['release_year'].min(), item['release_year'].max()], 0
+
+#### run 실행 시 실행될 함수들 #####
+
+# 테스팅
+@callback(
+    Output('test', 'children'),
+    Input('item_run', 'n_clicks'),
+    State('items_for_analysis', 'data'),
+    prevent_initial_call=True
+)
+def prepare_analysis(value, data):
+    if value != 1:
+        raise PreventUpdate
+    else:
+        return data
+
+# top pop 10
+@callback(
+    Output('top_pop_10', 'children'),
+    Input('item_run', 'n_clicks'),
+    State('items_for_analysis', 'data'),
+    prevent_initial_call=True
+)
+def draw_toppop_card(value, data):
+    if value != 1:
+        raise PreventUpdate
+    else:
+        def make_card(element):
+            tmp = item.loc[element]
+            card = dbc.Col(
+                children=dbc.Card([
+                    dbc.CardImg(top=True),
+                    dbc.CardBody([
+                        html.H6(tmp['movie_title']),
+                        html.P(tmp['genre']),
+                        html.P(tmp['release_year']),
+                        html.P(tmp['item_pop']),
+                    ],),
+                ],),
+            )
+            return card
+        pop = item.loc[data].sort_values(by=['item_pop'], ascending=False).head(10).index
+        lst = [make_card(item) for item in pop] # 보여줄 카드 갯수 지정 가능
+        return lst
+    
+# top rec 10
+@callback(
+    Output('top_rec_10', 'children'),
+    Input('item_run', 'n_clicks'),
+    State('items_for_analysis', 'data'),
+    prevent_initial_call=True
+)
+def draw_toprec_card(value, data):
+    if value != 1:
+        raise PreventUpdate
+    else:
+        def make_card(element):
+            tmp = item.loc[element]
+            card = dbc.Col(
+                children=dbc.Card([
+                    dbc.CardImg(top=True),
+                    dbc.CardBody([
+                        html.H6(tmp['movie_title']),
+                        html.P(tmp['genre']),
+                        html.P(tmp['release_year']),
+                        html.P(tmp['item_pop']),
+                    ],),
+                ],),
+            )
+            return card
+        
+        item['len']  = item['recommended_users'].apply(len)
+        
+        rec = item.loc[data].sort_values(by=['len'], ascending=False).head(10).index
+        lst = [make_card(item) for item in rec] # 보여줄 카드 갯수 지정 가능
+        
+        item.drop('len', axis=1, inplace=True)
+        return lst
+
+#pd.DataFrame.from_dict(data=data, orient='tight')데이터프래임
+# request.get().json
+# 저장
