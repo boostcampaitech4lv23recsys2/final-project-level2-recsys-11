@@ -4,11 +4,10 @@ import dash_bootstrap_components as dbc
 import requests
 from dash.exceptions import PreventUpdate
 from passlib.context import CryptContext
+from . import global_component as gct
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 salt_value = 'zFICaaUesOyNBJW4MHuUpV'
-
-API_url = 'http://127.0.0.1:8000'
 
 dash.register_page(__name__, path='/')
 
@@ -59,10 +58,15 @@ layout =  html.Div([
 )
 def login(n_click, uname, pwd):
         pwd =pwd_context.hash(pwd, salt=salt_value)
-        params = {'id': uname, 'password': pwd}
-        # response = requests.post(f'{API_url}/frontend/login', json=params)
-        # if response.status_code == 422:
-                # return dbc.Alert(response.json()['detail'][0]['msg'], color="primary")
-        return dcc.Location(pathname='compare-table', id='mvsm')
-        # else:
-        #         return dcc.Location(pathname='compare-table', id='mvsm')
+        print(pwd)
+        header = {'Content-Type': 'application/x-www-form-urlencoded'}
+        data = {'username': uname, 'password': pwd}
+        response = requests.post(f'{gct.API_URL}/user/login', data, header)
+        if response.status_code == 200:
+                # dcc.Store(id='user_info')
+                return dcc.Location(pathname='compare-table', id='mvsm')
+        elif response.status_code == 200:
+                return dbc.Alert("Invalid ID or password.", color="primary")
+        else:
+                return dbc.Alert(f"{response.status_code} Error.", color="primary")
+                

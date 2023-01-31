@@ -13,8 +13,6 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
 
-API_url = 'http://127.0.0.1:8000'
-
 dash.register_page(__name__, path='/deep_analysis_item')
 # load_figure_template("darkly") # figure 스타일 변경
 
