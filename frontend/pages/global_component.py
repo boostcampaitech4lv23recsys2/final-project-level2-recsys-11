@@ -25,6 +25,8 @@ def get_navbar(has_sidebar=True):
             children=[
                 dbc.DropdownMenuItem("Get API Key", href="#"),
                 dbc.DropdownMenuItem("Logout", href="#"),
+                html.Hr(),
+                dbc.DropdownMenuItem("About", href="#"),
             ],
             nav=True,
             in_navbar=True,
@@ -33,7 +35,7 @@ def get_navbar(has_sidebar=True):
 
         ],
         brand="𝙒𝙚𝙗𝟰𝙍𝙚𝙘",
-        brand_href="#",
+        brand_href="/compare-table",
         color="primary",
         dark=True,
         className=classname
