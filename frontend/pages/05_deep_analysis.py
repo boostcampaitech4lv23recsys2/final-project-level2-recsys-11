@@ -121,9 +121,9 @@ item_selection = html.Div(
                 html.Div(
                     children=[
                         html.H3('사이드인포'),
-                        html.Br(),
-                        html.Div(id='item_side_graph')
+                        html.Div(id='item_side_graph'),
                     ],
+                    style={'overflow': 'scroll', 'height':700}
                 ),
                 width=3,
             ),]
@@ -138,7 +138,6 @@ item_top = html.Div(
         html.H3('top rec 10'),
         dbc.Row(id='top_rec_10',),
         html.Br(),
-        html.P(id='test')
     ]
 )
 
@@ -230,11 +229,19 @@ user_selection = html.Div(
 
 
 layout = html.Div(
-    id='deep_analysis_page',
     children=[
         gct.get_navbar(has_sidebar=False),
-        base,
-        html.Div(id='deep_analysis_page')
+        html.Div(
+            children=[
+                base,
+                html.Div(
+                    id='deep_analysis_page',
+                )
+            ],
+            className='container'
+        )
+
+
         # selection,
         # top,
         # related_users
