@@ -66,13 +66,15 @@ qual_metrics = pd.read_csv('/opt/ml/qual_metrics_df.csv')
 fig_qual = plot_qual_metrics(qual_metrics)
 fig_dist = plot_dist_for_metrics(qual_metrics, 'Diversity(jaccard)')
 
+
+#### model form : 
 model_form = html.Div([html.Div([
     dbc.Row([
         dbc.Col([
             dbc.Button('➖', className='delete-btn', id='delete_button'),
             dbc.Popover("Delete this experiment", trigger='hover', target='delete_button', body=True)
-]
-            ),
+
+            ]),
 ]),
     dcc.Dropdown([1,2,3]),
     html.Hr(),
@@ -84,7 +86,7 @@ model_form = html.Div([html.Div([
 ], className='form-style'),
                        html.Br()])
 
-
+#### side bar : 비교하고 싶은 실험 추가하고 삭제하는 부분
 sidebar = html.Div(
     [
         html.H3("Select Expriements",),
@@ -153,6 +155,24 @@ layout = html.Div(children=[
     specific_metric
 ],className='content')
 
+
+# @callback(
+#     Output('items_selected_by_option', 'data'),
+#     Input('selected_genre', 'value'), Input('selected_year', 'value'),
+# )
+# def save_items_selected_by_option(genre, year):
+#     item_lst = item.copy()
+#     item_lst = item_lst[item_lst['genre'].str.contains(
+#         ''.join([*map(lambda x: f'(?=.*{x})', genre)]) + '.*', regex=True)]
+#     item_lst = item_lst[(item_lst['release_year'] >= year[0]) & (item_lst['release_year'] <= year[1])]
+#     return item_lst.index.to_list()
+
+@callback(# add_button 
+    Output('selected_exp', 'data'),
+    Input('selected_exp_id', 'data')
+)
+def save_selected_exp_id(exp_id):
+    return
 
 @callback(  # compare 버튼 누름
         Output('total_metric', 'figure'),
