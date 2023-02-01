@@ -21,8 +21,6 @@ class S3_Settings(BaseSettings):
     class Config:
         env_file = '.env'
         env_file_encoding = 'utf-8'
-<<<<<<< HEAD
-=======
 
 class Login_Settings(BaseSettings):
         SALT: str
@@ -48,4 +46,3 @@ def get_login_settings():
 def get_s3_settings():
     return S3_Settings(_env_file='s3.env', _env_file_encoding='utf-8')
 
->>>>>>> staging
