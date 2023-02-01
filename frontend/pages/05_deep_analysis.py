@@ -14,32 +14,65 @@ import plotly.graph_objects as go
 
 
 dash.register_page(__name__, path='/deep_analysis')
+
+# 유저가 고른 실험을 받아온다.
+@callback(
+    Output('trash', 'data'),
+    Input('temp_customers','value'),
+    prevent_initial_call=True
+)
+def selectt_experiment(val):
+    global user
+    global item
+    global uniq_genre
+    user = pd.read_csv('/opt/ml/user.csv', index_col='user_id')
+    item = pd.read_csv('/opt/ml/item.csv', index_col='item_id')
+    item.fillna(value='[]', inplace=True)
+    item['item_profile_user'] = item['item_profile_user'].apply(eval)
+    item['recommended_users'] = item['recommended_users'].apply(eval)
+    #리스트와 같은 객체는 json으로 넘어올 때 문자열로 들어올 가능성이 있으니 이 코드가 필요할 수도 있다. 상황에 따라 판단하기.
+    item['selected'] = 0
+    item['len']  = item['recommended_users'].apply(len)
+    uniq_genre = set()
+    for i in item['genre']:
+        uniq_genre |= set(i.split(' '))
+    return None
+
+
+
 # load_figure_template("darkly") # figure 스타일 변경
 
-user = pd.read_csv('/opt/ml/user.csv', index_col='user_id')
-item = pd.read_csv('/opt/ml/item.csv', index_col='item_id')
-item.fillna(value='[]', inplace=True)
-item['item_profile_user'] = item['item_profile_user'].apply(eval)
-item['recommended_users'] = item['recommended_users'].apply(eval)
-#리스트와 같은 객체는 json으로 넘어올 때 문자열로 들어올 가능성이 있으니 이 코드가 필요할 수도 있다. 상황에 따라 판단하기.
-item['selected'] = 0
-item['len']  = item['recommended_users'].apply(len)
+#TODO: 유저와 아이템 백엔드에서 받아오기
+#
+#pd.DataFrame.from_dict(data=data, orient='tight')데이터프래임
+# request.get().json
+# 저장
 
-uniq_genre = set()
-for i in item['genre']:
-    uniq_genre |= set(i.split(' '))
+# user = pd.read_csv('/opt/ml/user.csv', index_col='user_id')
+# item = pd.read_csv('/opt/ml/item.csv', index_col='item_id')
+# item.fillna(value='[]', inplace=True)
+# item['item_profile_user'] = item['item_profile_user'].apply(eval)
+# item['recommended_users'] = item['recommended_users'].apply(eval)
+# #리스트와 같은 객체는 json으로 넘어올 때 문자열로 들어올 가능성이 있으니 이 코드가 필요할 수도 있다. 상황에 따라 판단하기.
+# item['selected'] = 0
+# item['len']  = item['recommended_users'].apply(len)
+
+# uniq_genre = set()
+# for i in item['genre']:
+#     uniq_genre |= set(i.split(' '))
 
 #잠시 리랭크는 내가 임의로 진행한다.
-tmp_user = [1, 5, 10]
-obj = 'novelty'
-cand = user.loc[tmp_user]
-#이걸 가지고 백엔드에 소통할 것이다.
+# tmp_user = [1, 5, 10]
+# obj = 'novelty'
+# cand = user.loc[tmp_user]
+#이런 식의 인자를 가지고 백엔드에 요청할 것이다.
 
-base = html.Div(
+header = html.Div(
     children=[
         dbc.Row([
             html.Div('유저가 장바구니에 넣은 실험들'),
             dbc.DropdownMenu(
+                id='temp_customers',
                 children=[
                     dbc.DropdownMenuItem(id = '1', children="실험1",),
                     dbc.DropdownMenuItem(id = '2', children="실험2"),
@@ -50,10 +83,10 @@ base = html.Div(
             html.Div('해당 실험의 아이템, 유저 페이지'),
             dbc.RadioItems(
                 id="show_user_or_item",
-                # className="btn-group",
-                # inputClassName="btn-check",
-                # labelClassName="btn btn-outline-primary",
-                # labelCheckedClassName="active",
+                className="btn-group",
+                inputClassName="btn-check",
+                labelClassName="btn btn-outline-primary",
+                labelCheckedClassName="active",
                 options=[
                     {"label": "item", "value": 1},
                     {"label": "user", "value": 2},
@@ -75,7 +108,8 @@ item_selection = html.Div(
                         html.H3('옵션을 통한 선택'),
                         html.P('장르'),
                         dcc.Dropdown(
-                            options=[*uniq_genre],
+                            options=[],
+                            # options=[*uniq_genre],
                             value=[],
                             multi=True,
                             id='selected_genre'
@@ -161,8 +195,7 @@ item_related_users = html.Div(
 
 user_selection = html.Div(
     children=[
-        dbc.Row(
-            [
+        dbc.Row([
                 dbc.Col(
                     html.Div(
                         children=[
@@ -224,8 +257,7 @@ user_selection = html.Div(
                     ),
                     width=3,
                 ),
-            ]
-        ),
+            ],),
     ]
 )
 
@@ -242,21 +274,30 @@ layout = html.Div(
         gct.get_navbar(has_sidebar=False),
         html.Div(
             children=[
-                base,
+                header,
                 html.Div(id='deep_analysis_page',)
             ],
             className='container'
-        )
+        ),
+        dcc.Store(id='trash') # 아무런 기능도 하지 않고, 그냥 콜백의 아웃풋 위치만 잡아주는 녀석
     ],
 )
 
 
 test = html.Div(html.P(id='testin'))
 
+### 고객이 정한 장바구니가 담긴 store id가 필요함
+##그거 토대로 버튼 그룹을 구성해야 함
+
+
+
+
+
 # 유저 페이지를 띄울지, 아이템 페이지를 띄울지
 @callback(
     Output('deep_analysis_page', 'children'),
-    Input('show_user_or_item','value')
+    Input('show_user_or_item','value'),
+    prevent_initial_call=True
 )
 def display_overall(val):
     if val == 1:
@@ -777,32 +818,38 @@ def draw_rerank(value, user_lst, obj, alpha):
     if value != 1:
         raise PreventUpdate
     else:
-
-        #todo: user_lst, obj, alpha를 통해 백엔드에 요청
+        origin_lst = user.loc[user_lst]
+        #TODO: user_lst, obj, alpha를 통해 백엔드에 리랭킹 요청
         # 지표와 아이템들을 바로 merge할 수 있는 상태로 받는다.
+
+        # reranked = requests.get(das;ldfj)
+        #lst = origin_lst.merge(reranked)
+        # 유저별 모든 지표가 필요하다. indicator때 비교하기 위해
+        # 유저별 추천 아이템(10개), 리랭크 아이템 10개 필요하다. item poster위해
+        #
 
         indicator = dbc.Row(
             children=[
                 html.P('지표 비교. 리랭킹했더니 지표가 어떻게 변화했는지 +-로'),
-
+                #TODO: 기존 지표와 리랭킹 지표 차이를 각각 표시.
+                #
             ],
         )
         item_poster = dbc.Row(
             children=[
                 html.P('아이템 쪽에서의 포스터 처럼'),
                 html.P('원래 많이 추천된 놈. 리랭킹했더니 많이 추천된 놈. 완전 뉴 페이스'),
+                #TODO 아
             ],
         )
         item_side = dbc.Row(
             children=[
 
                 html.P('리랭킹된 아이템들 사이드 정보. 상준이 장르. 년도까지'),
+                # 장르 파이차트에서 유저 프로파일 필요. 이외에는 사용되지 않음
+
             ],
         )
         tmp = [indicator,item_poster,item_side]
 
         return tmp
-
-#pd.DataFrame.from_dict(data=data, orient='tight')데이터프래임
-# request.get().json
-# 저장
