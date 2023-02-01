@@ -162,17 +162,17 @@ user_selection = html.Div(
                     html.Div(
                         children=[
                             html.H3("옵션을 통한 선택"),
-                            html.P("성별"),
-                            dcc.Dropdown(
-                                options=["M", "F"],
-                                value=[],
-                                id="selected_gender",
-                            ),
                             html.P("연령대"),
                             dcc.Checklist(
                                 options=sorted(user["age"].unique()),
                                 value=[],
                                 id="selected_age",
+                            ),
+                            html.P("성별"),
+                            dcc.Dropdown(
+                                options=["M", "F"],
+                                value=[],
+                                id="selected_gender",
                             ),
                             html.P("직업"),
                             dcc.Dropdown(
@@ -204,10 +204,7 @@ user_selection = html.Div(
                     html.Div(
                         children=[
                             html.H3("유저 2차원 임베딩"),
-                            html.Br(),
-                            dcc.Graph(
-                                id="user_emb_graph", style={"config.responsive": True}
-                            ),
+                            dcc.Graph(id="user_emb_graph", style={"config.responsive": True}),
                         ],
                     ),
                     width=6,
@@ -216,9 +213,9 @@ user_selection = html.Div(
                     html.Div(
                         children=[
                             html.H3("사이드인포"),
-                            html.Br(),
                             html.Div(id="user_side_graph"),
                         ],
+                        style={'overflow': 'scroll', 'height':700}
                     ),
                     width=3,
                 ),
@@ -227,6 +224,10 @@ user_selection = html.Div(
     ]
 )
 
+user_rerank = dbc.Row(
+    id='rerank_box',
+
+)
 
 layout = html.Div(
     children=[
@@ -234,19 +235,11 @@ layout = html.Div(
         html.Div(
             children=[
                 base,
-                html.Div(
-                    id='deep_analysis_page',
-                )
+                html.Div(id='deep_analysis_page',)
             ],
             className='container'
         )
-
-
-        # selection,
-        # top,
-        # related_users
     ],
-    # className='content'
 )
 
 
@@ -267,6 +260,7 @@ def display_overall(val):
     else:
         return [
             user_selection,
+            user_rerank,
             test,
 
         ]
@@ -367,19 +361,6 @@ def item_reset_selection(value):
     return [], [item['release_year'].min(), item['release_year'].max()], 0
 
 #### run 실행 시 실행될 함수들 #####
-
-# 테스팅
-@callback(
-    Output('test', 'children'),
-    Input('item_run', 'n_clicks'),
-    State('items_for_analysis', 'data'),
-    prevent_initial_call=True
-)
-def prepare_analysis(value, data):
-    if value != 1:
-        raise PreventUpdate
-    else:
-        return data
 
 # top pop 10
 @callback(
@@ -568,16 +549,18 @@ def draw_user_graph(value, data):
 
         return age, gender, occupation
 
+
+
 #########################################################
 ######################## 유저 ###########################
 #########################################################
 
-@callback(Output('testin', 'children'), Input('users_selected_by_option', 'data'))
-def testing(val):
-    tmp = [*map(str, val)]
-    return str([len(tmp), tmp])
+# @callback(Output('testin', 'children'), Input('users_selected_by_option', 'data'))
+# def testing(val):
+#     tmp = [*map(str, val)]
+#     return str(tmp)
 
-#선택한 유저들을 store에 저장
+#선택한 유저들을 store1에 저장
 @callback(
     Output('users_selected_by_option', 'data'),
     Input('selected_age', 'value'),
@@ -597,7 +580,152 @@ def save_users_selected_by_option(age, gender, occupation, wrong):
         user_lst = user_lst[user_lst['div_jac'] <= 0.77] # 당장의 데이터에 recall이 없다.
     return user_lst.index.to_list()
 
+# user embed graph에서 선택한 유저들을 store2에 저장
+@callback(
+    Output('users_selected_by_embed', 'data'),
+    Input('user_emb_graph', 'selectedData')
+)
+def save_users_selected_by_embed(emb):
+    if emb is None:
+        raise PreventUpdate
+    user_idx = [i['pointNumber'] for i in emb['points']]
+    user_lst = user.iloc[user_idx]
+    return user_lst.index.to_list()
 
+# 최근에 선택한 유저를 최종 store에 저장
+@callback(
+    Output('users_for_analysis', 'data'),
+    Output('n_users', 'children'),
+    Input('users_selected_by_option', 'data'),
+    Input('users_selected_by_embed', 'data'),
+)
+def prepare_analysis(val1, val2):
+    if ctx.triggered_id == 'users_selected_by_option':
+        return val1, f'selected users: {len(val1)}'
+    else:
+        return val2, f'selected users: {len(val2)}'
+
+#최근에 저장된 store 기준으로 유저 임베딩 그래프를 그림
+# @callback(
+#     Output('user_emb_graph', 'figure'),
+#     Input('users_selected_by_option', 'data'),
+# )
+# def update_graph(store1):
+#     user['selected'] = 'Not Selected'
+#     user.loc[store1, 'selected'] = 'Selected'
+#     emb = px.scatter(
+#         user, x = 'xs', y = 'ys', color='selected', # 갯수에 따라 색깔이 유동적인 것 같다..
+#         opacity=0.9,
+#         marginal_x="histogram",
+#         marginal_y="histogram",
+#     )
+#     emb.update_layout(
+#         clickmode='event+select',
+#         width=700,
+#         height=700,
+#     )
+#     return emb
+
+# #최근에 저장된 store 기준으로 사이드 그래프를 그림
+@callback(
+    Output('user_side_graph', 'children'),
+    Input('users_selected_by_option', 'data'),
+    Input('users_selected_by_embed', 'data'),
+)
+def update_graph(store1, store2):
+    def plot_age_counter(age_Counter_profile: Counter):
+        age_Counter_profile_labels = list(age_Counter_profile.keys())
+        age_Counter_profile_values = list(age_Counter_profile.values())
+        fig = make_subplots(
+            rows=1, cols=1, specs=[[{'type':'domain'}]],
+            subplot_titles=("Age ratio(profile)")
+        )
+        fig.add_trace(go.Pie(labels=age_Counter_profile_labels, values=age_Counter_profile_values, name="Age(profile)", pull=[0.07]+[0]*(len(age_Counter_profile_values)-1)), # textinfo='label+percent', pull=[0.2]+[0]*(len(total_item_genre_values)-1)
+                1, 1)
+
+        fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
+        return fig
+
+    def plot_gender_counter(gender_Counter_profile: Counter):
+        gender_Counter_profile_labels = list(gender_Counter_profile.keys())
+        gender_Counter_profile_values = list(gender_Counter_profile.values())
+
+        fig = make_subplots(
+            rows=1, cols=1, specs=[[{'type':'domain'}]],
+            subplot_titles=("Gender ratio(profile)")
+        )
+        fig.add_trace(go.Pie(labels=gender_Counter_profile_labels, values=gender_Counter_profile_values, name="user Rec list genre", pull=[0.07]+[0]*(len(gender_Counter_profile_values)-1)), # textinfo='label+percent', pull=[0.2]+[0]*(len(user_rec_values)-1)
+                1, 1)
+        fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
+
+        return fig
+
+    def plot_occupation_counter(occupation_Counter_profile: Counter):
+        occupation_Counter_profile_labels = list(occupation_Counter_profile.keys())
+        occupation_Counter_profile_values = list(occupation_Counter_profile.values())
+        fig = make_subplots(
+            rows=1, cols=1, specs=[[{'type':'domain'}]],
+            subplot_titles=("Occupation ratio(profile)")
+        )
+        fig.add_trace(go.Pie(labels=occupation_Counter_profile_labels, values=occupation_Counter_profile_values, name="user Rec list genre", pull=[0.07]+[0]*(len(occupation_Counter_profile_values)-1)), # textinfo='label+percent', pull=[0.2]+[0]*(len(user_rec_values)-1)
+                1, 1)
+        fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
+        return fig
+
+    if ctx.triggered_id == 'users_selected_by_option':
+        tmp = user.loc[store1]
+        age = plot_age_counter(Counter(tmp['age']))
+        gender = plot_gender_counter(Counter(tmp['gender']))
+        occupation = plot_occupation_counter(Counter(tmp['occupation']))
+        return (dcc.Graph(figure=age), dcc.Graph(figure=gender), dcc.Graph(figure=occupation))
+    else:
+        if not store2:
+            raise PreventUpdate
+        tmp = user.loc[store2]
+        tmp = tmp[tmp['selected'] == 'Selected']
+        age = plot_age_counter(Counter(tmp['age']))
+        gender = plot_gender_counter(Counter(tmp['gender']))
+        occupation = plot_occupation_counter(Counter(tmp['occupation']))
+        return (dcc.Graph(figure=age), dcc.Graph(figure=gender), dcc.Graph(figure=occupation))
+
+
+
+
+#### run 실행 시 실행될 함수들 #####
+
+#최종 store가 업데이트됐을 때 리랭킹 선택지 등장
+@callback(
+    Output('rerank_box', 'children'),
+    Input('user_run', 'n_clicks'),
+    prevent_initial_call=True
+)
+def prepare_rerank(value):
+    if value != 1:
+        raise PreventUpdate
+    else:
+        tmp = [
+            html.P("Reranking Options  a *rel(i) + (1-a) * obj(i)"),
+            html.Br(),
+            dbc.Col(
+                dbc.RadioItems(
+                    id="rerank_obj",
+                    inputClassName="btn-check",
+                    labelClassName="btn btn-outline-primary",
+                    labelCheckedClassName="active",
+                    options=[
+                        {"label": "Diversity(Cosine)", "value": 1},
+                        {"label": "Diversity(Jaccard)", "value": 2},
+                        {"label": "Serendipity(PMI)", "value": 3},
+                        {"label": "Serendipity(Jaccard)", "value": 4},
+                        {"label": "Novelty", "value": 5},
+                    ],
+                ),
+            ),
+            dbc.Col(
+            dbc.Input(id="rerank_alpha", placeholder="Type alpha value", type="float"),
+            ),
+        ]
+        return tmp
 #pd.DataFrame.from_dict(data=data, orient='tight')데이터프래임
 # request.get().json
 # 저장
