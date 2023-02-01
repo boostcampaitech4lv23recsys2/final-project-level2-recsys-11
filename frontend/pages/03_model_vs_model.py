@@ -12,12 +12,9 @@ from dash import html, dcc, callback, Input, Output, State,  MATCH, ALL
 from dash_bootstrap_templates import load_figure_template
 from dash.exceptions import PreventUpdate
 from . import global_component as gct
-
 API_url = 'http://127.0.0.1:8000'
 
 dash.register_page(__name__, path='/model-vs-model')
-
-
 
 
 def plot_qual_metrics(df:pd.DataFrame):
@@ -149,11 +146,12 @@ specific_metric = html.Div([
 
 
 layout = html.Div(children=[
-    gct.get_navbar(),
+    gct.get_navbar(has_sidebar=False),
+    html.Div([
     sidebar,
     total_graph,
-    specific_metric
-],className='content')
+    specific_metric])
+], className="content")
 
 
 # @callback(
@@ -203,6 +201,15 @@ def plot_total_metrics(tmp): # df:pd.DataFrame
 # def get_quantative_metrics(form): 
 #     params={'model_name': form['model'], 'str_key': form['values']}
 #     return requests.get(url=f'{API_url}/metric/quantitative/', params=params).json()[0]
+
+@callback(
+        Output('map', 'children'),
+        Input('compare_btn', 'n_clicks'),
+        prevent_initial_call=True
+)
+def get_quantative_metrics(form):
+    params={'model_name': form['model'], 'str_key': form['values']}
+    return requests.get(url=f'{gct.API_URL}/metric/quantitative/', params=params).json()[0]
 
 @callback(
     Output('select_model2', 'children'),
