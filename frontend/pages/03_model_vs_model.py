@@ -10,8 +10,6 @@ import feffery_antd_components as fac
 from . import global_component as gct
 import json
 
-API_url = 'http://127.0.0.1:8000'
-
 dash.register_page(__name__, path='/model-vs-model')
 
 exp_df = pd.DataFrame(columns = ['model','recall','ndcg','map','popularity','colors'])
@@ -112,11 +110,12 @@ specific_metric = html.Div([
 
 
 layout = html.Div(children=[
-    gct.get_navbar(),
+    gct.get_navbar(has_sidebar=False),
+    html.Div([
     sidebar,
     total_graph,
-    specific_metric
-],className='content')
+    specific_metric])
+], className="content")
 
 
 @callback(
@@ -126,7 +125,7 @@ layout = html.Div(children=[
 )
 def get_quantative_metrics(form):
     params={'model_name': form['model'], 'str_key': form['values']}
-    return requests.get(url=f'{API_url}/metric/quantitative/', params=params).json()[0]
+    return requests.get(url=f'{gct.API_URL}/metric/quantitative/', params=params).json()[0]
 
 @callback(
     Output('select_model2', 'children'),

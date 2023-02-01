@@ -4,14 +4,14 @@ import dash_bootstrap_components as dbc
 import requests
 from dash.exceptions import PreventUpdate
 from passlib.context import CryptContext
+from . import global_component as gct
+from pydantic import BaseSettings
+
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-salt_value = 'zFICaaUesOyNBJW4MHuUpV'
-
-API_url = 'http://127.0.0.1:8000'
+salt_value = gct.get_login_setting()['SALT']
 
 dash.register_page(__name__, path='/')
-
 
 layout =  html.Div([
         html.H1('Web4Rec', style={
@@ -41,28 +41,39 @@ layout =  html.Div([
             dbc.Col(
             dcc.Link(
                 children=dbc.Button(children='Sign-up',
-                                     style={'margin':10}
+                                #      style={'margin':10}
                 ),
                     href='/signup'
             )),
             ]),
             html.Div(id='login-value')
             
-        ], style={'padding-left':'45%'}) #end div
+        ], 
+        style={'width':"40%"}
+        ) #end div
 
 @callback(
         Output(component_id='login-value', component_property='children'),
+        Output(component_id='user_state', component_property='data'),
+        
         Input('login-button', 'n_clicks'),
         State('uname-box', 'value'),
         State('pwd-box', 'value'),
         prevent_initial_call=True
 )
 def login(n_click, uname, pwd):
-        pwd =pwd_context.hash(pwd, salt=salt_value)
-        params = {'id': uname, 'password': pwd}
-        # response = requests.post(f'{API_url}/frontend/login', json=params)
-        # if response.status_code == 422:
-                # return dbc.Alert(response.json()['detail'][0]['msg'], color="primary")
-        return dcc.Location(pathname='compare-table', id='mvsm')
-        # else:
-        #         return dcc.Location(pathname='compare-table', id='mvsm')
+        if n_click == 0:
+                return None, None
+        try:
+                pwd = pwd_context.hash(pwd, salt=salt_value)
+        except TypeError as e:
+                pass
+        header = {'Content-Type': 'application/x-www-form-urlencoded'}
+        data = {'username': uname, 'password': pwd}
+        response = requests.post(f'{gct.API_URL}/user/login', data, header)
+        if response.status_code == 200:
+                return dcc.Location(pathname='compare-table', id='mvsm'), response.json()
+        elif response.status_code == 401:
+                return dbc.Alert("Invalid ID or password.", color="primary"), None
+        else:
+                return dbc.Alert(f"{response.status_code} Error.", color="primary"), None
