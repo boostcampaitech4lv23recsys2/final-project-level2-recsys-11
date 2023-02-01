@@ -3,6 +3,7 @@ from functools import lru_cache
 import hashlib
 import json
 from typing import Dict, Union 
+import pandas as pd
 
 from schemas.data import Dataset, Experiment
 from schemas.config import S3_Settings
@@ -34,8 +35,14 @@ async def get_from_s3(key_hash: str) -> Dict:   # key_hash = key_name.encode('ut
     return json.loads(obj['Body'].read().decode('utf-8'))
 
 
-def s3_dict_to_pd(s3_dict: Dict):
-    return pd.DataFrame.from_dict(s3_dict, orient='tight')
+async def s3_dict_to_pd(s3_dict: Dict) -> pd.DataFrame:
+    return pd.DataFrame.from_dict(s3_dict, orient='tight') 
+
+
+async def s3_to_pd(key_hash:str) -> pd.DataFrame: 
+    s3_obj = await get_from_s3(key_hash)
+    s3_obj_pd = await s3_dict_to_pd(s3_obj)
+    return s3_obj_pd
 
 
 async def s3_transmission(cls: Union[Dataset, Experiment], primary_key: str) -> Dict:
