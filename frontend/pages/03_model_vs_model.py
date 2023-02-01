@@ -10,12 +10,7 @@ import feffery_antd_components as fac
 from . import global_component as gct
 import json
 
-API_url = 'http://127.0.0.1:8000'
-
 dash.register_page(__name__, path='/model-vs-model')
-# load_figure_template("darkly") # figure 스타일 변경
-
-model_hype_type = requests.get(url=f'{API_url}/model_hype_type').json()
 
 exp_df = pd.DataFrame(columns = ['model','recall','ndcg','map','popularity','colors'])
 
@@ -42,7 +37,7 @@ model_form = html.Div([html.Div([
 ]
             ),
 ]),
-    dcc.Dropdown(list(model_hype_type.keys())),
+    dcc.Dropdown([1,2,3]),
     html.Hr(),
     html.P(
         f'''
@@ -115,11 +110,12 @@ specific_metric = html.Div([
 
 
 layout = html.Div(children=[
-    gct.get_navbar(),
+    gct.get_navbar(has_sidebar=False),
+    html.Div([
     sidebar,
     total_graph,
-    specific_metric
-],className='content')
+    specific_metric])
+], className="content")
 
 
 @callback(
@@ -129,7 +125,7 @@ layout = html.Div(children=[
 )
 def get_quantative_metrics(form):
     params={'model_name': form['model'], 'str_key': form['values']}
-    return requests.get(url=f'{API_url}/metric/quantitative/', params=params).json()[0]
+    return requests.get(url=f'{gct.API_URL}/metric/quantitative/', params=params).json()[0]
 
 @callback(
     Output('select_model2', 'children'),
@@ -164,7 +160,7 @@ def display_dropdowns(n_clicks, _, children):
         model_form = html.Div([
             dbc.Button('➖', className='delete-btn', id={'type':'delete_btn', 'index':n_clicks}),
             # dbc.Popover("Delete this experiment", trigger='hover', target={'type':'delete_btn', 'index':ALL}, body=True), # 동적 컴포넌트에는 어떻게 적용해야 할지 모르겠음
-            dcc.Dropdown(list(model_hype_type.keys()), value=list(model_hype_type.keys())[0], id={'type':'selected_exp', 'index':n_clicks}),
+            dcc.Dropdown([1,2,3], value=1, id={'type':'selected_exp', 'index':n_clicks}),
             html.Hr(),
             html.P(
                     f'''
@@ -190,7 +186,6 @@ def display_output(selected_exp:str) -> str:
     Input('sort_of_metric', 'value'),
 )
 def load_metric_list(sort_of_metric:str) -> list:
-    # metric_list = requests.get(f'{API_url}/metric_list').json()
     
     metric_list = ['fdsa', '123','fdsavcx']
     return metric_list

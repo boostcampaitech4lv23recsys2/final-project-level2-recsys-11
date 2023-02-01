@@ -3,9 +3,11 @@ from dash import html, dcc, callback, Input, Output, State
 import dash_bootstrap_components as dbc
 import requests
 from dash.exceptions import PreventUpdate
-import hashlib
+from passlib.context import CryptContext
+from . import global_component as gct
 
-API_url = 'http://127.0.0.1:8000'
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+salt_value = 'zFICaaUesOyNBJW4MHuUpV'
 
 dash.register_page(__name__, path='/')
 
@@ -38,32 +40,39 @@ layout =  html.Div([
             dbc.Col(
             dcc.Link(
                 children=dbc.Button(children='Sign-up',
-                                     style={'margin':10}
+                                #      style={'margin':10}
                 ),
                     href='/signup'
             )),
             ]),
-            html.H6(id='login-value')
+            html.Div(id='login-value')
             
-        ], style={'padding-left':'45%'}) #end div
+        ], 
+        style={'width':"40%"}
+        ) #end div
 
 @callback(
         Output(component_id='login-value', component_property='children'),
+        Output(component_id='user_state', component_property='data'),
+        
         Input('login-button', 'n_clicks'),
         State('uname-box', 'value'),
         State('pwd-box', 'value'),
+        prevent_initial_call=True
 )
 def login(n_click, uname, pwd):
         if n_click == 0:
-                raise PreventUpdate     
-        params = {'id': uname, 'password': pwd}
-        resospnse = requests.get(f'{API_url}/login_user', params=params)
-        if resospnse:
-                return dcc.Location(pathname='compare-table', id='mvsm')
+                return None, None
+        try:
+                pwd = pwd_context.hash(pwd, salt=salt_value)
+        except TypeError as e:
+                pass
+        header = {'Content-Type': 'application/x-www-form-urlencoded'}
+        data = {'username': uname, 'password': pwd}
+        response = requests.post(f'{gct.API_URL}/user/login', data, header)
+        if response.status_code == 200:
+                return dcc.Location(pathname='compare-table', id='mvsm'), response.json()
+        elif response.status_code == 401:
+                return dbc.Alert("Invalid ID or password.", color="primary"), None
         else:
-                return dbc.Modal([
-            dbc.ModalBody("Invalid ID or password."),
-            dbc.ModalFooter(
-                dbc.Button("Close")
-                )
-        ], is_open=True)
+                return dbc.Alert(f"{response.status_code} Error.", color="primary"), None
