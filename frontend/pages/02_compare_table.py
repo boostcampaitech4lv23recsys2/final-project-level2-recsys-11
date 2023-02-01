@@ -91,7 +91,7 @@ layout = html.Div([
 #     else:
 #         return list(str(response))
 
-gct.Authenticate('select_done')
+gct.Authenticate('select_done', 'datase_list')
 
 @callback(
     Output('test_store', 'children'),

@@ -29,24 +29,6 @@ fig_total = px.bar(
             color_discrete_sequence=exp_df['colors'].values
             )
 
-model_form = html.Div([html.Div([
-    dbc.Row([
-        dbc.Col([
-            dbc.Button('➖', className='delete-btn', id='delete_button'),
-            dbc.Popover("Delete this experiment", trigger='hover', target='delete_button', body=True)
-]
-            ),
-]),
-    dcc.Dropdown([1,2,3]),
-    html.Hr(),
-    html.P(
-        f'''
-        neg_sample: 123
-        '''
-    ),
-], className='form-style'),
-                       html.Br()])
-
 
 sidebar = html.Div(
     [
@@ -102,8 +84,6 @@ specific_metric = html.Div([
             dcc.Graph(figure=fig_total),
         ], width=8)
     ]),
-
-           
     ],
     className="radio-group", 
 )

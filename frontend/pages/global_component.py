@@ -52,10 +52,10 @@ def get_navbar(has_sidebar=True):
     )
     return navbar
 
-def Authenticate(btn_name:str):
+def Authenticate(input_btn_name:str, output_component_name:str):
     @callback(
-        Output('dataset-list', 'options'),
-        Input(f'{btn_name}', 'n_clicks'),
+        Output(f'{output_component_name}', 'options'),
+        Input(f'{input_btn_name}', 'n_clicks'),
         State('user_state', 'data')
     )
     def get_dataset_list(n, user_state):
