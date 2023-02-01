@@ -5,12 +5,13 @@ import requests
 from dash.exceptions import PreventUpdate
 from passlib.context import CryptContext
 from . import global_component as gct
+from pydantic import BaseSettings
+
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-salt_value = 'zFICaaUesOyNBJW4MHuUpV'
+salt_value = gct.get_login_setting()['SALT']
 
 dash.register_page(__name__, path='/')
-
 
 layout =  html.Div([
         html.H1('Web4Rec', style={

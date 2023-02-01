@@ -1,5 +1,21 @@
 from dash import html, dcc, callback, Input, Output, State
 import dash_bootstrap_components as dbc
+from pydantic import BaseSettings
+
+
+env_path = '/opt/ml/final-project-level2-recsys-11/backend/login.env'
+class Login_Settings(BaseSettings):
+        SALT: str
+        ACCESS_TOKEN_EXPIRE_MINUTES: int
+        SECRET_KEY: str
+        ALGORITHM: str
+        
+        class config:
+                env_flie = '.env'
+                env_flie_encoding = 'utf-8'
+
+def get_login_setting():
+    return Login_Settings(_env_file=env_path, _env_file_encoding='utf-8').dict()
 
 API_URL = 'http://127.0.0.1:30004'
 

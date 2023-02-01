@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
 from schemas.user import UserCreate, Token
+from schemas.config import get_login_settings
 from typing import Dict
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
@@ -14,9 +15,10 @@ from routers.database import get_db_inst, get_db_dep
 
 router = APIRouter()  
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
-SECRET_KEY = "90854f928da3abee27b2a4af37b6b538308fdfe92538cfd0b8cf68a4c597cb4a"
-ALGORITHM = "HS256"
+login_config = get_login_settings().dict()
+ACCESS_TOKEN_EXPIRE_MINUTES = login_config['ACCESS_TOKEN_EXPIRE_MINUTES']
+SECRET_KEY = login_config['SECRET_KEY']
+ALGORITHM = login_config['ALGORITHM']
 
 @router.post("/create_user",)
 async def create_user(_user_create: UserCreate, connection=Depends(get_db_dep)):
