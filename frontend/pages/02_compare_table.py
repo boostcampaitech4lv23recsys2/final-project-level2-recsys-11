@@ -62,23 +62,35 @@ compare_table = html.Div([
     html.Hr(),
     html.H3('Selected experiments'),
     html.Div(id='table-container'),
-])
+], )
 
 selected_table = html.Div(children=[],id='selected_table',)
 
 layout = html.Div([
     gct.get_navbar(has_sidebar=False),
+    html.Div(id='test_store'),
+    html.Div(
+    [
     select_dataset,
     compare_table,
     selected_table,
     html.H3( id='output_test')
-])
-
+], className="container")
+                    ])
+ 
 # @callback(
 #     Output('dataset-list', 'children'),
 #     Input()
 # )
+@callback(
+    Output('test_store', 'children'),
+    Input('select_done', 'n_clicks'),
+    State('user_state', 'data'),
+    prevent_initial_call=True
+)
+def test_store(n, data):
 
+    return str(data)
 
 @callback(
     Output('table-container', 'children'),

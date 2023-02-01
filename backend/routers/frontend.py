@@ -20,7 +20,6 @@ async def get_exp_total(ID: str, dataset_name:str, connection=Depends(get_db_dep
                     FROM Experiments WHERE ID = %s AND dataset_name = %s'
             await cur.execute(query, (ID, dataset_name))
             result = cur.fetchall()
-
     return result 
     # [{'experiment_name': (name), 'alpha' : (alpha)}, {'experiment_name2': (name2), 'alpha2' : (alpha2)}, ...]
 

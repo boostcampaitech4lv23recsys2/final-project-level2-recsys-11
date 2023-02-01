@@ -40,33 +40,39 @@ layout =  html.Div([
             dbc.Col(
             dcc.Link(
                 children=dbc.Button(children='Sign-up',
-                                     style={'margin':10}
+                                #      style={'margin':10}
                 ),
                     href='/signup'
             )),
             ]),
             html.Div(id='login-value')
             
-        ], style={'padding-left':'45%'}) #end div
+        ], 
+        style={'width':"40%"}
+        ) #end div
 
 @callback(
         Output(component_id='login-value', component_property='children'),
+        Output(component_id='user_state', component_property='data'),
+        
         Input('login-button', 'n_clicks'),
         State('uname-box', 'value'),
         State('pwd-box', 'value'),
         prevent_initial_call=True
 )
 def login(n_click, uname, pwd):
-        pwd =pwd_context.hash(pwd, salt=salt_value)
-        print(pwd)
+        if n_click == 0:
+                return None, None
+        try:
+                pwd = pwd_context.hash(pwd, salt=salt_value)
+        except TypeError as e:
+                pass
         header = {'Content-Type': 'application/x-www-form-urlencoded'}
         data = {'username': uname, 'password': pwd}
         response = requests.post(f'{gct.API_URL}/user/login', data, header)
         if response.status_code == 200:
-                # dcc.Store(id='user_info')
-                return dcc.Location(pathname='compare-table', id='mvsm')
-        elif response.status_code == 200:
-                return dbc.Alert("Invalid ID or password.", color="primary")
+                return dcc.Location(pathname='compare-table', id='mvsm'), response.json()
+        elif response.status_code == 401:
+                return dbc.Alert("Invalid ID or password.", color="primary"), None
         else:
-                return dbc.Alert(f"{response.status_code} Error.", color="primary")
-                
+                return dbc.Alert(f"{response.status_code} Error.", color="primary"), None
