@@ -7,7 +7,7 @@ from schemas.config import get_login_settings
 from typing import Dict
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
-from jose import jwt
+from jose import jwt, JWTError
 #pip install "python-jose[cryptography]"
 
 from cruds.database import check_user, check_password
@@ -42,12 +42,9 @@ async def create_user(_user_create: UserCreate, connection=Depends(get_db_dep)):
 @router.post("/login", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(),
                            ):
-
     # check user and password
-    print(form_data.password)
     user = await check_password(form_data.username, form_data.password)
-    print(user)
-    # if not user or not (form_data.password, user.password):
+    
     if not user:
         return JSONResponse({'msg': 'Invalid username or password'},
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -65,3 +62,30 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         "token_type": "bearer",
         "username": user['ID']
     }
+
+@router.post('/get_current_user', status_code=201)
+async def get_current_user(token:Token, connection=Depends(get_db_dep)):
+    print('token: ',token)
+    credentials_exception = JSONResponse(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        content={'msg': 'Invalid username or password'},
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token.access_token, SECRET_KEY, algorithms=[ALGORITHM])
+        print(payload)
+        username: str = payload.get("sub")
+        if username is None:
+            return credentials_exception
+    except JWTError:
+        return credentials_exception
+    
+    async with connection as conn:
+        async with conn.cursor() as cur:
+            query = "SELECT ID FROM Users WHERE (ID) = %s"
+            await cur.execute(query, (token.username))
+            user = await cur.fetchone()
+
+    if user is None:
+        return credentials_exception
+    
