@@ -63,29 +63,9 @@ qual_metrics = pd.read_csv('/opt/ml/qual_metrics_df.csv')
 fig_qual = plot_qual_metrics(qual_metrics)
 fig_dist = plot_dist_for_metrics(qual_metrics, 'Diversity(jaccard)')
 
-
-#### model form : 
-model_form = html.Div([html.Div([
-    dbc.Row([
-        dbc.Col([
-            dbc.Button('➖', className='delete-btn', id='delete_button'),
-            dbc.Popover("Delete this experiment", trigger='hover', target='delete_button', body=True)
-
-            ]),
-]),
-    dcc.Dropdown([1,2,3]),
-    html.Hr(),
-    html.P(
-        f'''
-        neg_sample: 123
-        '''
-    ),
-], className='form-style'),
-                       html.Br()])
-
+### layout 정의
 #### side bar : 비교하고 싶은 실험 추가하고 삭제하는 부분
-sidebar = html.Div(
-    [
+sidebar = html.Div([
         html.H3("Select Expriements",),
         html.Hr(),
         html.Div(id='model_form', children=[]),
@@ -97,6 +77,7 @@ sidebar = html.Div(
     className='sidebar'
 )
 
+#### total metric 그래프 그릴 부분
 total_graph = html.Div([
     html.Br(),
     html.H1(children='Model vs Model', style={'text-align': 'center','font-weight': 'bold'}),
@@ -114,27 +95,28 @@ total_graph = html.Div([
             ])
     ])
 
+#### 정량, 정성 지표 그래프 그릴 부분
 specific_metric = html.Div([
     html.H3('Specific Metric'),
     dbc.Row([
         dbc.Col([
             dbc.RadioItems(
-            id="sort_of_metric",
-            className="btn-group",
-            inputClassName="btn-check",
-            labelClassName="btn btn-outline-primary",
-            labelCheckedClassName="active",
-            options=[
-                {"label": "Qualitive", "value": 'Qual'},
-                {"label": "Quantitive", "value": 'Quant'},
-            ],
-            value='Qual',
-                        ),
+                id="sort_of_metric",
+                className="btn-group",
+                inputClassName="btn-check",
+                labelClassName="btn btn-outline-primary",
+                labelCheckedClassName="active",
+                options=[
+                    {"label": "Qualitive", "value": 'Qual'},
+                    {"label": "Quantitive", "value": 'Quant'},
+                ],
+                value='Qual',
+            ),
             html.Br(),
-            dcc.Dropdown(options=['123', '12342'], id='metric_list')
+            dcc.Dropdown(id='metric_list')
             ], width=2),
         dbc.Col([
-            dcc.Graph(figure=fig_qual),
+            dcc.Graph(id = 'Qual_fig'), #figure=fig_qual
             dcc.Graph(figure=fig_dist),
         ], width=8)
     ]),
@@ -150,7 +132,10 @@ layout = html.Div(children=[
     html.Div([
     sidebar,
     total_graph,
-    specific_metric])
+    specific_metric]),
+    dcc.Store(id='store_selected_exp', storage_type='memory'),
+    dcc.Store(id='store_exp_names', storage_type='memory')
+
 ], className="content")
 
 
@@ -165,12 +150,12 @@ layout = html.Div(children=[
 #     item_lst = item_lst[(item_lst['release_year'] >= year[0]) & (item_lst['release_year'] <= year[1])]
 #     return item_lst.index.to_list()
 
-@callback(# add_button 
-    Output('selected_exp', 'data'),
-    Input('selected_exp_id', 'data')
-)
-def save_selected_exp_id(exp_id):
-    return
+# @callback( # add_button 
+#     Output('selected_exp', 'data'),
+#     Input('store_exp_names', 'data')
+# )
+# def save_selected_exp_id(exp_id):
+#     return
 
 @callback(  # compare 버튼 누름
         Output('total_metric', 'figure'),
@@ -197,11 +182,13 @@ def plot_total_metrics(tmp): # df:pd.DataFrame
     fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
 
     return fig
+
 # TODO: get request(selected user) and plot total_metrics
 # def get_quantative_metrics(form): 
 #     params={'model_name': form['model'], 'str_key': form['values']}
 #     return requests.get(url=f'{API_url}/metric/quantitative/', params=params).json()[0]
 
+### ??
 @callback(
         Output('map', 'children'),
         Input('compare_btn', 'n_clicks'),
@@ -211,6 +198,7 @@ def get_quantative_metrics(form):
     params={'model_name': form['model'], 'str_key': form['values']}
     return requests.get(url=f'{gct.API_URL}/metric/quantitative/', params=params).json()[0]
 
+### ??
 @callback(
     Output('select_model2', 'children'),
     Input('uname-box', 'value'),
@@ -221,16 +209,17 @@ def sider_custom_trigger_demo(v):
     return v
 
 
+### 어떤 실험을 고를지 select하는 dropdown을 보여주는 callback
 @callback(
     Output("model_form", "children"),
     [
         Input("add_button", "n_clicks"),
         Input({"type": "delete_btn", "index": ALL}, "n_clicks"),
+        Input("store_exp_names", "data")
     ],
-    [State("model_form", "children"), 
-     ],
+    [State("model_form", "children")],
 )
-def display_dropdowns(n_clicks, _, children):
+def display_dropdowns(n_clicks, _, store_exp_names, children): 
     input_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
     if "index" in input_id:
         delete_chart = json.loads(input_id)["index"]
@@ -240,22 +229,25 @@ def display_dropdowns(n_clicks, _, children):
             if "'index': " + str(delete_chart) not in str(chart)
         ]
     else:
-        
         model_form = html.Div([
-            dbc.Button('➖', className='delete-btn', id={'type':'delete_btn', 'index':n_clicks}),
-            # dbc.Popover("Delete this experiment", trigger='hover', target={'type':'delete_btn', 'index':ALL}, body=True), # 동적 컴포넌트에는 어떻게 적용해야 할지 모르겠음
-            dcc.Dropdown([1,2,3], value=1, id={'type':'selected_exp', 'index':n_clicks}),
-            html.Hr(),
-            html.P(
-                    f'''
-                    neg_sample: 123
-                    '''
-                , id={'type':"exp's_hype", 'index':n_clicks}),
-            html.Br()
-], className='form-style')
+                dbc.Button('➖', className='delete-btn', id={'type':'delete_btn', 'index':n_clicks}),
+                # dbc.Popover("Delete this experiment", trigger='hover', target={'type':'delete_btn', 'index':ALL}, body=True), # 동적 컴포넌트에는 어떻게 적용해야 할지 모르겠음
+                dcc.Dropdown(
+                    store_exp_names, id={'type':'selected_exp', 'index':n_clicks},
+                    placeholder="Select or Search experiment", optionHeight=50, # options=[{'label':'exp_name', 'value':'exp_id'}, ... ], # label은 보여지는거, value는 실제 어떤 데이터인지
+                ),
+                html.Hr(),
+                html.P(
+                        f'''
+                        neg_sample: 123
+                        '''
+                    , id={'type':"exp's_hype", 'index':n_clicks}),
+                html.Br()
+            ], className='form-style')
         children.append(model_form)
     return children
 
+### selected_exp 의 hype을 소개하는 callback
 @callback(
     Output({"type": "exp's_hype", "index": MATCH}, "children"),
     [
@@ -265,11 +257,42 @@ def display_dropdowns(n_clicks, _, children):
 def display_output(selected_exp:str) -> str:
     return f'{selected_exp}"s hype '
 
+### metric lists를 보여주는 callback
 @callback(
     Output('metric_list', 'options'),
     Input('sort_of_metric', 'value'),
 )
 def load_metric_list(sort_of_metric:str) -> list:
-    
-    metric_list = ['fdsa', '123','fdsavcx']
+    if sort_of_metric == 'Quant':
+        metric_list = ['Recall_k', 'NDCG', 'AP@K', 'AvgPopularity', 'TailPercentage']
+    elif sort_of_metric == 'Qual':
+        metric_list = ['Diversity(jaccard)', 'Diversity(cosine)', 'Serendipity(jaccard)', 'Serendipity(PMI)', 'Novelty']
     return metric_list
+
+### Qual,Quant 지표 선택 callback
+@callback(
+    Output('metric', 'value'),
+    Input("metric_list", 'options'),
+)
+def get_select_metric(options):
+    return
+
+
+### Qual 지표 선택시 그림 그려지는 callback
+@callback(
+    Output('Qual_fig', 'figure'),
+    Input("metric_list", 'options'),
+)
+def plot_Qual_dist(option:str):
+    if option in ['Diversity(jaccard)', 'Diversity(cosine)', 'Serendipity(jaccard)', 'Serendipity(PMI)', 'Novelty']:
+        fig = go.Figure()
+        return fig
+
+# ### Quant 지표 선택시 그림 그려지는 callback
+# @callback(
+#     Output('Quant_fig', 'figure'),
+#     Input('metric_list', 'options')
+# )
+# def plot_Quant_dist():
+#     fig = go.Figure()
+#     return fig
