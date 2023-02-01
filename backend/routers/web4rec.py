@@ -16,7 +16,7 @@ router = APIRouter()
 # 유저 아이디랑 비번이 쿼리에..?? 이게맞나
 @router.get("/login")
 async def login(ID:str, password:str, connection=Depends(get_db_dep)) -> List:
-    user = await check_user(ID, password) 
+    user = await check_user(ID) 
  
     # 데이터에서 유저 확인
     if user:
@@ -84,6 +84,7 @@ async def upload_dataset(dataset: Dataset,
     row_dict['ID'] = dataset.ID
     row_dict['dataset_name'] = dataset.dataset_name
     row_dict['upload_time'] = dataset.upload_time
+    row_dict['dataset_desc'] = dataset.dataset_desc
 
     query, values = await insert_from_dict(row=row_dict, table='Datasets') 
 
