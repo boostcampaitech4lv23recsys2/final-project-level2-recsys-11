@@ -39,8 +39,6 @@ def plot_qual_metrics(df:pd.DataFrame):
     return fig
 
 
-<<<<<<< HEAD
-=======
 def plot_dist_for_metrics(qual_df:pd.DataFrame, metric:str):
     assert metric in qual_df.columns, 'Metric is not in the column'
     hist_data = [eval(each)[0] for each in qual_df['Diversity(jaccard)']]
@@ -53,7 +51,6 @@ def plot_dist_for_metrics(qual_df:pd.DataFrame, metric:str):
 
     # Add title
     fig.update_layout(title_text='Distribution of metrics')
->>>>>>> staging
 
     return fig
 # 옵션으로 선택된 실험들을 불러옴
