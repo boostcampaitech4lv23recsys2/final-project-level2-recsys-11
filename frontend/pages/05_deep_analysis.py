@@ -29,6 +29,11 @@ uniq_genre = set()
 for i in item['genre']:
     uniq_genre |= set(i.split(' '))
 
+#잠시 리랭크는 내가 임의로 진행한다.
+tmp_user = [1, 5, 10]
+obj = 'novelty'
+cand = user.loc[tmp_user]
+#이걸 가지고 백엔드에 소통할 것이다.
 
 base = html.Div(
     children=[
@@ -226,7 +231,10 @@ user_selection = html.Div(
 
 user_rerank = dbc.Row(
     id='rerank_box',
+)
 
+user_analysis = html.Div(
+    id = 'user_deep_analysis'
 )
 
 layout = html.Div(
@@ -261,6 +269,7 @@ def display_overall(val):
         return [
             user_selection,
             user_rerank,
+            user_analysis,
             test,
 
         ]
@@ -688,7 +697,17 @@ def update_graph(store1, store2):
         occupation = plot_occupation_counter(Counter(tmp['occupation']))
         return (dcc.Graph(figure=age), dcc.Graph(figure=gender), dcc.Graph(figure=occupation))
 
-
+# 초기화 버튼 누를 때 선택 초기화
+@callback(
+    Output('selected_age', 'value'),
+    Output('selected_gender', 'value'),
+    Output('selected_occupation', 'value'),
+    Output('selected_wrong', 'value'),
+    Output('user_run', 'n_clicks'),
+    Input('user_reset_selection', 'n_clicks'),
+)
+def item_reset_selection(value):
+    return [], [], [], [], 0
 
 
 #### run 실행 시 실행될 함수들 #####
@@ -721,11 +740,69 @@ def prepare_rerank(value):
                     ],
                 ),
             ),
-            dbc.Col(
-            dbc.Input(id="rerank_alpha", placeholder="Type alpha value", type="float"),
-            ),
+            dbc.Col([
+                dbc.Input(id="rerank_alpha", placeholder="Type alpha value", type="float"),
+                dbc.Button(id="rerank_reset", children="리랭킹 초기화"),
+                dbc.Button(id="rerank_run", children="Rerank"),
+            ]),
         ]
         return tmp
+
+# 초기화 버튼 누를 때 선택 초기화
+@callback(
+    Output('rerank_obj', 'value'),
+    Output('rerank_alpha', 'value'),
+    Output('rerank_run', 'n_clicks'),
+    Input('rerank_reset', 'n_clicks'),
+)
+def item_reset_selection(value):
+    return [], [], 0
+
+
+######################### 리랭킹 진행 ##############################
+######################### 리랭킹 진행 ##############################
+######################### 리랭킹 진행 ##############################
+
+#백엔드에 리랭킹 계산 요청하고 받은 것으로 바로 모든 그림을 그려냄
+#그리고 통째로 리턴
+@callback(
+    Output('user_deep_analysis', 'children'),
+    Input('rerank_run', 'n_clicks'), #  선택하기 전까지 비활성화도 필요
+    State('users_for_analysis', 'data'),
+    State('rerank_obj', 'value'),
+    State('rerank_alpha', 'value'),
+    prevent_initial_call=True
+)
+def draw_rerank(value, user_lst, obj, alpha):
+    if value != 1:
+        raise PreventUpdate
+    else:
+
+        #todo: user_lst, obj, alpha를 통해 백엔드에 요청
+        # 지표와 아이템들을 바로 merge할 수 있는 상태로 받는다.
+
+        indicator = dbc.Row(
+            children=[
+                html.P('지표 비교. 리랭킹했더니 지표가 어떻게 변화했는지 +-로'),
+
+            ],
+        )
+        item_poster = dbc.Row(
+            children=[
+                html.P('아이템 쪽에서의 포스터 처럼'),
+                html.P('원래 많이 추천된 놈. 리랭킹했더니 많이 추천된 놈. 완전 뉴 페이스'),
+            ],
+        )
+        item_side = dbc.Row(
+            children=[
+
+                html.P('리랭킹된 아이템들 사이드 정보. 상준이 장르. 년도까지'),
+            ],
+        )
+        tmp = [indicator,item_poster,item_side]
+
+        return tmp
+
 #pd.DataFrame.from_dict(data=data, orient='tight')데이터프래임
 # request.get().json
 # 저장
