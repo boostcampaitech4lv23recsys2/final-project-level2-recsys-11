@@ -78,19 +78,21 @@ layout = html.Div([
 ], className="container")
                     ])
  
-@callback(
-    Output('dataset-list', 'options'),
-    Input('select_done', 'n_clicks'),
-    State('user_state', 'data')
-)
-def get_dataset_list(n, user_state):
+# @callback(
+#     Output('dataset-list', 'options'),
+#     Input('select_done', 'n_clicks'),
+#     State('user_state', 'data')
+# )
+# def get_dataset_list(n, user_state):
 
-    response = requests.post(f"{gct.API_URL}/user/get_current_user", json=user_state)
-    if response.status_code == 201:
-        return [1,2,3,4]
-    else:
-        return list(str(response))
-    
+#     response = requests.post(f"{gct.API_URL}/user/get_current_user", json=user_state)
+#     if response.status_code == 201:
+#         return [1,2,3,4]
+#     else:
+#         return list(str(response))
+
+gct.Authenticate('select_done')
+
 @callback(
     Output('test_store', 'children'),
     Input('select_done', 'n_clicks'),
