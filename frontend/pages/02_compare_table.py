@@ -96,13 +96,13 @@ layout = html.Div([
 #     else:
 #         return list(str(response))
 
-gct.Authenticate('select_done', 'datase_list')
+# gct.Authenticate('select_done', 'datase_list')
 
-    response = requests.post(f"{gct.API_URL}/user/get_current_user", json=user_state)
-    if response.status_code == 201:
-        return [1,2,3,4]
-    else:
-        return list(str(response))
+    # response = requests.post(f"{gct.API_URL}/user/get_current_user", json=user_state)
+    # if response.status_code == 201:
+    #     return [1,2,3,4]
+    # else:
+    #     return list(str(response))
     
 # @callback(
 #     Output('test_store', 'children'),
