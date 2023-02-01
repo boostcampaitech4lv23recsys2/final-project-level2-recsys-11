@@ -96,14 +96,14 @@ def get_dataset_list(n, user_state):
     else:
         return list(str(response))
     
-@callback(
-    Output('test_store', 'children'),
-    Input('select_done', 'n_clicks'),
-    State('user_state', 'data'),
-    prevent_initial_call=True
-)
-def test_store(n, data):
-
+# @callback(
+#     Output('test_store', 'children'),
+#     Input('select_done', 'n_clicks'),
+#     State('user_state', 'data'),
+#     prevent_initial_call=True
+# )
+# def test_store(n, data):
+#     return
 # @callback(
 #     Output('test_store', 'children'),
 #     Input('select_done', 'n_clicks'),
