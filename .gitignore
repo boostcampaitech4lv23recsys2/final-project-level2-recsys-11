@@ -19,3 +19,5 @@ wandb/
 rds.env
 s3.env
 test/
+
+*.pickle
