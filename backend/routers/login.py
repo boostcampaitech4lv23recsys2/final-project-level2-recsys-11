@@ -65,6 +65,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 
 @router.post('/get_current_user', status_code=201)
 async def get_current_user(token:Token, connection=Depends(get_db_dep)):
+    print('token: ',token)
     credentials_exception = JSONResponse(
         status_code=status.HTTP_401_UNAUTHORIZED,
         content={'msg': 'Invalid username or password'},
@@ -81,7 +82,7 @@ async def get_current_user(token:Token, connection=Depends(get_db_dep)):
     
     async with connection as conn:
         async with conn.cursor() as cur:
-            query = "SELECT FROM Users (ID) VALUES (%s)"
+            query = "SELECT ID FROM Users WHERE (ID) = %s"
             await cur.execute(query, (token.username))
             user = await cur.fetchone()
 
