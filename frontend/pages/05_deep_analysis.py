@@ -15,30 +15,10 @@ import plotly.graph_objects as go
 
 dash.register_page(__name__, path='/deep_analysis')
 
-# 유저가 고른 실험을 받아온다.
-@callback(
-    Output('trash', 'data'),
-    Input('temp_customers','value'),
-    prevent_initial_call=True
-)
-def selectt_experiment(val):
-    global user
-    global item
-    global uniq_genre
-    user = pd.read_csv('/opt/ml/user.csv', index_col='user_id')
-    item = pd.read_csv('/opt/ml/item.csv', index_col='item_id')
-    item.fillna(value='[]', inplace=True)
-    item['item_profile_user'] = item['item_profile_user'].apply(eval)
-    item['recommended_users'] = item['recommended_users'].apply(eval)
-    #리스트와 같은 객체는 json으로 넘어올 때 문자열로 들어올 가능성이 있으니 이 코드가 필요할 수도 있다. 상황에 따라 판단하기.
-    item['selected'] = 0
-    item['len']  = item['recommended_users'].apply(len)
-    uniq_genre = set()
-    for i in item['genre']:
-        uniq_genre |= set(i.split(' '))
-    return None
 
-
+user = None
+item = None
+uniq_genre = None
 
 # load_figure_template("darkly") # figure 스타일 변경
 
@@ -61,24 +41,16 @@ def selectt_experiment(val):
 # for i in item['genre']:
 #     uniq_genre |= set(i.split(' '))
 
-#잠시 리랭크는 내가 임의로 진행한다.
-# tmp_user = [1, 5, 10]
-# obj = 'novelty'
-# cand = user.loc[tmp_user]
-#이런 식의 인자를 가지고 백엔드에 요청할 것이다.
 
 header = html.Div(
     children=[
         dbc.Row([
             html.Div('유저가 장바구니에 넣은 실험들'),
-            dbc.DropdownMenu(
-                id='temp_customers',
-                children=[
-                    dbc.DropdownMenuItem(id = '1', children="실험1",),
-                    dbc.DropdownMenuItem(id = '2', children="실험2"),
-                    dbc.DropdownMenuItem(id = '3', children="실험3"),],
-                ),
-            ]),
+            dcc.Dropdown(
+                id='exp_id_for_deep_analysis',
+                options=[],
+            )
+        ]),
         dbc.Row([
             html.Div('해당 실험의 아이템, 유저 페이지'),
             dbc.RadioItems(
@@ -91,84 +63,12 @@ header = html.Div(
                     {"label": "item", "value": 1},
                     {"label": "user", "value": 2},
                 ],
-                value=1,
+                # value=1,
             ),
         ]),
     ]
 )
 
-
-item_selection = html.Div(
-    children=[
-        dbc.Row(
-            [dbc.Col(
-                html.Div(
-                    children=[
-                        # 년도, 장르, 제목?, 인기도
-                        html.H3('옵션을 통한 선택'),
-                        html.P('장르'),
-                        dcc.Dropdown(
-                            options=[],
-                            # options=[*uniq_genre],
-                            value=[],
-                            multi=True,
-                            id='selected_genre'
-                        ),
-                        html.P('년도'),
-                        dcc.RangeSlider(
-                            min=item['release_year'].min(),
-                            max=item['release_year'].max(),
-                            value=[item['release_year'].min(), item['release_year'].max()],
-                            step=1,
-                            marks={
-                                item['release_year'].min():str(item['release_year'].min()),
-                                item['release_year'].max():str(item['release_year'].max()),
-                            },
-                            tooltip={"placement": "bottom", "always_visible": True},
-                            allowCross=False,
-                            id='selected_year'
-                        ),
-                        html.P('인기도'),
-                        html.Br(),
-                        dbc.Button(id='item_reset_selection', children="초기화", color="primary"),
-                        html.P(id='n_items'),
-                        dbc.Button(id='item_run',children='RUN'),
-                        dcc.Store(id='items_selected_by_option', storage_type='session'), #데이터를 저장하는 부분
-                        dcc.Store(id='items_selected_by_embed', storage_type='session'), #데이터를 저장하는 부분
-                        dcc.Store(id='items_for_analysis', storage_type='session'), #데이터를 저장하는 부분
-                    ],
-                    # className='form-style'
-                ),
-                width=3,
-
-            ),
-            dbc.Col(
-                html.Div(
-                    children=[
-                        html.H3('아이템 2차원 임베딩'),
-                        html.P('참고로 리랭킹 관련한 지원은 유저 페이지에서만 됩니다.'),
-                        html.Br(),
-                        dcc.Graph(
-                            id='item_emb_graph',
-                            style={'config.responsive': True}
-                        )
-                    ],
-                ),
-                width=6,
-            ),
-            dbc.Col(
-                html.Div(
-                    children=[
-                        html.H3('사이드인포'),
-                        html.Div(id='item_side_graph'),
-                    ],
-                    style={'overflow': 'scroll', 'height':700}
-                ),
-                width=3,
-            ),]
-        )
-    ]
-)
 
 item_top = html.Div(
     children=[
@@ -192,82 +92,11 @@ item_related_users = html.Div(
     ]
 )
 
+#리랭크 박스
+user_rerank = dbc.Row(id='rerank_box',)
 
-user_selection = html.Div(
-    children=[
-        dbc.Row([
-                dbc.Col(
-                    html.Div(
-                        children=[
-                            html.H3("옵션을 통한 선택"),
-                            html.P("연령대"),
-                            dcc.Checklist(
-                                options=sorted(user["age"].unique()),
-                                value=[],
-                                id="selected_age",
-                            ),
-                            html.P("성별"),
-                            dcc.Dropdown(
-                                options=["M", "F"],
-                                value=[],
-                                id="selected_gender",
-                            ),
-                            html.P("직업"),
-                            dcc.Dropdown(
-                                options=sorted(user["occupation"].unique()),
-                                value=[],
-                                multi=True,
-                                id="selected_occupation",
-                            ),
-                            dcc.Checklist(
-                                options=['틀린 유저들만(0.5 기준으로)'],
-                                value=[],
-                                id="selected_wrong",
-                            ),
-                            html.Br(),
-                            dbc.Button(
-                                id="user_reset_selection", children="초기화", color="primary"
-                            ),
-                            html.P(id="n_users"),
-                            dbc.Button(id="user_run", children="RUN"),
-                            dcc.Store(id="users_selected_by_option", storage_type="session"),  # 데이터를 저장하는 부분
-                            dcc.Store(id="users_selected_by_embed", storage_type="session"),  # 데이터를 저장하는 부분
-                            dcc.Store(id="users_for_analysis", storage_type="session"),  # 데이터를 저장하는 부분
-                        ],
-                        # className='form-style'
-                    ),
-                    width=3,
-                ),
-                dbc.Col(
-                    html.Div(
-                        children=[
-                            html.H3("유저 2차원 임베딩"),
-                            dcc.Graph(id="user_emb_graph", style={"config.responsive": True}),
-                        ],
-                    ),
-                    width=6,
-                ),
-                dbc.Col(
-                    html.Div(
-                        children=[
-                            html.H3("사이드인포"),
-                            html.Div(id="user_side_graph"),
-                        ],
-                        style={'overflow': 'scroll', 'height':700}
-                    ),
-                    width=3,
-                ),
-            ],),
-    ]
-)
-
-user_rerank = dbc.Row(
-    id='rerank_box',
-)
-
-user_analysis = html.Div(
-    id = 'user_deep_analysis'
-)
+#유저 분석
+user_analysis = html.Div(id= 'user_deep_analysis')
 
 layout = html.Div(
     children=[
@@ -288,7 +117,38 @@ test = html.Div(html.P(id='testin'))
 
 ### 고객이 정한 장바구니가 담긴 store id가 필요함
 ##그거 토대로 버튼 그룹을 구성해야 함
+# @callback(
+#     Output('exp_id_for_deep_analysis', 'options'),
+#     Output('exp_id_for_deep_analysis', 'value'),
+#     Input('stoted_exp', 'data'),
+# )
+# def show_exp_choice(data):
+#     return data, data[0]
 
+# 고객이 장바구니에서 원하는 exp_id를 선택하면 그에 대한 user, item을 불러온다.
+@callback(
+    Output('trash', 'data'),
+    Input('exp_id_for_deep_analysis','value'),
+)
+def choose_experiment(val):
+    global user
+    global item
+    global uniq_genre
+
+    #TODO: 백에 호출하여 user와 item 만들기
+    user = pd.read_csv('/opt/ml/user.csv', index_col='user_id')
+    item = pd.read_csv('/opt/ml/item.csv', index_col='item_id')
+    item.fillna(value='[]', inplace=True)
+    item['item_profile_user'] = item['item_profile_user'].apply(eval)
+    item['recommended_users'] = item['recommended_users'].apply(eval)
+    #리스트와 같은 객체는 json으로 넘어올 때 문자열로 들어올 가능성이 있으니 이 코드가 필요할 수도 있다. 상황에 따라 판단하기.
+    item['selected'] = 0
+    item['len']  = item['recommended_users'].apply(len)
+    uniq_genre = set()
+    for i in item['genre']:
+        uniq_genre |= set(i.split(' '))
+    uniq_genre = [*uniq_genre]
+    return None
 
 
 
@@ -300,18 +160,146 @@ test = html.Div(html.P(id='testin'))
     prevent_initial_call=True
 )
 def display_overall(val):
-    if val == 1:
+    if val == 1: #아이템을 선택함
+        item_selection = html.Div(
+            children=[
+                dbc.Row([
+                    dbc.Col(
+                        html.Div(
+                            children=[
+                                html.H3('옵션을 통한 선택'),
+                                html.P('장르'),
+                                dcc.Dropdown(
+                                    options=uniq_genre,
+                                    multi=True,
+                                    id='selected_genre'
+                                ),
+                                html.P('년도'),
+                                dcc.RangeSlider(
+                                    min=item['release_year'].min(), max=item['release_year'].max(),
+                                    value=[item['release_year'].min(), item['release_year'].max()],
+                                    step=1,
+                                    marks={
+                                        item['release_year'].min():str(item['release_year'].min()),
+                                        item['release_year'].max():str(item['release_year'].max()),
+                                    },
+                                    tooltip={"placement": "bottom", "always_visible": True},
+                                    allowCross=False,
+                                    id='selected_year'
+                                ),
+                                html.P('인기도'),
+                                dbc.Button(id='item_reset_selection', children="초기화", color="primary"),
+                                html.P(id='n_items'),
+                                dbc.Button(id='item_run',children='RUN'),
+                                dcc.Store(id='items_selected_by_option', storage_type='session'), #데이터를 저장하는 부분
+                                dcc.Store(id='items_selected_by_embed', storage_type='session'), #데이터를 저장하는 부분
+                                dcc.Store(id='items_for_analysis', storage_type='session'), #데이터를 저장하는 부분
+                            ],
+                            # className='form-style'
+                        ),
+                        width=3,
+                    ),
+                    dbc.Col(
+                        html.Div(
+                            children=[
+                                html.H3('아이템 2차원 임베딩'),
+                                html.P('참고로 리랭킹 관련한 지원은 유저 페이지에서만 됩니다.'),
+                                html.Br(),
+                                dcc.Graph(id='item_emb_graph',)
+                            ],
+                        ),
+                        width=6,
+                    ),
+                    dbc.Col(
+                        html.Div(
+                            children=[
+                                html.H3('사이드인포'),
+                                html.Div(id='item_side_graph'),
+                            ],
+                            style={'overflow': 'scroll', 'height':700}
+                        ),
+                        width=3,
+                    ),],)
+            ]
+        )
         return [
             item_selection,
             item_top,
-            item_related_users,
+            item_related_users, # 얘네는 run 버튼 이후로 되게 하자
         ]
     else:
+        user_selection = html.Div(
+            children=[
+                dbc.Row([
+                        dbc.Col(
+                            html.Div(
+                                children=[
+                                    html.H3("옵션을 통한 선택"),
+                                    html.P("연령대"),
+                                    dcc.Checklist(
+                                        options=sorted(user["age"].unique()),
+                                        value=[],
+                                        id="selected_age",
+                                    ),
+                                    html.P("성별"),
+                                    dcc.Dropdown(
+                                        options=["M", "F"],
+                                        value=[],
+                                        id="selected_gender",
+                                    ),
+                                    html.P("직업"),
+                                    dcc.Dropdown(
+                                        options=sorted(user["occupation"].unique()),
+                                        value=[],
+                                        multi=True,
+                                        id="selected_occupation",
+                                    ),
+                                    dcc.Checklist(
+                                        options=['틀린 유저들만(0.5 기준으로)'],
+                                        value=[],
+                                        id="selected_wrong",
+                                    ),
+                                    html.Br(),
+                                    dbc.Button(
+                                        id="user_reset_selection", children="초기화", color="primary"
+                                    ),
+                                    html.P(id="n_users"),
+                                    dbc.Button(id="user_run", children="RUN"),
+                                    dcc.Store(id="users_selected_by_option", storage_type="session"),  # 데이터를 저장하는 부분
+                                    dcc.Store(id="users_selected_by_embed", storage_type="session"),  # 데이터를 저장하는 부분
+                                    dcc.Store(id="users_for_analysis", storage_type="session"),  # 데이터를 저장하는 부분
+                                ],
+                                # className='form-style'
+                            ),
+                            width=3,
+                        ),
+                        dbc.Col(
+                            html.Div(
+                                children=[
+                                    html.H3("유저 2차원 임베딩"),
+                                    dcc.Graph(id="user_emb_graph", style={"config.responsive": True}),
+                                ],
+                            ),
+                            width=6,
+                        ),
+                        dbc.Col(
+                            html.Div(
+                                children=[
+                                    html.H3("사이드인포"),
+                                    html.Div(id="user_side_graph"),
+                                ],
+                                style={'overflow': 'scroll', 'height':700}
+                            ),
+                            width=3,
+                        ),
+                    ],),
+            ]
+        )
         return [
             user_selection,
             user_rerank,
             user_analysis,
-            test,
+            # test,
 
         ]
 
@@ -410,7 +398,7 @@ def update_graph(store1, store2):
 def item_reset_selection(value):
     return [], [item['release_year'].min(), item['release_year'].max()], 0
 
-#### run 실행 시 실행될 함수들 #####
+#### item run 실행 시 실행될 함수들 #####
 
 # top pop 10
 @callback(
