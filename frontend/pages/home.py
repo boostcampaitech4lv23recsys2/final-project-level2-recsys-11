@@ -60,8 +60,11 @@ layout = html.Div([
             html.H1('추천을 평가할 땐, 𝙒𝙚𝙗𝟰𝙍𝙚𝙘', className="pt-4 pb-4 text-center fs-1"),
             feature1,
             feature2,
-            dcc.Link(dbc.Button(),)
-            ], className="container"),
+            dcc.Link(dbc.Button("Get Started", className="position-absolute top-100 start-50 translate-middle w-25 fs-2 mt-4 mb-4 "), href="/login"),
+            html.Br(),
+            html.Br(),
+            html.Br()
+            ], className="container position-relative pb-4"),
     ]),
 ])
 

@@ -36,11 +36,12 @@ layout =  html.Div([
                     n_clicks=0,
                     type='submit',
                     id='login-button',
-                    style={'margin':10})
-            , html.Div(children='', id='output-state')]),
-            dbc.Col(
-            dcc.Link(
-                children=dbc.Button(children='Sign-up',
+                #     style={'margin':10},
+                ),
+             html.Div(children='', id='output-state')]),
+                     dbc.Col(
+                        dcc.Link(
+                        children=dbc.Button(children='Sign-up',
                                 #      style={'margin':10}
                 ),
                     href='/signup'
@@ -49,7 +50,8 @@ layout =  html.Div([
             html.Div(id='login-value')
             
         ], 
-        style={'width':"40%"}
+        # style={'width':"40%"},
+        className="mx-auto w-25"
         ) #end div
 
 @callback(
