@@ -1,3 +1,4 @@
+/* @import url(https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css); */
 
 :root {
   --sidebar-width:20rem;
@@ -80,3 +81,11 @@
   border-bottom-left-radius: 0;
   /* margin-left: -1px; */
 } 
+
+.feature-image {
+  width: 100%;
+}
+
+.feature {
+  margin-top: 5rem;
+}
