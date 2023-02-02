@@ -1,7 +1,8 @@
 from dash import html, dcc, callback, Input, Output, State
 import dash_bootstrap_components as dbc
 from pydantic import BaseSettings
-
+import requests
+from dash.exceptions import PreventUpdate
 
 env_path = '/opt/ml/final-project-level2-recsys-11/backend/login.env'
 class Login_Settings(BaseSettings):
@@ -50,3 +51,18 @@ def get_navbar(has_sidebar=True):
         className=classname
     )
     return navbar
+
+def Authenticate(input_btn_name:str, output_component_name:str):
+    @callback(
+        Output(f'{output_component_name}', 'options'),
+        Input(f'{input_btn_name}', 'n_clicks'),
+        State('user_state', 'data')
+    )
+    def get_dataset_list(n, user_state):
+        if n != 0:
+            PreventUpdate
+        response = requests.post(f"{API_URL}/user/get_current_user", json=user_state)
+        if response.status_code == 201:
+            return [1,2,3,4]
+        else:
+            return list(str(response))

@@ -122,8 +122,6 @@ specific_metric = html.Div([
             html.Div(id = 'dist_fig'),  # dcc.Graph(id = 'dist_fig')
         ], width=8)
     ]),
-
-           
     ],
     className="radio-group", 
 )

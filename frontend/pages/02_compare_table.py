@@ -83,18 +83,26 @@ layout = html.Div([
     dcc.Store(id='store_exp_names', storage_type='memory')
 ])
  
-@callback(
-    Output('dataset-list', 'options'),
-    Input('select_done', 'n_clicks'),
-    State('user_state', 'data')
-)
-def get_dataset_list(n, user_state):
+# @callback(
+#     Output('dataset-list', 'options'),
+#     Input('select_done', 'n_clicks'),
+#     State('user_state', 'data')
+# )
+# def get_dataset_list(n, user_state):
 
-    response = requests.post(f"{gct.API_URL}/user/get_current_user", json=user_state)
-    if response.status_code == 201:
-        return [1,2,3,4]
-    else:
-        return list(str(response))
+#     response = requests.post(f"{gct.API_URL}/user/get_current_user", json=user_state)
+#     if response.status_code == 201:
+#         return [1,2,3,4]
+#     else:
+#         return list(str(response))
+
+# gct.Authenticate('select_done', 'datase_list')
+
+    # response = requests.post(f"{gct.API_URL}/user/get_current_user", json=user_state)
+    # if response.status_code == 201:
+    #     return [1,2,3,4]
+    # else:
+    #     return list(str(response))
     
 # @callback(
 #     Output('test_store', 'children'),
