@@ -11,7 +11,7 @@ from pydantic import BaseSettings
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 salt_value = gct.get_login_setting()['SALT']
 
-dash.register_page(__name__, path='/')
+dash.register_page(__name__, path='/login')
 
 layout =  html.Div([
         html.H1('Web4Rec', style={
