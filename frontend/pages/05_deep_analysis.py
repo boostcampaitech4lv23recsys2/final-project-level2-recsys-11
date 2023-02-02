@@ -22,24 +22,23 @@ uniq_genre = None
 
 # load_figure_template("darkly") # figure 스타일 변경
 
-#TODO: 유저와 아이템 백엔드에서 받아오기
-#
-#pd.DataFrame.from_dict(data=data, orient='tight')데이터프래임
-# request.get().json
-# 저장
+# 포스터를 띄우는 함수
+def make_card(element):
+    tmp = item.loc[element]
+    card = dbc.Col(
+        children=dbc.Card([
+            dbc.CardImg(top=True), #여기에 이미지를 넣으면 된다.
+            dbc.CardBody([
+                html.H6(tmp['movie_title']),
+                html.P(tmp['genre']),
+                html.P(tmp['release_year']),
+                html.P(tmp['item_pop']),
+            ],),
+        ],),
+        width={'size':3}
+    )
+    return card
 
-# user = pd.read_csv('/opt/ml/user.csv', index_col='user_id')
-# item = pd.read_csv('/opt/ml/item.csv', index_col='item_id')
-# item.fillna(value='[]', inplace=True)
-# item['item_profile_user'] = item['item_profile_user'].apply(eval)
-# item['recommended_users'] = item['recommended_users'].apply(eval)
-# #리스트와 같은 객체는 json으로 넘어올 때 문자열로 들어올 가능성이 있으니 이 코드가 필요할 수도 있다. 상황에 따라 판단하기.
-# item['selected'] = 0
-# item['len']  = item['recommended_users'].apply(len)
-
-# uniq_genre = set()
-# for i in item['genre']:
-#     uniq_genre |= set(i.split(' '))
 
 
 header = html.Div(
@@ -73,9 +72,9 @@ header = html.Div(
 item_top = html.Div(
     children=[
         html.H3('top pop 10'),
-        dbc.Row(id='top_pop_10',),
+        dbc.Row(id='top_pop_10',style={'overflow': 'scroll', 'height':500}),
         html.H3('top rec 10'),
-        dbc.Row(id='top_rec_10',),
+        dbc.Row(id='top_rec_10',style={'overflow': 'scroll', 'height':500}),
         html.Br(),
     ]
 )
@@ -222,11 +221,8 @@ def display_overall(val):
                     ),],)
             ]
         )
-        return [
-            item_selection,
-            item_top,
-            item_related_users, # 얘네는 run 버튼 이후로 되게 하자
-        ]
+        return [item_selection, item_top, item_related_users]
+        # 얘네는 run 버튼 이후로 되게 하자
     else:
         user_selection = html.Div(
             children=[
@@ -295,13 +291,7 @@ def display_overall(val):
                     ],),
             ]
         )
-        return [
-            user_selection,
-            user_rerank,
-            user_analysis,
-            # test,
-
-        ]
+        return [user_selection, user_rerank, user_analysis,]
 
 #########################################################
 ######################## 아이템 ##########################
@@ -400,6 +390,7 @@ def item_reset_selection(value):
 
 #### item run 실행 시 실행될 함수들 #####
 
+
 # top pop 10
 @callback(
     Output('top_pop_10', 'children'),
@@ -411,20 +402,7 @@ def draw_toppop_card(value, data):
     if value != 1:
         raise PreventUpdate
     else:
-        def make_card(element):
-            tmp = item.loc[element]
-            card = dbc.Col(
-                children=dbc.Card([
-                    dbc.CardImg(top=True),
-                    dbc.CardBody([
-                        html.H6(tmp['movie_title']),
-                        html.P(tmp['genre']),
-                        html.P(tmp['release_year']),
-                        html.P(tmp['item_pop']),
-                    ],),
-                ],),
-            )
-            return card
+
         pop = item.loc[data].sort_values(by=['item_pop'], ascending=False).head(10).index
         lst = [make_card(item) for item in pop] # 보여줄 카드 갯수 지정 가능
         return lst
@@ -440,20 +418,7 @@ def draw_toprec_card(value, data):
     if value != 1:
         raise PreventUpdate
     else:
-        def make_card(element):
-            tmp = item.loc[element]
-            card = dbc.Col(
-                children=dbc.Card([
-                    dbc.CardImg(top=True),
-                    dbc.CardBody([
-                        html.H6(tmp['movie_title']),
-                        html.P(tmp['genre']),
-                        html.P(tmp['release_year']),
-                        html.P(tmp['item_pop']),
-                    ],),
-                ],),
-            )
-            return card
+
         rec = item.loc[data].sort_values(by=['len'], ascending=False).head(10).index
         lst = [make_card(item) for item in rec] # 보여줄 카드 갯수 지정 가능
         return lst
@@ -545,9 +510,9 @@ def draw_user_graph(value, data):
                 rows=1, cols=2, specs=[[{'type':'domain'}, {'type':'domain'}]],
                 subplot_titles=("Gender ratio(profile)", "Gender ratio(rec)")
             )
-            fig.add_trace(go.Pie(labels=gender_Counter_profile_labels, values=gender_Counter_profile_values, name="user Rec list genre", pull=[0.07]+[0]*(len(gender_Counter_profile_values)-1)), # textinfo='label+percent', pull=[0.2]+[0]*(len(user_rec_values)-1)
+            fig.add_trace(go.Pie(labels=gender_Counter_profile_labels, values=gender_Counter_profile_values, name="user Rec list genre", pull=[0.07]+[0]*(len(gender_Counter_profile_values)-1)),
                     1, 1)
-            fig.add_trace(go.Pie(labels=gender_Counter_rec_labels, values=gender_Counter_rec_values, name="user rerank", pull=[0.07]+[0]*(len(gender_Counter_rec_values)-1)), # textinfo='label+percent', pull=[0.2]+[0]*(len(user_rerank_values)-1)
+            fig.add_trace(go.Pie(labels=gender_Counter_rec_labels, values=gender_Counter_rec_values, name="user rerank", pull=[0.07]+[0]*(len(gender_Counter_rec_values)-1)),
                     1, 2)
             fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
             fig.update_layout(
