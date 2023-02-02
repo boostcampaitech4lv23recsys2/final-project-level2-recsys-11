@@ -41,7 +41,7 @@ def plot_qual_metrics(df:pd.DataFrame):
 
 def plot_dist_for_metrics(qual_df:pd.DataFrame, metric:str):
     assert metric in qual_df.columns, 'Metric is not in the column'
-    hist_data = [eval(each)[0] for each in qual_df['Diversity(jaccard)']]
+    hist_data = [eval(each)[0] for each in qual_df[metric]]
     group_labels = qual_df['Name'].values
     colors = ['#A56CC1', '#A6ACEC', '#63F5EF', '#425FEF'] # 사용자 입력으로 받을 수 있어야 함
     # colors = qual_df['colors]
@@ -53,11 +53,13 @@ def plot_dist_for_metrics(qual_df:pd.DataFrame, metric:str):
     fig.update_layout(title_text='Distribution of metrics')
 
     return fig
+
 # 옵션으로 선택된 실험들을 불러옴
 # 불러온 실험들로 df를 제작함
 # 만약 새로운 실험이 + 되면 그 실험 정보를 df에 추가함 e.g.,) df.loc[] = ...
 total_metrics = pd.read_csv('/opt/ml/total_metrics_df.csv')
-qual_metrics = pd.read_csv('/opt/ml/qual_metrics_df.csv')
+qual_metrics = pd.read_csv('/opt/ml/qual_metrics_df.csv')  # 정성 지표들이 array로 담겨있음
+# quan_metrics = pd.read_csv('/opt/ml/quan_metrics_df.csv') # 정량 지표들이 array로 담겨있음
 
 # fig_total = plot_total_metrics(total_metrics)
 fig_qual = plot_qual_metrics(qual_metrics)
@@ -114,10 +116,10 @@ specific_metric = html.Div([
             ),
             html.Br(),
             dcc.Dropdown(id='metric_list')
-            ], width=2),
+            ], width=4),
         dbc.Col([
-            dcc.Graph(id = 'Qual_fig'), #figure=fig_qual
-            dcc.Graph(figure=fig_dist),
+            dcc.Graph(id = 'bar_fig'), #figure=fig_qual
+            html.Div(id = 'dist_fig'),  # dcc.Graph(id = 'dist_fig')
         ], width=8)
     ]),
     ],
@@ -267,24 +269,35 @@ def load_metric_list(sort_of_metric:str) -> list:
         metric_list = ['Diversity(jaccard)', 'Diversity(cosine)', 'Serendipity(jaccard)', 'Serendipity(PMI)', 'Novelty']
     return metric_list
 
-### Qual,Quant 지표 선택 callback
+### Qual or Quant 선택하면 metric bar plot 띄워주는 Callback
 @callback(
-    Output('metric', 'value'),
-    Input("metric_list", 'options'),
+    Output('bar_fig', 'figure'),
+    Input("sort_of_metric", 'value'),
 )
-def get_select_metric(options):
-    return
-
-
-### Qual 지표 선택시 그림 그려지는 callback
-@callback(
-    Output('Qual_fig', 'figure'),
-    Input("metric_list", 'options'),
-)
-def plot_Qual_dist(option:str):
-    if option in ['Diversity(jaccard)', 'Diversity(cosine)', 'Serendipity(jaccard)', 'Serendipity(PMI)', 'Novelty']:
-        fig = go.Figure()
+def plot_bar(sort_of_metric):
+    if sort_of_metric == 'Qual':
+        fig = plot_qual_metrics(qual_metrics)
         return fig
+    # elif sort_of_metric == 'Quant':
+    #     fig = plot_quant_metrics(quant_metrics)
+    else:
+        return html.Div([])
+    
+
+### 선택한 metric에 대한 dist plot을 띄워주는 callback
+@callback(
+    Output('dist_fig', 'children'),
+    Input("metric_list", 'value'),
+)
+def plot_dist(value):
+    if value in ['Diversity(jaccard)', 'Diversity(cosine)', 'Serendipity(jaccard)', 'Serendipity(PMI)', 'Novelty']:
+        fig = plot_dist_for_metrics(qual_metrics, value)
+        return dcc.Graph(id = 'dist_fig', figure=fig)
+    # elif value in ['Recall_k', 'NDCG', 'AP@K', 'AvgPopularity', 'TailPercentage']:
+        # fig = plot_dist_for_metrics(quan_metrics, value)    
+    else:
+        return html.Div([])
+    
 
 # ### Quant 지표 선택시 그림 그려지는 callback
 # @callback(
