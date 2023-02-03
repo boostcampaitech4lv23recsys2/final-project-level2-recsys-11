@@ -137,30 +137,54 @@ layout = html.Div(children=[
     sidebar,
     total_graph,
     specific_metric]),
-    dcc.Store(id='store_selected_exp', storage_type='memory'),
-    dcc.Store(id='store_exp_names', storage_type='memory')
+    dcc.Store(id='store_selected_exp', storage_type='session'),
+    dcc.Store(id='store_exp_names', storage_type='session')
 
 ], className="content")
 
 
-# @callback(
-#     Output('items_selected_by_option', 'data'),
-#     Input('selected_genre', 'value'), Input('selected_year', 'value'),
-# )
-# def save_items_selected_by_option(genre, year):
-#     item_lst = item.copy()
-#     item_lst = item_lst[item_lst['genre'].str.contains(
-#         ''.join([*map(lambda x: f'(?=.*{x})', genre)]) + '.*', regex=True)]
-#     item_lst = item_lst[(item_lst['release_year'] >= year[0]) & (item_lst['release_year'] <= year[1])]
-#     return item_lst.index.to_list()
+### 어떤 실험을 고를지 select하는 dropdown을 보여주는 callback
+@callback(
+    Output("model_form", "children"),
+    [
+        Input("add_button", "n_clicks"),
+        Input({"type": "delete_btn", "index": ALL}, "n_clicks"),
+        Input("store_exp_names", "data")
+    ],
+    [State("model_form", "children")],
+)
+def display_dropdowns(n_clicks, _, store_exp_names, children): 
+    input_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
+    if "index" in input_id:
+        delete_chart = json.loads(input_id)["index"]
+        children = [
+            chart
+            for chart in children
+            if "'index': " + str(delete_chart) not in str(chart)
+        ]
+    else:
+        model_form = html.Div([
+                dbc.Button('➖', className='delete-btn', id={'type':'delete_btn', 'index':n_clicks}),
+                # dbc.Popover("Delete this experiment", trigger='hover', target={'type':'delete_btn', 'index':ALL}, body=True), # 동적 컴포넌트에는 어떻게 적용해야 할지 모르겠음
+                dcc.Dropdown(
+                    store_exp_names, id={'type':'selected_exp', 'index':n_clicks},
+                    placeholder="Select or Search experiment", optionHeight=50, # options=[{'label':'exp_name', 'value':'exp_id'}, ... ], # label은 보여지는거, value는 실제 어떤 데이터인지
+                ),
+                html.Hr(),
+                html.P(id={'type':"exp's_hype", 'index':n_clicks}),
+                html.Br()
+            ], className='form-style')
+        children.append(model_form)
+    return children
 
-# @callback( # add_button 
-#     Output('selected_exp', 'data'),
-#     Input('store_exp_names', 'data')
-# )
-# def save_selected_exp_id(exp_id):
-#     return
 
+# TODO: get request(selected user) and plot total_metrics
+# def get_quantative_metrics(form): 
+#     params={'model_name': form['model'], 'str_key': form['values']}
+#     return requests.get(url=f'{API_url}/metric/quantitative/', params=params).json()[0]
+
+
+### compare! 버튼을 누르면 plot을 그려주는 callback
 @callback(  # compare 버튼 누름
         Output('total_metric', 'children'),
         Input('compare_btn', 'n_clicks'),
@@ -194,10 +218,6 @@ def plot_total_metrics(inp, state): # df:pd.DataFrame
         return dcc.Graph(figure=fig)  # id = 'total_metric'
     # return fig
 
-# TODO: get request(selected user) and plot total_metrics
-# def get_quantative_metrics(form): 
-#     params={'model_name': form['model'], 'str_key': form['values']}
-#     return requests.get(url=f'{API_url}/metric/quantitative/', params=params).json()[0]
 
 ### ??
 @callback(
@@ -220,43 +240,6 @@ def sider_custom_trigger_demo(v):
     return v
 
 
-### 어떤 실험을 고를지 select하는 dropdown을 보여주는 callback
-@callback(
-    Output("model_form", "children"),
-    [
-        Input("add_button", "n_clicks"),
-        Input({"type": "delete_btn", "index": ALL}, "n_clicks"),
-        Input("store_exp_names", "data")
-    ],
-    [State("model_form", "children")],
-)
-def display_dropdowns(n_clicks, _, store_exp_names, children): 
-    input_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
-    if "index" in input_id:
-        delete_chart = json.loads(input_id)["index"]
-        children = [
-            chart
-            for chart in children
-            if "'index': " + str(delete_chart) not in str(chart)
-        ]
-    else:
-        model_form = html.Div([
-                dbc.Button('➖', className='delete-btn', id={'type':'delete_btn', 'index':n_clicks}),
-                # dbc.Popover("Delete this experiment", trigger='hover', target={'type':'delete_btn', 'index':ALL}, body=True), # 동적 컴포넌트에는 어떻게 적용해야 할지 모르겠음
-                dcc.Dropdown(
-                    store_exp_names, id={'type':'selected_exp', 'index':n_clicks},
-                    placeholder="Select or Search experiment", optionHeight=50, # options=[{'label':'exp_name', 'value':'exp_id'}, ... ], # label은 보여지는거, value는 실제 어떤 데이터인지
-                ),
-                html.Hr(),
-                html.P(
-                        f'''
-                        neg_sample: 123
-                        '''
-                    , id={'type':"exp's_hype", 'index':n_clicks}),
-                html.Br()
-            ], className='form-style')
-        children.append(model_form)
-    return children
 
 ### selected_exp 의 hype을 소개하는 callback
 @callback(
