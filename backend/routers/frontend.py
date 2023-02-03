@@ -15,12 +15,12 @@ from cruds.metrics import avg_metric, predicted_per_item
 from database.rds import get_db_dep
 from database.s3 import get_from_s3, s3_dict_to_pd, s3_to_pd
 
-router = APIRouter()  
+router = APIRouter(prefix="/frontend")  
 
 #### PAGE 1
 ## Compare Table dataset 
 
-@router.get('/get_exp_total')
+@router.get('/get_exp_total', status_code=201)
 async def get_exp_total(ID: str, dataset_name:str):
     total_exps = await get_total_info(ID, dataset_name) 
 
@@ -118,7 +118,6 @@ async def item_info(ID: str, dataset_name: str, exp_id: int):
     item_side = await s3_to_pd(key_hash=df_row['item_side'])
     item_side_pd = item_side[['genre', 'title', 'year', 'popularity']]
     item_profile_pd = await inter_to_profile(key_hash=df_row['train_interaction'], group_by='item_id', col='user_id') 
->>>>>>> staging
 
     item_rec_users_pd = await predicted_per_item(pred_item_hash=exp_row['pred_items'])
     item_tsne_pd = await s3_to_pd(key_hash=exp_row['item_tsne'])
