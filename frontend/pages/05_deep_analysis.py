@@ -11,7 +11,7 @@ from . import global_component as gct
 from collections import Counter
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
-
+import requests
 
 dash.register_page(__name__, path="/deep_analysis")
 
@@ -271,23 +271,11 @@ item_top = html.Div(
 )
 
 item_related_users = html.Div(
-    children=[
-        html.H3("유저 프로필, 유저 추천 리스트"),
-        dbc.Row(
-            [
-                dbc.Col(id="related_user_age"),
-                dbc.Col(id="related_user_gender"),
-                dbc.Col(id="related_user_occupation"),
-            ]
-        ),
-        html.Br(),
-    ]
+    id="item_related_users",
 )
 
 # 리랭크 박스
-user_rerank = dbc.Row(
-    id="rerank_box",
-)
+user_rerank = dbc.Row(id="rerank_box")
 
 # 유저 분석
 user_analysis = html.Div(id="user_deep_analysis")
@@ -679,16 +667,14 @@ def draw_item_top(value, data):
         return children
 
 
-# 관련 유저 그래프 시각화
+# 아이템 관련 유저 그리기
 @callback(
-    Output("related_user_age", "children"),
-    Output("related_user_gender", "children"),
-    Output("related_user_occupation", "children"),
+    Output("item_related_users", "children"),
     Input("item_run", "n_clicks"),
     State("items_for_analysis", "data"),
     prevent_initial_call=True,
 )
-def draw_user_graph(value, data):
+def draw_item_related_users(value, data):
     if value != 1:
         raise PreventUpdate
     else:
@@ -710,7 +696,17 @@ def draw_user_graph(value, data):
             )
         )
 
-        return age, gender, occupation
+        children = [
+            html.H3("유저 프로필, 유저 추천 리스트"),
+            dbc.Row(
+                [
+                    dbc.Col(age),
+                    dbc.Col(gender),
+                    dbc.Col(occupation),
+                ]
+            ),
+        ]
+        return children
 
 
 #########################################################
