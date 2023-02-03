@@ -266,24 +266,24 @@ def plot_total_metrics(inp, state): # df:pd.DataFrame
 
 
 ### ??
-@callback(
-        Output('map', 'children'),
-        Input('compare_btn', 'n_clicks'),
-        prevent_initial_call=True
-)
-def get_quantative_metrics(form):
-    params={'model_name': form['model'], 'str_key': form['values']}
-    return requests.get(url=f'{gct.API_URL}/metric/quantitative/', params=params).json()[0]
+# @callback(
+#         Output('map', 'children'),
+#         Input('compare_btn', 'n_clicks'),
+#         prevent_initial_call=True
+# )
+# def get_quantative_metrics(form):
+#     params={'model_name': form['model'], 'str_key': form['values']}
+#     return requests.get(url=f'{gct.API_URL}/metric/quantitative/', params=params).json()[0]
 
 ### ??
-@callback(
-    Output('select_model2', 'children'),
-    Input('uname-box', 'value'),
-    prevent_initial_call=True
-)
-def sider_custom_trigger_demo(v):
+# @callback(
+#     Output('select_model2', 'children'),
+#     Input('uname-box', 'value'),
+#     prevent_initial_call=True
+# )
+# def sider_custom_trigger_demo(v):
 
-    return v
+#     return v
 
 
 
@@ -326,7 +326,7 @@ def plot_dist(value):
         return dcc.Graph(id = 'dist_fig', figure=fig)
     # elif value in ['Recall_k', 'NDCG', 'AP@K', 'AvgPopularity', 'TailPercentage']:
         # fig = plot_dist_for_metrics(quan_metrics, value)    
-        return dcc.Graph(id = 'dist_fig', figure=fig)
+        # return dcc.Graph(id = 'dist_fig', figure=fig)
     else:
         return html.Div([])
     
