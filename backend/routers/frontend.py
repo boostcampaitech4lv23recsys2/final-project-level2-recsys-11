@@ -43,9 +43,10 @@ async def selected_models(ID:str, dataset_name:str, exp_ids: List[int] = Query(d
          return {'msg': 'Experiments Not Found'}
     
     total_exps_pd = pd.DataFrame(total_exps).set_index('exp_id')
-    selected_rows = total_exps_pd[['experiment_name', 'alpha', 'objective_fn', 'hyperparameters']].iloc[exp_ids]
+    selected_rows = total_exps_pd[['experiment_name', 'alpha', 'objective_fn', 'hyperparameters']].loc[exp_ids]
 
     return selected_rows.to_dict('tight')
+
 
 # COMPARE 누른 후  
 @router.get('/selected_metrics')
@@ -53,15 +54,19 @@ async def selected_metrics(ID:str, dataset_name:str, exp_ids: List[int] = Query(
     total_exps = await get_total_info(ID, dataset_name) # cached
     total_exps_pd = pd.DataFrame(total_exps).set_index('exp_id')
 
-    model_metrics = total_exps_pd['recall', 'map', 'ndcg', 'tail_percentage', 'avg_popularity', 'coverage',
+    model_metrics = total_exps_pd[['recall', 'map', 'ndcg', 'tail_percentage', 'avg_popularity', 'coverage',
                                   'diversity_cos', 'diversity_jac', 'serendipity_pmi', 'serendipity_jac', 
-                                  'novelty'].iloc[exp_ids]
+                                  'novelty']].loc[exp_ids]
 
-    user_metric_s3 = total_exps_pd.iloc[exp_ids]['metric_per_user'].to_dict()
-    user_metrics = {str(model_id): await get_from_s3(s3_loc) for model_id, s3_loc in user_metric_s3.items()}
+    user_metric_s3 = total_exps_pd.loc[exp_ids]['metric_per_user'].to_dict()
+    
+    index_id = list(user_metric_s3.keys())
+    models = [await s3_to_pd(s3_loc) for s3_loc in user_metric_s3.values()] 
+    user_metrics = pd.concat(models, axis=1).T
+    user_metrics.index = index_id
 
     result = {'model_metrics': model_metrics.to_dict(orient='tight'), 
-              'user_metrics': user_metrics}
+              'user_metrics': user_metrics.to_dict(orient='tight')}
 
     return result
 
