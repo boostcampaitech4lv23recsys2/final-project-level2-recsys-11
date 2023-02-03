@@ -60,15 +60,10 @@ header = html.Div(
                 html.Div("해당 실험의 아이템, 유저 페이지"),
                 dbc.RadioItems(
                     id="show_user_or_item",
-                    # className="btn-group",
-                    # inputClassName="btn-check",
-                    # labelClassName="btn btn-outline-primary",
-                    # labelCheckedClassName="active",
-                    # options=[
-                    #     {"label": "item", "value": 1},
-                    #     {"label": "user", "value": 2},
-                    # ],
-                    # value=1,
+                    className="btn-group",
+                    inputClassName="btn-check",
+                    labelClassName="btn btn-outline-primary",
+                    labelCheckedClassName="active",
                 ),
             ]
         ),
@@ -78,13 +73,7 @@ header = html.Div(
 
 item_top = html.Div(
     id="item_top_poster",
-    children=[
-        html.H3("top pop 10"),
-        dbc.Row(id="top_pop_10", style={"overflow": "scroll", "height": 500}),
-        html.H3("top rec 10"),
-        dbc.Row(id="top_rec_10", style={"overflow": "scroll", "height": 500}),
-        html.Br(),
-    ],
+    children=[html.P("골라야 볼 수 있습니다.")],
 )
 
 item_related_users = html.Div(
@@ -469,68 +458,31 @@ def item_reset_selection(value):
 
 #### item run 실행 시 실행될 함수들 #####
 
-
-# @callback(
-#     Output("item_top_poster", "children"),
-#     Input("item_run", "n_clicks"),
-#     State("items_for_analysis", "data"),
-#     prevent_initial_call=True,
-# )
-# def draw_item_top(value, data):
-#     if value != 1:
-#         raise PreventUpdate
-#     else:
-#         children = (
-#             [
-#                 html.H3("선택한 아이템 인기도 top 10"),
-#                 dbc.Row(id="top_pop_10", style={"overflow": "scroll", "height": 500}),
-#                 html.H3(""),
-#                 dbc.Row(id="top_rec_10", style={"overflow": "scroll", "height": 500}),
-#                 html.Br(),
-#             ],
-#         )
-#         pop = (
-#             item.loc[data].sort_values(by=["item_pop"], ascending=False).head(10).index
-#         )
-#         lst = [make_card(item) for item in pop]  # 보여줄 카드 갯수 지정 가능
-#         return lst
-#####################################################################################################수정중. 한번에 모든 아이템 그려내도록
-
-
-# top pop 10
+# 아이템 포스터 카드 표시(top pop 10, top rec 10)
 @callback(
-    Output("top_pop_10", "children"),
+    Output("item_top_poster", "children"),
     Input("item_run", "n_clicks"),
     State("items_for_analysis", "data"),
     prevent_initial_call=True,
 )
-def draw_toppop_card(value, data):
+def draw_item_top(value, data):
     if value != 1:
         raise PreventUpdate
     else:
-
         pop = (
             item.loc[data].sort_values(by=["item_pop"], ascending=False).head(10).index
         )
-        lst = [make_card(item) for item in pop]  # 보여줄 카드 갯수 지정 가능
-        return lst
-
-
-# top rec 10
-@callback(
-    Output("top_rec_10", "children"),
-    Input("item_run", "n_clicks"),
-    State("items_for_analysis", "data"),
-    prevent_initial_call=True,
-)
-def draw_toprec_card(value, data):
-    if value != 1:
-        raise PreventUpdate
-    else:
-
+        pop_lst = [make_card(item) for item in pop]  # 보여줄 카드 갯수 지정 가능
         rec = item.loc[data].sort_values(by=["len"], ascending=False).head(10).index
-        lst = [make_card(item) for item in rec]  # 보여줄 카드 갯수 지정 가능
-        return lst
+        rec_lst = [make_card(item) for item in rec]  # 보여줄 카드 갯수 지정 가능
+        children = [
+            html.H3("선택한 아이템 인기도 top 10"),
+            dbc.Row(children=pop_lst, style={"overflow": "scroll", "height": 500}),
+            html.H3("선택한 아이템 추천횟수 top 10"),
+            dbc.Row(children=rec_lst, style={"overflow": "scroll", "height": 500}),
+            html.Br(),
+        ]
+        return children
 
 
 # 관련 유저 그래프 시각화
