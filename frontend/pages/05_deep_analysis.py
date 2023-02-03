@@ -280,9 +280,12 @@ user_rerank = dbc.Row(id="rerank_box")
 # 유저 분석
 user_analysis = html.Div(id="user_deep_analysis")
 
+test = html.Div(html.P(id="testin", children="gogo"))
+
 layout = html.Div(
     children=[
         gct.get_navbar(has_sidebar=False),
+        test,
         html.Div(
             children=[
                 header,
@@ -293,11 +296,16 @@ layout = html.Div(
             className="container",
         ),
         dcc.Store(id="trash"),  # 아무런 기능도 하지 않고, 그냥 콜백의 아웃풋 위치만 잡아주는 녀석
+        dcc.Store(id="store_selected_exp"),
     ],
 )
 
 
-test = html.Div(html.P(id="testin"))
+@callback(Output("testin", "children"), Input("store_selected_exp", "data"))
+def testing(val):
+    tmp = val
+    return str(tmp)
+
 
 ### 고객이 정한 장바구니가 담긴 store id가 필요함
 ##그거 토대로 버튼 그룹을 구성해야 함
@@ -314,14 +322,21 @@ test = html.Div(html.P(id="testin"))
     # Output('trash', 'data'),
     Output("show_user_or_item", "options"),
     Input("exp_id_for_deep_analysis", "value"),
+    State("user_state", "data"),
+    ## 데이터셋 이름을 가지고 있는 store도 필요
+    State("store_selected_exp", "data"),
     prevent_initial_call=True,
 )
-def choose_experiment(val):
+def choose_experiment(val, vip, exp_id):
     global user
     global item
     global uniq_genre
 
     # TODO: 백에 호출하여 user와 item 만들기
+    customer = vip["username"]
+    print(customer)
+    dataset = "ml-1m"
+
     user = pd.read_csv("/opt/ml/user.csv", index_col="user_id")
     item = pd.read_csv("/opt/ml/item.csv", index_col="item_id")
     item.fillna(value="[]", inplace=True)
@@ -713,10 +728,6 @@ def draw_item_related_users(value, data):
 ######################## 유저 ###########################
 #########################################################
 
-# @callback(Output('testin', 'children'), Input('users_selected_by_option', 'data'))
-# def testing(val):
-#     tmp = [*map(str, val)]
-#     return str(tmp)
 
 # 선택한 유저들을 store1에 저장
 @callback(
