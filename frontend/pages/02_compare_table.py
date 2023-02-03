@@ -14,127 +14,122 @@ user_df = pd.read_csv('/opt/ml/user.csv', index_col='user_id')[:100]
 
 dash.register_page(__name__, path='/compare-table')
 
-# TODO: dataset_list 넘겨주는 API 필요
-# dataset_list = requests.get('/dataset_list', params={'user_id': 'smth'})
 
-pinned_column_name = 'age'
+pinned_column_name = 'experiment_name'
 pinned_column_setting = dict(
                         pinned='left',
                         checkboxSelection=True,
                         )
 
+
 select_dataset = html.Div([
     html.H3('Select a dataset'),
     dcc.Dropdown(
-        # TODO: dataset_list 넘겨주는 API 필요
-        # dataset_list,
-        # dataset_list[0],
                  id='dataset-list',
                  style={'width':'40%'},
                  ),
     html.Hr()
 ])
 
-compare_table = html.Div([
-    html.H3('Total experiments'),
-    dag.AgGrid(
-        rowData=user_df.to_dict('records'),
-        id='compare_table',
-        columnDefs=[
-             {'headerName': column, 'field':column, 'pinned':'left', 'checkboxSelection':True, 'rowDrag':True, 'headerCheckboxSelection':True} if column == pinned_column_name else {'headerName': column, 'field':column, } for column in user_df.columns 
-        ],
-        columnSize="sizeToFit",
-        defaultColDef=dict(
-                resizable= True,
-                sortable=True,
-                filter=True,
-                floatingFilter=True,
-                headerCheckboxSelectionFilteredOnly=True,
-        ),
-        dashGridOptions=dict(
-            rowSelection="multiple", 
+def get_table(df):
+    compare_table = html.Div([
+        html.H3('Total experiments'),
+        dag.AgGrid(
+            rowData=df.to_dict('records'),
+            id='compare_table',
+            columnDefs=[
+                {'headerName': column, 'field':column, 'pinned':'left', 'checkboxSelection':True, 'rowDrag':True, 'headerCheckboxSelection':True} if column == pinned_column_name else {'headerName': column, 'field':column, } for column in df.columns 
+            ],
+            columnSize="sizeToFit",
+            defaultColDef=dict(
+                    resizable= True,
+                    sortable=True,
+                    filter=True,
+                    floatingFilter=True,
+                    headerCheckboxSelectionFilteredOnly=True,
             ),
-        rowDragManaged=True,
-        animateRows=True,
-    ),
-    html.Br(),
-    dbc.Button('Select done!', id='select_done'),
-    html.Hr(),
-    html.H3('Selected experiments'),
-    html.Div(id='table-container'),
-], )
-
-selected_table = html.Div(children=[], id='selected_table')
-# store_data = html.Div(children=[], id='store_data')
+            dashGridOptions=dict(
+                rowSelection="multiple", 
+                ),
+            rowDragManaged=True,
+            animateRows=True,
+        ),
+        html.Br(),
+        dbc.Button('Select done!', id='select_done', n_clicks=0),
+        html.Hr(),
+        
+    ], )
+    return compare_table
 
 layout = html.Div([
     gct.get_navbar(has_sidebar=False),
-    html.Div(id='test_store'),
+    html.P(id='test_data'),
+    html.Div(id="test2"),
     html.Div([
         select_dataset,
-        compare_table,
-        selected_table,
+        html.Div(id="exp_table_container"),
+        # compare_table,
+        
+        html.Div(id="selected_table_container"),
+        # selected_table,
         html.H3(id='output_test')
     ],
     className="container"),
     html.Div(id='store_exp_names'),
 
     dcc.Store(id='store_selected_exp', storage_type='memory'),
-    dcc.Store(id='store_exp_names', storage_type='memory')
+    dcc.Store(id='store_exp_names', storage_type='memory'),
+    dcc.Store(id='store_exp_column', storage_type='memory')
 ])
- 
-# @callback(
-#     Output('dataset-list', 'options'),
-#     Input('select_done', 'n_clicks'),
-#     State('user_state', 'data')
-# )
-# def get_dataset_list(n, user_state):
 
-#     response = requests.post(f"{gct.API_URL}/user/get_current_user", json=user_state)
-#     if response.status_code == 201:
-#         return [1,2,3,4]
-#     else:
-#         return list(str(response))
-
-# gct.Authenticate('select_done', 'datase_list')
-
-    # response = requests.post(f"{gct.API_URL}/user/get_current_user", json=user_state)
-    # if response.status_code == 201:
-    #     return [1,2,3,4]
-    # else:
-    #     return list(str(response))
+@callback(
+        Output('dataset-list', 'options'),
+        Input("user_state", "data"),
+        State("user_state", "data")
+)
+def test_request(n, user_state):
+    params = {
+        "ID": user_state["username"]
+    }
+    response = requests.get(f"{gct.API_URL}/web4rec-lib/check_dataset", params=params)
+    if response.status_code == 201:
+        return response.json()
     
-# @callback(
-#     Output('test_store', 'children'),
-#     Input('select_done', 'n_clicks'),
-#     State('user_state', 'data'),
-#     prevent_initial_call=True
-# )
-# def test_store(n, data):
-#     return
-# @callback(
-#     Output('test_store', 'children'),
-#     Input('select_done', 'n_clicks'),
-#     State('user_state', 'data'),
-#     prevent_initial_call=True
-# )
-# def test_store(n_clicks, data):
-#     return str(data)
+@callback(
+        Output('exp_table_container', 'children'),
+        Output('store_exp_column','data'),
+        State("user_state", "data"),
+        Input("dataset-list", "value"),
+        prevent_initial_call=True
+)
+def get_exp_data(user_state:dict, dataset_name:str,):
+    if dataset_name == None:
+        return dbc.Alert("데이터셋을 먼저 선택해주세요.", color="primary"), None
+    params = {
+        "ID": user_state["username"],
+        "dataset_name": dataset_name
+    }
+    response = requests.get(f"{gct.API_URL}/frontend/get_exp_total", params=params)
+    df = pd.DataFrame(response.json())
+    df['exp_id']
+    print("jdfaslfjeow;dsj",df)
+    return get_table(df), df.columns
 
 ## 선택한 실험의 정보를 table로 만들어주고, 그 실험 정보 자체를 return
 @callback(  
-    Output('table-container', 'children'),
+    Output('selected_table_container', 'children'),
     Output('store_selected_exp', 'data'),
     Input('select_done', 'n_clicks'),
     State('compare_table', 'selectionChanged'),
+    State('store_exp_column', 'data'),
     prevent_initial_call=True
 )
-def test_output(n, r2):
+def plot_selected_table(n, seleceted_rows, exp_column):
     AgGrid = dag.AgGrid(
         id = 'selected_table',
-        rowData=r2,
+        rowData=seleceted_rows,
         columnDefs=[
-             {'headerName': column, 'field':column, 'pinned':'left', 'checkboxSelection':True, 'rowDrag':True, 'headerCheckboxSelection':True} if column == pinned_column_name else {'headerName': column, 'field':column, } for column in user_df.columns 
+             {'headerName': column, 'field':column, 'pinned':'left', 'checkboxSelection':True, 'rowDrag':True, 'headerCheckboxSelection':True} if column == pinned_column_name else {'headerName': column, 'field':column, } for column in exp_column
         ],
         columnSize="sizeToFit",
         defaultColDef=dict(
@@ -150,8 +145,9 @@ def test_output(n, r2):
         rowDragManaged=True,
         animateRows=True,
     )
-
-    return AgGrid, r2
+    
+    return [html.H3('Selected experiments'),
+    html.Div(AgGrid, id='table-container')], seleceted_rows
 
 ## 선택한 실험에서 실험의 이름을 가져와서 model vs model page로 넘겨주기 (지금은 age로 임시방편)
 @callback(
@@ -163,5 +159,5 @@ def store_selected_exp_names(data):
         raise PreventUpdate
     exp_names = []
     for each in data:
-        exp_names.append(each['age'])
+        exp_names.append(each[pinned_column_name])
     return exp_names
