@@ -11,7 +11,7 @@ from jose import jwt, JWTError
 #pip install "python-jose[cryptography]"
 
 from cruds.database import check_user, check_password
-from routers.database import get_db_inst, get_db_dep
+from database.rds import get_db_inst, get_db_dep
 
 router = APIRouter()  
 

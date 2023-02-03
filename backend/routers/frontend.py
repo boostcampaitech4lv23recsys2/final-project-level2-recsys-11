@@ -1,11 +1,19 @@
 from asyncmy.cursors import DictCursor
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException
-from starlette import status
-from typing import Dict
+from fastapi import APIRouter, Depends, Query 
 from fastapi.responses import JSONResponse
+import json
+from starlette import status
+from schemas.user import UserCreate
+from typing import Dict, List
 
-from routers.database import get_db_inst, get_db_dep
+import pandas as pd
+from functools import reduce
+
+from cruds.database import check_user, get_exp, get_df, get_total_info, inter_to_profile
+from cruds.metrics import avg_metric, predicted_per_item
+from database.rds import get_db_dep
+from database.s3 import get_from_s3, s3_dict_to_pd, s3_to_pd
 
 router = APIRouter()  
 
@@ -45,9 +53,9 @@ async def selected_metrics(ID:str, dataset_name:str, exp_ids: List[int] = Query(
     total_exps = await get_total_info(ID, dataset_name) # cached
     total_exps_pd = pd.DataFrame(total_exps).set_index('exp_id')
 
-    model_metrics = total_exps_pd[['recall', 'map', 'ndcg', 'tail_percentage', 'avg_popularity', 'coverage',
+    model_metrics = total_exps_pd['recall', 'map', 'ndcg', 'tail_percentage', 'avg_popularity', 'coverage',
                                   'diversity_cos', 'diversity_jac', 'serendipity_pmi', 'serendipity_jac', 
-                                  'novelty']].iloc[exp_ids,:]
+                                  'novelty'].iloc[exp_ids]
 
     user_metric_s3 = total_exps_pd.iloc[exp_ids]['metric_per_user'].to_dict()
     user_metrics = {str(model_id): await get_from_s3(s3_loc) for model_id, s3_loc in user_metric_s3.items()}
@@ -90,3 +98,31 @@ async def user_info(ID: str, dataset_name: str, exp_id: int):
     return user_merged
     
 
+@router.get('/item_info')
+async def item_info(ID: str, dataset_name: str, exp_id: int):
+    # GET: image_uri
+    # GET: dataset - item_side (genre, title, year, popularity)
+    #              - train_df (->item_profile)
+    # GET: exp(exp_id)    - pred_items (->item_recommended users)
+    #                     - xs, ys (item)
+     
+    df_row = await get_df(ID, dataset_name)
+    exp_row = await get_exp(exp_id) 
+
+    if df_row == None:
+        return {'msg': 'Dataset Not Found'}
+    exp_row = await get_exp(exp_id) 
+    if exp_row == None:
+        return {'msg': 'Model Not Found'}
+    
+    item_side = await s3_to_pd(key_hash=df_row['item_side'])
+    item_side_pd = item_side[['genre', 'title', 'year', 'popularity']]
+    item_profile_pd = await inter_to_profile(key_hash=df_row['train_interaction'], group_by='item_id', col='user_id') 
+
+    item_rec_users_pd = await predicted_per_item(pred_item_hash=exp_row['pred_items'])
+    item_tsne_pd = await s3_to_pd(key_hash=exp_row['item_tsne'])
+
+    dfs = [item_side_pd, item_profile_pd, item_rec_users_pd, item_tsne_pd]
+    item_merged = reduce(lambda left,right: pd.merge(left,right,on='item_id'), dfs)
+
+    return item_merged

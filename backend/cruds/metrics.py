@@ -1,8 +1,9 @@
 from typing import Dict
-from pandas import pd
-from numpy import np
+import pandas as pd
+import numpy as np
 
 from schemas.data import Dataset
+from database.s3 import get_from_s3, s3_to_pd
 
 class Quant_Metrics:
     '''
@@ -163,24 +164,23 @@ class Quant_Metrics:
                 'AveragePopularity': self.AveragePopularity(users)
                 }
 
-class Qual_Metrics:
-    '''
-    Qualitative Metrics:
-        - Diversity (Cosine, Jaccard)
-        - Serendipity (PMI, Jaccard)
-        - Novelty 
+
+def avg_metric(rows: Dict) -> Dict:
+    metrics = ['recall', 'ap', 'ndcg', 'tail_percentage', 'avg_popularity', \
+                'diversity_cos', 'diversity_jac', 'serendipity_pmi', 'serendipity_jac', 'novelty'] # coverage not measured per user
     
-    * Rerank based on above metrics also available
-    '''
-    def __init__(self, dataset:Dataset, pred_item:Dict, pred_score:Dict, item_h_vector: Dict):
-        self.pred_item = pd.Series(pred_item.values(), index=[int(k) for k in pred_item.keys()], 
-                                    name='item_id').apply(lambda x: x.astype(int))
-        self.pred_score = pd.Series(pred_score.values(), index=[int(k) for k in pred_score.keys()], 
-                                    name='item_id') 
-        self.n_user = dataset.n_user
+    for row in rows: # row = experiment(dict)
+        for key, value in row.items(): # key = column  # value = column value
+            if key in metrics: # key = metric
+                # get from s3 
+                dict_of_per_user = get_from_s3(value) # {user1: (float),}
+                row[key] = sum(dict_of_per_user.values()) / len(dict_of_per_user.values())
+    
+    return rows
 
-        self.pmi_matrix = dataset.pmi_matrix
-        self.jaccard_matrix = dataset.jaccard_matrix
-        self.implicit_matrix = dataset.implicit_matrix 
 
-        self.user_profiles = dataset.user_profiles #?? 
+async def predicted_per_item(pred_item_hash: str) -> pd.DataFrame:
+    pred_item_pd = await s3_to_pd(pred_item_hash)
+    predicted_per_item = pred_item_pd.explode('b').groupby('b').agg(list)
+    return predicted_per_item
+    
