@@ -49,7 +49,7 @@ async def add_user(ID: str, password:str, connection=Depends(get_db_dep)):
     return {'message': f"User: {ID} has been ADDED"}
 
 
-@router.get("/check_dataset")
+@router.get("/check_dataset", status_code=201)
 async def check_dataset(ID: str, connection=Depends(get_db_dep)) -> List:
     async with connection as conn:
         async with conn.cursor(cursor=DictCursor) as cur:
