@@ -52,18 +52,21 @@ feature2 = get_feature_component(
     description="기능 설명",
     img_position="right"
 )
- 
+
 layout = html.Div([
-    gct.get_navbar(has_sidebar=False),
+    dbc.NavbarSimple([
+        # dbc.NavItem(dcc.Link(dbc.Button("평가 시작하기!", className="position-fixed top-50 end-0 translate-middle-y w-25 fs-2 mt-3 mb-4",),href="/login"),)
+        dbc.NavItem(dcc.Link(dbc.Button("평가 시작하기!", className=" fs-6 mt-3 mb-4", color="light"),href="/login"),)
+], color="primary", className="navbar ", sticky="top", brand="𝙒𝙚𝙗𝟰𝙍𝙚𝙘",),
     html.Div([
         html.Div([
             html.H1('추천을 평가할 땐, 𝙒𝙚𝙗𝟰𝙍𝙚𝙘', className="pt-4 pb-4 text-center fs-1"),
             feature1,
             feature2,
-            dcc.Link(dbc.Button("Get Started", className="position-absolute top-100 start-50 translate-middle w-25 fs-2 mt-4 mb-4 "), href="/login"),
+            dcc.Link(dbc.Button("평가 시작하기!", className="position-absolute top-100 start-50 translate-middle w-25 fs-2 mt-3 mb-4 "), href="/login"),
             html.Br(),
             html.Br(),
-            html.Br()
+            html.Br(className="h-25")
             ], className="container position-relative pb-4"),
     ]),
 ])
