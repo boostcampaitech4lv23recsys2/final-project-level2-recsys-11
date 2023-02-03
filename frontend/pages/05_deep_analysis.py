@@ -470,31 +470,31 @@ def item_reset_selection(value):
 #### item run 실행 시 실행될 함수들 #####
 
 
-@callback(
-    Output("item_top_poster", "children"),
-    Input("item_run", "n_clicks"),
-    State("items_for_analysis", "data"),
-    prevent_initial_call=True,
-)
-def draw_item_top(value, data):
-    if value != 1:
-        raise PreventUpdate
-    else:
-        children = (
-            [
-                html.H3("선택한 아이템 인기도 top 10"),
-                dbc.Row(id="top_pop_10", style={"overflow": "scroll", "height": 500}),
-                html.H3(""),
-                dbc.Row(id="top_rec_10", style={"overflow": "scroll", "height": 500}),
-                html.Br(),
-            ],
-        )
-        pop = (
-            item.loc[data].sort_values(by=["item_pop"], ascending=False).head(10).index
-        )
-        lst = [make_card(item) for item in pop]  # 보여줄 카드 갯수 지정 가능
-        return lst
-    #####################################################################################################수정중. 한번에 모든 아이템 그려내도록
+# @callback(
+#     Output("item_top_poster", "children"),
+#     Input("item_run", "n_clicks"),
+#     State("items_for_analysis", "data"),
+#     prevent_initial_call=True,
+# )
+# def draw_item_top(value, data):
+#     if value != 1:
+#         raise PreventUpdate
+#     else:
+#         children = (
+#             [
+#                 html.H3("선택한 아이템 인기도 top 10"),
+#                 dbc.Row(id="top_pop_10", style={"overflow": "scroll", "height": 500}),
+#                 html.H3(""),
+#                 dbc.Row(id="top_rec_10", style={"overflow": "scroll", "height": 500}),
+#                 html.Br(),
+#             ],
+#         )
+#         pop = (
+#             item.loc[data].sort_values(by=["item_pop"], ascending=False).head(10).index
+#         )
+#         lst = [make_card(item) for item in pop]  # 보여줄 카드 갯수 지정 가능
+#         return lst
+#####################################################################################################수정중. 한번에 모든 아이템 그려내도록
 
 
 # top pop 10
