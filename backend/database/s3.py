@@ -20,8 +20,8 @@ client = boto3.client('s3', **s3_config)
 async def send_to_s3(data: Dict, key_name: str) -> str:
     json_body = json.dumps(data)
     hash_object = hashlib.sha256(key_name.encode('utf-8'))
-    key_hash = hash_object.hexdigest() + '.json'
-
+    # key_hash = hash_object.hexdigest() + '.json'
+    key_hash = key_name
     if len(key_hash) > 100:
         raise ValueError('Hash String Length Has Exceeded 100')
 
@@ -51,7 +51,7 @@ async def s3_transmission(cls: Union[Dataset, Experiment], primary_key: str) -> 
     # json (library) -> json (s3) 
     for attribute, value in vars(cls).items():
         if isinstance(value, dict): 
-            key_hash = await send_to_s3(data = value, key_name = primary_key+attribute)
+            key_hash = await send_to_s3(data = value, key_name = primary_key + '_' + attribute)
             row_dict[attribute] = str(key_hash)
     
     return row_dict

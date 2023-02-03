@@ -4,12 +4,12 @@ import os
 import dash
 from dash import Dash, dcc, html, Input, Output
 import dash_bootstrap_components as dbc
-# from dash_bootstrap_templates import load_figure_template
+from dash_bootstrap_templates import load_figure_template
 from dash.exceptions import PreventUpdate
 
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
 app = Dash(
-    __name__, external_stylesheets=[dbc.themes.JOURNAL, dbc_css], 
+    __name__, external_stylesheets=[dbc.themes.JOURNAL], 
     use_pages=True, 
     suppress_callback_exceptions=True,
 ) # 페이지 스타일 변경

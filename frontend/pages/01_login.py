@@ -11,7 +11,7 @@ from pydantic import BaseSettings
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 salt_value = gct.get_login_setting()['SALT']
 
-dash.register_page(__name__, path='/')
+dash.register_page(__name__, path='/login')
 
 layout =  html.Div([
         html.H1('Web4Rec', style={
@@ -36,11 +36,12 @@ layout =  html.Div([
                     n_clicks=0,
                     type='submit',
                     id='login-button',
-                    style={'margin':10})
-            , html.Div(children='', id='output-state')]),
-            dbc.Col(
-            dcc.Link(
-                children=dbc.Button(children='Sign-up',
+                #     style={'margin':10},
+                ),
+             html.Div(children='', id='output-state')]),
+                     dbc.Col(
+                        dcc.Link(
+                        children=dbc.Button(children='Sign-up',
                                 #      style={'margin':10}
                 ),
                     href='/signup'
@@ -49,7 +50,8 @@ layout =  html.Div([
             html.Div(id='login-value')
             
         ], 
-        style={'width':"40%"}
+        # style={'width':"40%"},
+        className="mx-auto w-25"
         ) #end div
 
 @callback(
