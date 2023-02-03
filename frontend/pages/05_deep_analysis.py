@@ -933,7 +933,13 @@ def prepare_rerank(value):
             dbc.Col(
                 [
                     dbc.Input(
-                        id="rerank_alpha", placeholder="Type alpha value", type="float"
+                        id="rerank_alpha",
+                        placeholder="Type alpha value",
+                        # type="float",
+                        min=0,
+                        max=1,
+                        step=0.1,
+                        value=0.5,
                     ),
                     dbc.Button(id="rerank_reset", children="리랭킹 초기화"),
                     dbc.Button(id="rerank_run", children="Rerank"),
