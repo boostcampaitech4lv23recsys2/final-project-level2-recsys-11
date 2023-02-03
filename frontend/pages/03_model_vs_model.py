@@ -74,7 +74,7 @@ sidebar = html.Div([
         
         dbc.Button('➕', id='add_button', n_clicks=0, style={'position':'absolute', 'right':0, 'margin-right':'2rem'}),
         dbc.Popover("Add a new expriement", trigger='hover', target='add_button', body=True),
-        dbc.Button('Compare!', id='compare_btn')
+        dbc.Button('Compare!', id='compare_btn', n_clicks=0)
     ],
     className='sidebar'
 )
@@ -91,11 +91,15 @@ total_graph = html.Div([
 
     html.H3('Total Metric'),
     dbc.Row([
-      dbc.Col([
-          dcc.Graph(id='total_metric') # figure=fig_total,
+        dbc.Col([
+            html.Div([
+                html.Br(),
             ]),
-            ])
+            html.Div(id='total_metric')
+            # dcc.Graph(id='total_metric') # html.Div(id='total_metric')
+        ]),
     ])
+])
 
 #### 정량, 정성 지표 그래프 그릴 부분
 specific_metric = html.Div([
@@ -158,30 +162,37 @@ layout = html.Div(children=[
 #     return
 
 @callback(  # compare 버튼 누름
-        Output('total_metric', 'figure'),
+        Output('total_metric', 'children'),
         Input('compare_btn', 'n_clicks'),
-        prevent_initial_call=True
+        State('compare_btn', 'n_clicks'),
+        # prevent_initial_call=True
 )
-def plot_total_metrics(tmp): # df:pd.DataFrame
-    # 모델간 정량, 정성 지표 plot (Compare Table에 있는 모든 정보들 활용)
-    metrics = list(total_metrics.columns[1:])
-    colors = ['#A56CC1', '#A6ACEC', '#63F5EF', '#425FEF'] # 사용자 입력으로 받을 수 있어야 함
-    
-    fig = go.Figure()
+def plot_total_metrics(inp, state): # df:pd.DataFrame
+    if state == 0:
+        return html.Div([
+            html.P("If you want to metric compare between selected models, Click Compare!"),
+        ])
+    else:
+        # 모델간 정량, 정성 지표 plot (Compare Table에 있는 모든 정보들 활용)
+        metrics = list(total_metrics.columns[1:])
+        colors = ['#A56CC1', '#A6ACEC', '#63F5EF', '#425FEF'] # 사용자 입력으로 받을 수 있어야 함
+        
+        fig = go.Figure()
 
-    for i in total_metrics.index:
-        fig.add_bar(name=total_metrics['Name'][i], x=metrics, y=list(total_metrics.iloc[i,1:].apply(np.mean)), text=list(total_metrics.iloc[i,1:].apply(np.mean)), marker={'color' : colors[i]})
-        # .apply(eval)은 np.array나 list를 문자열로 인식할 때만 활용해주면 됨
-        # 아니면 TypeError: eval() arg 1 must be a string, bytes or code object 발생
-    fig.update_layout(
-        barmode='group',
-        bargap=0.15, # gap between bars of adjacent location coordinates.
-        bargroupgap=0.1, # gap between bars of the same location coordinate.)
-        title_text='Metric indicators'
-    )
-    fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
+        for i in total_metrics.index:
+            fig.add_bar(name=total_metrics['Name'][i], x=metrics, y=list(total_metrics.iloc[i,1:].apply(np.mean)), text=list(total_metrics.iloc[i,1:].apply(np.mean)), marker={'color' : colors[i]})
+            # .apply(eval)은 np.array나 list를 문자열로 인식할 때만 활용해주면 됨
+            # 아니면 TypeError: eval() arg 1 must be a string, bytes or code object 발생
+        fig.update_layout(
+            barmode='group',
+            bargap=0.15, # gap between bars of adjacent location coordinates.
+            bargroupgap=0.1, # gap between bars of the same location coordinate.)
+            title_text='Metric indicators'
+        )
+        fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
 
-    return fig
+        return dcc.Graph(figure=fig)  # id = 'total_metric'
+    # return fig
 
 # TODO: get request(selected user) and plot total_metrics
 # def get_quantative_metrics(form): 
@@ -295,6 +306,7 @@ def plot_dist(value):
         return dcc.Graph(id = 'dist_fig', figure=fig)
     # elif value in ['Recall_k', 'NDCG', 'AP@K', 'AvgPopularity', 'TailPercentage']:
         # fig = plot_dist_for_metrics(quan_metrics, value)    
+        return dcc.Graph(id = 'dist_fig', figure=fig)
     else:
         return html.Div([])
     
