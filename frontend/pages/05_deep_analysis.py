@@ -334,10 +334,17 @@ def choose_experiment(val, vip, exp_id):
 
     # TODO: 백에 호출하여 user와 item 만들기
     customer = vip["username"]
-    print(customer)
     dataset = "ml-1m"
+    # current_exp = exp_id["exp_id"]
+    params = {"ID": "mkdir", "dataset_name": "ml-1m", "exp_id": 9}
 
-    user = pd.read_csv("/opt/ml/user.csv", index_col="user_id")
+    user = requests.get(gct.API_URL + "/frontend/user_info", params=params).json()
+    user = pd.DataFrame.from_dict(data=user, orient="tight")
+    item = requests.get(gct.API_URL + "/frontend/item_info", params=params).json()
+    item = pd.DataFrame.from_dict(data=item, orient="tight")
+    # user = pd.read_csv("/opt/ml/user.csv", index_col="user_id")
+    print(user.columns)
+    print(item.columns)
     item = pd.read_csv("/opt/ml/item.csv", index_col="item_id")
     item.fillna(value="[]", inplace=True)
     item["item_profile_user"] = item["item_profile_user"].apply(eval)
