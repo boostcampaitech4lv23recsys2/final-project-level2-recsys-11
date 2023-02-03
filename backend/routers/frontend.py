@@ -15,12 +15,12 @@ from cruds.metrics import avg_metric, predicted_per_item
 from database.rds import get_db_dep
 from database.s3 import get_from_s3, s3_dict_to_pd, s3_to_pd
 
-router = APIRouter()  
+router = APIRouter(prefix="/frontend")  
 
 #### PAGE 1
 ## Compare Table dataset 
 
-@router.get('/get_exp_total')
+@router.get('/get_exp_total', status_code=201)
 async def get_exp_total(ID: str, dataset_name:str):
     total_exps = await get_total_info(ID, dataset_name) 
 
