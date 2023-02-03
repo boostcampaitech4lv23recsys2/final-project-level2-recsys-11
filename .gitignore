@@ -20,3 +20,5 @@ rds.env
 s3.env
 login.env
 test/
+
+*.pickle
