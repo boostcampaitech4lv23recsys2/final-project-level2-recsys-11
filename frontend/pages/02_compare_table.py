@@ -64,52 +64,73 @@ compare_table = html.Div([
     html.Div(id='table-container'),
 ], )
 
-selected_table = html.Div(children=[],id='selected_table',)
+selected_table = html.Div(children=[], id='selected_table')
+# store_data = html.Div(children=[], id='store_data')
 
 layout = html.Div([
     gct.get_navbar(has_sidebar=False),
     html.Div(id='test_store'),
-    html.Div(
-    [
-    select_dataset,
-    compare_table,
-    selected_table,
-    html.H3( id='output_test')
-], className="container")
-                    ])
+    html.Div([
+        select_dataset,
+        compare_table,
+        selected_table,
+        html.H3(id='output_test')
+    ],
+    className="container"),
+    html.Div(id='store_exp_names'),
+
+    dcc.Store(id='store_selected_exp', storage_type='memory'),
+    dcc.Store(id='store_exp_names', storage_type='memory')
+])
  
-@callback(
-    Output('dataset-list', 'options'),
-    Input('select_done', 'n_clicks'),
-    State('user_state', 'data')
-)
-def get_dataset_list(n, user_state):
+# @callback(
+#     Output('dataset-list', 'options'),
+#     Input('select_done', 'n_clicks'),
+#     State('user_state', 'data')
+# )
+# def get_dataset_list(n, user_state):
 
-    response = requests.post(f"{gct.API_URL}/user/get_current_user", json=user_state)
-    if response.status_code == 201:
-        return [1,2,3,4]
-    else:
-        return list(str(response))
+#     response = requests.post(f"{gct.API_URL}/user/get_current_user", json=user_state)
+#     if response.status_code == 201:
+#         return [1,2,3,4]
+#     else:
+#         return list(str(response))
+
+# gct.Authenticate('select_done', 'datase_list')
+
+    # response = requests.post(f"{gct.API_URL}/user/get_current_user", json=user_state)
+    # if response.status_code == 201:
+    #     return [1,2,3,4]
+    # else:
+    #     return list(str(response))
     
-@callback(
-    Output('test_store', 'children'),
-    Input('select_done', 'n_clicks'),
-    State('user_state', 'data'),
-    prevent_initial_call=True
-)
-def test_store(n, data):
+# @callback(
+#     Output('test_store', 'children'),
+#     Input('select_done', 'n_clicks'),
+#     State('user_state', 'data'),
+#     prevent_initial_call=True
+# )
+# def test_store(n, data):
+#     return
+# @callback(
+#     Output('test_store', 'children'),
+#     Input('select_done', 'n_clicks'),
+#     State('user_state', 'data'),
+#     prevent_initial_call=True
+# )
+# def test_store(n_clicks, data):
+#     return str(data)
 
-    return str(data)
-
-@callback(
+## 선택한 실험의 정보를 table로 만들어주고, 그 실험 정보 자체를 return
+@callback(  
     Output('table-container', 'children'),
+    Output('store_selected_exp', 'data'),
     Input('select_done', 'n_clicks'),
     State('compare_table', 'selectionChanged'),
     prevent_initial_call=True
 )
 def test_output(n, r2):
-
-    return dag.AgGrid(
+    AgGrid = dag.AgGrid(
         id = 'selected_table',
         rowData=r2,
         columnDefs=[
@@ -129,3 +150,18 @@ def test_output(n, r2):
         rowDragManaged=True,
         animateRows=True,
     )
+
+    return AgGrid, r2
+
+## 선택한 실험에서 실험의 이름을 가져와서 model vs model page로 넘겨주기 (지금은 age로 임시방편)
+@callback(
+    Output('store_exp_names', 'data'),
+    Input('store_selected_exp', 'data')
+)
+def store_selected_exp_names(data):
+    if data is None:
+        raise PreventUpdate
+    exp_names = []
+    for each in data:
+        exp_names.append(each['age'])
+    return exp_names
