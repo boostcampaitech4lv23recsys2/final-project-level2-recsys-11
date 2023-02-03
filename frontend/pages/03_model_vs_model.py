@@ -16,6 +16,22 @@ API_url = 'http://127.0.0.1:8000'
 
 dash.register_page(__name__, path='/model-vs-model')
 
+# total_dict = requests.get(API_url + '/')
+# total_df = pd.DataFrame(total_dict).from_dict(orient='tight')
+
+# def make_total_metric_df(tmp_df:pd.DataFrame):
+#     # tmp_dict = requests.get(API_url + '/')
+#     total_metric_df = tmp_df.loc[] 
+#     return total_metric_df
+
+# def make_qual_metric_df(tmp_df:pd.DataFrame):
+#     qual_metric_df = tmp_df.loc[]
+#     return qual_metric_df
+
+# def make_quan_metric_df(tmp_df:pd.DataFrame):
+#     quan_metric_df = tmp_df.loc[]
+#     return quan_metric_df
+
 
 def plot_qual_metrics(df:pd.DataFrame):
     # 모델간 정량, 정성 지표 plot (Compare Table에 있는 모든 정보들 활용)
@@ -57,8 +73,12 @@ def plot_dist_for_metrics(qual_df:pd.DataFrame, metric:str):
 # 옵션으로 선택된 실험들을 불러옴
 # 불러온 실험들로 df를 제작함
 # 만약 새로운 실험이 + 되면 그 실험 정보를 df에 추가함 e.g.,) df.loc[] = ...
+
 total_metrics = pd.read_csv('/opt/ml/total_metrics_df.csv')
+# total_metrics = make_total_metrics_df()
 qual_metrics = pd.read_csv('/opt/ml/qual_metrics_df.csv')  # 정성 지표들이 array로 담겨있음
+# qual_metrics = make_qual_metrics_df()
+# quan_metrics = pd.read_csv('/opt/ml/quan_metrics_df.csv') # 정량 지표들이 array로 담겨있음
 # quan_metrics = pd.read_csv('/opt/ml/quan_metrics_df.csv') # 정량 지표들이 array로 담겨있음
 
 # fig_total = plot_total_metrics(total_metrics)
