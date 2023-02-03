@@ -99,7 +99,6 @@ async def user_info(ID: str, dataset_name: str, exp_id: int):
     user_profile_pd = await inter_to_profile(key_hash=df_row['train_interaction'], group_by='user_id', col='item_id') 
 
     pred_item_pd = await s3_to_pd(key_hash=exp_row['pred_items'])
-    print(type(pred_item_pd))
     user_tsne_pd = await s3_to_pd(key_hash=exp_row['user_tsne'])
 
     dfs = [user_side_pd, user_profile_pd, pred_item_pd, user_tsne_pd]
@@ -126,7 +125,8 @@ async def item_info(ID: str, dataset_name: str, exp_id: int):
         return {'msg': 'Model Not Found'}
     
     item_side = await s3_to_pd(key_hash=df_row['item_side'])
-    item_side_pd = item_side[['genre', 'title', 'year', 'popularity']]
+    print(item_side.columns)
+    item_side_pd = item_side[['item_id', 'item_name', 'genres:multi', 'year', 'item_popularity']]
     item_profile_pd = await inter_to_profile(key_hash=df_row['train_interaction'], group_by='item_id', col='user_id') 
 
     item_rec_users_pd = await predicted_per_item(pred_item_hash=exp_row['pred_items'])
