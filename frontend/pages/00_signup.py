@@ -44,7 +44,7 @@ layout = html.Div([
             dcc.Link(
                 dbc.Button('Back', n_clicks=0, style={'margin': 20}),
                 href='/'),
-                  ], className='login-form')
+                  ], className="mx-auto w-25")
 
 @callback(
     Output(component_id='container-button-basic', component_property='children'),
