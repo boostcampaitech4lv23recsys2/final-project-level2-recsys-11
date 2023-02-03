@@ -7,9 +7,10 @@ import plotly.express as px
 from dash.exceptions import PreventUpdate
 import json
 from passlib.context import CryptContext
+from . import global_component as gct
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-salt_value = 'zFICaaUesOyNBJW4MHuUpV'
+salt_value = gct.get_login_setting()['SALT']
 API_url = 'http://127.0.0.1:30004'
 
 dash.register_page(__name__, path='/signup')
@@ -43,7 +44,7 @@ layout = html.Div([
             dcc.Link(
                 dbc.Button('Back', n_clicks=0, style={'margin': 20}),
                 href='/'),
-                  ], className='login-form')
+                  ], className="mx-auto w-25")
 
 @callback(
     Output(component_id='container-button-basic', component_property='children'),
