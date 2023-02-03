@@ -1,5 +1,6 @@
 from asyncmy.cursors import DictCursor
 from async_lru import alru_cache
+from functools import lru_cache
 from typing import Dict, Tuple, List
 import pandas as pd
 
@@ -28,7 +29,7 @@ async def check_user(ID:str) -> Dict:
 
 
 ######## 비동기 객체에 대해 caching이 잘 작동하는지 디버깅 필요!!
-@alru_cache(max_size=5)
+@alru_cache(maxsize=5)
 async def get_df(ID: str, dataset_name: str):
     connection = get_db_inst()
 
@@ -40,7 +41,7 @@ async def get_df(ID: str, dataset_name: str):
     return row 
 
 
-@alru_cache(maxsize=10)
+@lru_cache(maxsize=10)
 async def get_exp(exp_id: int):
     connection = get_db_inst()
 
@@ -55,24 +56,24 @@ async def get_exp(exp_id: int):
 async def inter_to_profile(key_hash:str, group_by:str, col:str) -> pd.DataFrame:
     train_inter = await get_from_s3(key_hash)
     
-    inter_pd = s3_dict_to_pd(train_inter, orient='tight')
+    inter_pd = await s3_dict_to_pd(train_inter)
     pd_profile = inter_pd.groupby(group_by).agg(list)[col].reset_index()
     
     return pd_profile
 
 
-@alru_cache(max_size=3)
+@lru_cache(maxsize=3)
 async def get_total_info(ID: str, dataset_name:str):
     connection = get_db_inst()
 
     async with connection as conn:
         async with conn.cursor(cursor=DictCursor) as cur:
             query = 'SELECT exp_id, experiment_name, alpha, objective_fn, hyperparameters, \
-                     recall, ap, ndcg, tail_percentage, avg_popularity, coverage, \
+                     recall, map, ndcg, tail_percentage, avg_popularity, coverage, \
                      diversity_cos, diversity_jac, serendipity_pmi, serendipity_jac, novelty \
                      metric_per_user FROM Experiments WHERE ID = %s AND dataset_name = %s'
             await cur.execute(query, (ID, dataset_name))
-            result = cur.fetchall()
+            result = await cur.fetchall()
 
     return result
 

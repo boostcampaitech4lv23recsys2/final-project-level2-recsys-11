@@ -1,6 +1,6 @@
 from typing import Dict
-from pandas import pd
-from numpy import np
+import pandas as pd
+import numpy as np
 
 from schemas.data import Dataset
 from database.s3 import get_from_s3, s3_to_pd

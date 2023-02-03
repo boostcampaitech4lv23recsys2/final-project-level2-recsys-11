@@ -16,14 +16,14 @@ def get_db_inst():
     return connect(**rds_config)
 
 
-def get_db_dep():
+async def get_db_dep():
     db = connect(**rds_config)
     try:
         yield db
 
     except ValueError:
         logging.error("Validation Error: ValueError - DB Connection")
-        return None
+        yield None
 
     except:
         logging.error("RDS Not Connected")

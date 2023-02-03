@@ -37,6 +37,7 @@ class Login_Settings(BaseSettings):
 def get_rds_settings():
     return RDS_Settings(_env_file='rds.env', _env_file_encoding='utf-8')
 
+
 @lru_cache
 def get_login_settings():
     return Login_Settings(_env_file='login.env', _env_file_encoding='utf-8')

@@ -29,7 +29,7 @@ async def send_to_s3(data: Dict, key_name: str) -> str:
 
     return key_hash 
 
-
+@lru_cache(maxsize=10)
 async def get_from_s3(key_hash: str) -> Dict:   # key_hash = key_name.encode('utf-8') + json
     obj = client.get_object(Bucket='mkdir-bucket', Key=key_hash) 
     return json.loads(obj['Body'].read().decode('utf-8'))
