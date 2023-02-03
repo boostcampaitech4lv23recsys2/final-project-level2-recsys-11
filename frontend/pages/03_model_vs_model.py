@@ -16,6 +16,22 @@ API_url = 'http://127.0.0.1:8000'
 
 dash.register_page(__name__, path='/model-vs-model')
 
+# total_dict = requests.get(API_url + '/')
+# total_df = pd.DataFrame(total_dict).from_dict(orient='tight')
+
+# def make_total_metric_df(tmp_df:pd.DataFrame):
+#     # tmp_dict = requests.get(API_url + '/')
+#     total_metric_df = tmp_df.loc[] 
+#     return total_metric_df
+
+# def make_qual_metric_df(tmp_df:pd.DataFrame):
+#     qual_metric_df = tmp_df.loc[]
+#     return qual_metric_df
+
+# def make_quan_metric_df(tmp_df:pd.DataFrame):
+#     quan_metric_df = tmp_df.loc[]
+#     return quan_metric_df
+
 
 def plot_qual_metrics(df:pd.DataFrame):
     # 모델간 정량, 정성 지표 plot (Compare Table에 있는 모든 정보들 활용)
@@ -57,8 +73,12 @@ def plot_dist_for_metrics(qual_df:pd.DataFrame, metric:str):
 # 옵션으로 선택된 실험들을 불러옴
 # 불러온 실험들로 df를 제작함
 # 만약 새로운 실험이 + 되면 그 실험 정보를 df에 추가함 e.g.,) df.loc[] = ...
+
 total_metrics = pd.read_csv('/opt/ml/total_metrics_df.csv')
+# total_metrics = make_total_metrics_df()
 qual_metrics = pd.read_csv('/opt/ml/qual_metrics_df.csv')  # 정성 지표들이 array로 담겨있음
+# qual_metrics = make_qual_metrics_df()
+# quan_metrics = pd.read_csv('/opt/ml/quan_metrics_df.csv') # 정량 지표들이 array로 담겨있음
 # quan_metrics = pd.read_csv('/opt/ml/quan_metrics_df.csv') # 정량 지표들이 array로 담겨있음
 
 # fig_total = plot_total_metrics(total_metrics)
@@ -74,7 +94,7 @@ sidebar = html.Div([
         
         dbc.Button('➕', id='add_button', n_clicks=0, style={'position':'absolute', 'right':0, 'margin-right':'2rem'}),
         dbc.Popover("Add a new expriement", trigger='hover', target='add_button', body=True),
-        dbc.Button('Compare!', id='compare_btn')
+        dbc.Button('Compare!', id='compare_btn', n_clicks=0)
     ],
     className='sidebar'
 )
@@ -91,11 +111,15 @@ total_graph = html.Div([
 
     html.H3('Total Metric'),
     dbc.Row([
-      dbc.Col([
-          dcc.Graph(id='total_metric') # figure=fig_total,
+        dbc.Col([
+            html.Div([
+                html.Br(),
             ]),
-            ])
+            html.Div(id='total_metric')
+            # dcc.Graph(id='total_metric') # html.Div(id='total_metric')
+        ]),
     ])
+])
 
 #### 정량, 정성 지표 그래프 그릴 부분
 specific_metric = html.Div([
@@ -133,80 +157,10 @@ layout = html.Div(children=[
     sidebar,
     total_graph,
     specific_metric]),
-    dcc.Store(id='store_selected_exp', storage_type='memory'),
-    dcc.Store(id='store_exp_names', storage_type='memory')
+    dcc.Store(id='store_selected_exp', storage_type='session'),
+    dcc.Store(id='store_exp_names', storage_type='session')
 
 ], className="content")
-
-
-# @callback(
-#     Output('items_selected_by_option', 'data'),
-#     Input('selected_genre', 'value'), Input('selected_year', 'value'),
-# )
-# def save_items_selected_by_option(genre, year):
-#     item_lst = item.copy()
-#     item_lst = item_lst[item_lst['genre'].str.contains(
-#         ''.join([*map(lambda x: f'(?=.*{x})', genre)]) + '.*', regex=True)]
-#     item_lst = item_lst[(item_lst['release_year'] >= year[0]) & (item_lst['release_year'] <= year[1])]
-#     return item_lst.index.to_list()
-
-# @callback( # add_button 
-#     Output('selected_exp', 'data'),
-#     Input('store_exp_names', 'data')
-# )
-# def save_selected_exp_id(exp_id):
-#     return
-
-@callback(  # compare 버튼 누름
-        Output('total_metric', 'figure'),
-        Input('compare_btn', 'n_clicks'),
-        prevent_initial_call=True
-)
-def plot_total_metrics(tmp): # df:pd.DataFrame
-    # 모델간 정량, 정성 지표 plot (Compare Table에 있는 모든 정보들 활용)
-    metrics = list(total_metrics.columns[1:])
-    colors = ['#A56CC1', '#A6ACEC', '#63F5EF', '#425FEF'] # 사용자 입력으로 받을 수 있어야 함
-    
-    fig = go.Figure()
-
-    for i in total_metrics.index:
-        fig.add_bar(name=total_metrics['Name'][i], x=metrics, y=list(total_metrics.iloc[i,1:].apply(np.mean)), text=list(total_metrics.iloc[i,1:].apply(np.mean)), marker={'color' : colors[i]})
-        # .apply(eval)은 np.array나 list를 문자열로 인식할 때만 활용해주면 됨
-        # 아니면 TypeError: eval() arg 1 must be a string, bytes or code object 발생
-    fig.update_layout(
-        barmode='group',
-        bargap=0.15, # gap between bars of adjacent location coordinates.
-        bargroupgap=0.1, # gap between bars of the same location coordinate.)
-        title_text='Metric indicators'
-    )
-    fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
-
-    return fig
-
-# TODO: get request(selected user) and plot total_metrics
-# def get_quantative_metrics(form): 
-#     params={'model_name': form['model'], 'str_key': form['values']}
-#     return requests.get(url=f'{API_url}/metric/quantitative/', params=params).json()[0]
-
-### ??
-@callback(
-        Output('map', 'children'),
-        Input('compare_btn', 'n_clicks'),
-        prevent_initial_call=True
-)
-def get_quantative_metrics(form):
-    params={'model_name': form['model'], 'str_key': form['values']}
-    return requests.get(url=f'{gct.API_URL}/metric/quantitative/', params=params).json()[0]
-
-### ??
-@callback(
-    Output('select_model2', 'children'),
-    Input('uname-box', 'value'),
-    prevent_initial_call=True
-)
-def sider_custom_trigger_demo(v):
-
-    return v
 
 
 ### 어떤 실험을 고를지 select하는 dropdown을 보여주는 callback
@@ -237,15 +191,75 @@ def display_dropdowns(n_clicks, _, store_exp_names, children):
                     placeholder="Select or Search experiment", optionHeight=50, # options=[{'label':'exp_name', 'value':'exp_id'}, ... ], # label은 보여지는거, value는 실제 어떤 데이터인지
                 ),
                 html.Hr(),
-                html.P(
-                        f'''
-                        neg_sample: 123
-                        '''
-                    , id={'type':"exp's_hype", 'index':n_clicks}),
+                html.P(id={'type':"exp's_hype", 'index':n_clicks}),
                 html.Br()
             ], className='form-style')
         children.append(model_form)
     return children
+
+
+# TODO: get request(selected user) and plot total_metrics
+# def get_quantative_metrics(form): 
+#     params={'model_name': form['model'], 'str_key': form['values']}
+#     return requests.get(url=f'{API_url}/metric/quantitative/', params=params).json()[0]
+
+
+### compare! 버튼을 누르면 plot을 그려주는 callback
+@callback(  # compare 버튼 누름
+        Output('total_metric', 'children'),
+        Input('compare_btn', 'n_clicks'),
+        State('compare_btn', 'n_clicks'),
+        # prevent_initial_call=True
+)
+def plot_total_metrics(inp, state): # df:pd.DataFrame
+    if state == 0:
+        return html.Div([
+            html.P("If you want to metric compare between selected models, Click Compare!"),
+        ])
+    else:
+        # 모델간 정량, 정성 지표 plot (Compare Table에 있는 모든 정보들 활용)
+        metrics = list(total_metrics.columns[1:])
+        colors = ['#A56CC1', '#A6ACEC', '#63F5EF', '#425FEF'] # 사용자 입력으로 받을 수 있어야 함
+        
+        fig = go.Figure()
+
+        for i in total_metrics.index:
+            fig.add_bar(name=total_metrics['Name'][i], x=metrics, y=list(total_metrics.iloc[i,1:].apply(np.mean)), text=list(total_metrics.iloc[i,1:].apply(np.mean)), marker={'color' : colors[i]})
+            # .apply(eval)은 np.array나 list를 문자열로 인식할 때만 활용해주면 됨
+            # 아니면 TypeError: eval() arg 1 must be a string, bytes or code object 발생
+        fig.update_layout(
+            barmode='group',
+            bargap=0.15, # gap between bars of adjacent location coordinates.
+            bargroupgap=0.1, # gap between bars of the same location coordinate.)
+            title_text='Metric indicators'
+        )
+        fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
+
+        return dcc.Graph(figure=fig)  # id = 'total_metric'
+    # return fig
+
+
+### ??
+@callback(
+        Output('map', 'children'),
+        Input('compare_btn', 'n_clicks'),
+        prevent_initial_call=True
+)
+def get_quantative_metrics(form):
+    params={'model_name': form['model'], 'str_key': form['values']}
+    return requests.get(url=f'{gct.API_URL}/metric/quantitative/', params=params).json()[0]
+
+### ??
+@callback(
+    Output('select_model2', 'children'),
+    Input('uname-box', 'value'),
+    prevent_initial_call=True
+)
+def sider_custom_trigger_demo(v):
+
+    return v
+
+
 
 ### selected_exp 의 hype을 소개하는 callback
 @callback(
@@ -295,6 +309,7 @@ def plot_dist(value):
         return dcc.Graph(id = 'dist_fig', figure=fig)
     # elif value in ['Recall_k', 'NDCG', 'AP@K', 'AvgPopularity', 'TailPercentage']:
         # fig = plot_dist_for_metrics(quan_metrics, value)    
+        return dcc.Graph(id = 'dist_fig', figure=fig)
     else:
         return html.Div([])
     
