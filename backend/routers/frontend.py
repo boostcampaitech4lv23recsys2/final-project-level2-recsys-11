@@ -39,7 +39,6 @@ async def get_exp_total(ID: str, dataset_name:str):
 async def selected_models(ID:str, dataset_name:str, exp_ids: List[int] = Query(default=None)):
     total_exps = await get_total_info(ID, dataset_name) # cached
 
-    print(total_exps)
     if not total_exps:
          return {'msg': 'Experiments Not Found'}
     
