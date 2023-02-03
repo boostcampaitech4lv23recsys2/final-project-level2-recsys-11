@@ -22,3 +22,4 @@ login.env
 test/
 
 *.pickle
+*.log
