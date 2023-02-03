@@ -1,6 +1,5 @@
 from asyncmy.cursors import DictCursor
 from async_lru import alru_cache
-from functools import lru_cache
 from typing import Dict, Tuple, List
 import pandas as pd
 
@@ -41,7 +40,7 @@ async def get_df(ID: str, dataset_name: str):
     return row 
 
 
-@lru_cache(maxsize=10)
+@alru_cache(maxsize=10)
 async def get_exp(exp_id: int):
     connection = get_db_inst()
 
@@ -62,7 +61,7 @@ async def inter_to_profile(key_hash:str, group_by:str, col:str) -> pd.DataFrame:
     return pd_profile
 
 
-@lru_cache(maxsize=3)
+@alru_cache(maxsize=3)
 async def get_total_info(ID: str, dataset_name:str):
     connection = get_db_inst()
 
