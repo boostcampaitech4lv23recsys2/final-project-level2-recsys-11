@@ -28,7 +28,7 @@ def get_navbar(has_sidebar=True):
     navbar = dbc.NavbarSimple(
         children=[
             dbc.NavItem(dbc.NavLink("Compare Table", href="/compare-table")),
-            dbc.NavItem(dbc.NavLink('Model vs Model', href="/model-vs-model")),
+            dbc.NavItem(dbc.NavLink('Modelw vs Model', href="/model-vs-model")),
             dbc.NavItem(dbc.NavLink('Reranking', href="/reranking")),
             dbc.NavItem(dbc.NavLink('Deep Analysis', href="/deep_analysis")),
             dbc.DropdownMenu(

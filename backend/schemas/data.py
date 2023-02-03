@@ -17,15 +17,16 @@ class Dataset(BaseModel):
     item_side: Dict
     dataset_desc: str
 
-    item_vectors: Dict[str, Dict[str, List]] 
+    # item_vectors: Dict[str, Dict[str, List]] 
 
     @property
     def n_user(self):
-        return self.train_df['user_id'].nunique()
+        return self.train_interaction['user_id'].nunique()
 
     @property 
     def n_item(self):
-        return self.train_df['item_id'].nunique()
+        return self.train_interaction['item_id'].nunique()
+
 
 # class TrainInteraction(BaseModel):
 #     user_id: Union[str, int]
@@ -44,31 +45,36 @@ class CoreDataset(BaseModel):
     train_interaction: Dict
     ground_truth: Dict
 
-    
 
 class Experiment(BaseModel):
     ID: str
     dataset_name: str
     experiment_name: str
     alpha: float = 1.0
-    objective_fn: str = None
+    objective_fn: Union[str, None]
 
-    hyperparameters: Dict
-    pred_item: Dict
-    pred_score: Dict
-    item_vector: Dict
-    distance_matrix: Dict
-    jaccard_matrice: Union[Dict, None] 
+    hyperparameters: str
+    pred_items: Dict # 디코
+    pred_scores: Union[Dict, None] # 디코
+    # cos_dist: Union[Dict, None] # 디코
+    # pmi_dist: Union[Dict, None] # 디코
+    # jac_dist: Union[Dict, None] # 디코
+
+    user_tsne: Union[Dict, None]
+    item_tsne: Union[Dict, None]
     
-    recall: Dict
-    map: Dict
-    ndcg: Dict
-    tail_per: Dict
-    avg_pop: Dict
-    coverage: Dict
+    recall: float
+    ndcg: float
+    map: float
+    avg_popularity: float
+    tail_percentage: float
+    coverage: float
 
-    diversity_cos: Dict
-    diversity_jac: Union[Dict, None]
-    serendipity_pmi: Dict
-    serendipity_jac: Union[Dict, None]
-    novelty: Dict 
+    diversity_cos: float
+    serendipity_pmi: float
+    novelty: float
+
+    diversity_jac: Union[float, None]
+    serendipity_jac: Union[float, None]
+
+    metric_per_user: Dict # 그대로
