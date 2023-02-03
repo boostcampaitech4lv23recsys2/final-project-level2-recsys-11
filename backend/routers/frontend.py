@@ -17,27 +17,6 @@ from database.s3 import get_from_s3, s3_dict_to_pd, s3_to_pd
 
 router = APIRouter()  
 
-#### LOGIN 
-@router.post("/create_user", status_code=202)
-async def create_user(_user_create: UserCreate, connection=Depends(get_db_dep)):
-
-    # connection = get_db_inst()
-    user = await check_user(_user_create.ID) 
-
-    if user:
-        return JSONResponse({'msg':'error'},status_code=status.HTTP_409_CONFLICT)
-
-    else:
-        async with connection as conn:
-            async with conn.cursor() as cur:
-                curr_time = datetime.now()
-                query = "INSERT INTO Users (ID, password, access_time) VALUES (%s, %s, %s)"
-                await cur.execute(query, (_user_create.ID, _user_create.password1, curr_time))
-            await conn.commit()
-
-        return {'message': f"User: {_user_create.ID} has been ADDED"}
-
-
 #### PAGE 1
 ## Compare Table dataset 
 

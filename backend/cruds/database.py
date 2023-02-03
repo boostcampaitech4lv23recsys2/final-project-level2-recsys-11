@@ -70,7 +70,7 @@ async def get_total_info(ID: str, dataset_name:str):
         async with conn.cursor(cursor=DictCursor) as cur:
             query = 'SELECT exp_id, experiment_name, alpha, objective_fn, hyperparameters, \
                      recall, map, ndcg, tail_percentage, avg_popularity, coverage, \
-                     diversity_cos, diversity_jac, serendipity_pmi, serendipity_jac, novelty \
+                     diversity_cos, diversity_jac, serendipity_pmi, serendipity_jac, novelty, \
                      metric_per_user FROM Experiments WHERE ID = %s AND dataset_name = %s'
             await cur.execute(query, (ID, dataset_name))
             result = await cur.fetchall()
