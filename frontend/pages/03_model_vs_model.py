@@ -17,6 +17,9 @@ API_url = 'http://127.0.0.1:30004'
 dash.register_page(__name__, path='/model-vs-model')
 
 
+# params = {'ID':'mkdir', 'dataset_name':'ml-1m', 'exp_ids': [9]}
+# response = requests.get(API_url + '/frontend/selected_metrics', params = params)
+# a = response.json()
 
 # total_dict = requests.get(API_url + '/')
 # total_df = pd.DataFrame(total_dict).from_dict(orient='tight')
@@ -207,7 +210,7 @@ def display_dropdowns(n_clicks, _, store_exp_names, children):
     Input('store_exp_ids', 'data')
 )
 def get_stored_selected_models(exp_ids:list[int]) -> pd.DataFrame:
-    params = {'ID':'mkdir', 'dataset_name':'ml-1m', 'exp_id': exp_ids}
+    params = {'ID':'mkdir', 'dataset_name':'ml-1m', 'exp_ids': exp_ids}
     response = requests.get(API_url + '/frontend/selected_models', params = params)
     a = response.json()
     return pd.DataFrame.from_dict(data=a, orinet='tight')
