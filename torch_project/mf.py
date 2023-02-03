@@ -18,7 +18,7 @@ def get_parser():
     parser.add_argument('--data_dir', default='data/ml-1m')
     parser.add_argument('--device', default='cuda', type=str)
     parser.add_argument('--seed', default=42, type=int)
-    parser.add_argument('--n_valids', default=1, type=int)
+    parser.add_argument('--n_valids', default=2, type=int)
     
     parser.add_argument("--loss", default='bce', choices = ['bpr', 'bce'], type=str)
     parser.add_argument("--sampler", default='uni', choices=['uni', 'pop'], type=str)
@@ -81,6 +81,7 @@ class BPRLoss(nn.Module):
 
 def main(args):
     # 라이브러리 쭉쭉
+    print('start:', args.loss, args.sampler)
     ratings = pd.read_csv(os.path.join(args.data_dir, 'train_ratings.csv'))
     ratings = ratings.sort_values(by=['user_id', 'timestamp'], ignore_index=True)
 
@@ -173,21 +174,39 @@ def main(args):
     with torch.no_grad():
         user_emb = model.user_embedding.weight.data
         item_emb = model.item_embedding.weight.data
-        pred_rating_mat = torch.matmul(user_emb, item_emb.T)
-        pred_rating_mat_npy = pred_rating_mat.cpu().numpy()
-        np.save('./data/pred_rating_mat.npy', pred_rating_mat_npy)
-        pred_rating_mat[train_data['user_idx'].values, train_data['item_idx'].values] = -999.9
 
-        _, recs = torch.sort(pred_rating_mat, dim=-1, descending=True)
+        total_pred_rating_mat = torch.matmul(user_emb, item_emb.T).cpu().numpy()
+        # total_pred_rating_mat[train_data['user_idx'].values, train_data['item_idx'].values] = -999.9
 
-        preds = recs.cpu().numpy()
-        preds = np.vectorize(lambda x: idx2item[x])(preds)
-        for u_idx in range(len(preds)):
-            topk[idx2user[u_idx]] = preds[u_idx].tolist()
-        # get_full_sort_score(valid_answers, preds)
+        # 필요 유저 - 아이템 들만 골라냄.
+        target_users = train_ratings['user_id'].unique()
+        user_indices = list(map(lambda u: user2idx[u], target_users))
 
-        topk = pd.Series(topk)
-        print(topk)
+        target_items = train_ratings['item_id'].unique()
+        item_indices = list(map(lambda i: item2idx[i], target_items))
+
+        scores = total_pred_rating_mat[user_indices, :][:, item_indices]
+
+        pd.DataFrame(
+            index=list(map(lambda u: idx2user[u], user_indices)),
+            columns=list(map(lambda i: idx2item[i], item_indices)),
+            data=scores
+        ).to_pickle('prediction_matrix_' + args.loss + '_' + args.sampler + '_.pickle')
+
+
+        # pred_rating_mat_npy = pred_rating_mat.cpu().numpy()
+        # np.save('./data/pred_rating_mat.npy', pred_rating_mat_npy)
+
+        # _, recs = torch.sort(pred_rating_mat, dim=-1, descending=True)
+
+        # preds = recs.cpu().numpy()
+        # preds = np.vectorize(lambda x: idx2item[x])(preds)
+        # for u_idx in range(len(preds)):
+        #     topk[idx2user[u_idx]] = preds[u_idx].tolist()
+        # # get_full_sort_score(valid_answers, preds)
+
+        # topk = pd.Series(topk)
+        # print(topk)
 
 
 if __name__ == '__main__':

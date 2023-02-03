@@ -21,7 +21,7 @@ def dict_to_df(dict_: dict):
 
 
 class W4RDatasetManager:
-    __server_url: str = 'http://127.0.0.1:8000/web4rec-lib' 
+    __server_url: str = 'http://127.0.0.1:30004/web4rec-lib' 
     __ID: str = None # user_id -> ID #
     __password: str = None
 
@@ -41,14 +41,7 @@ class W4RDatasetManager:
 
     item_popularity: pd.Series = None # {item_id: 'popularity' float } # 영화 본 유저 / 총 유저
     item_name: Dict = {} # {item_id: 'name' str }
-    item_vectors: Dict = {} # 장르스 같은 자카드 item_vecots['genres']
-    # {
-    #     'name' : 
-    #     {
-    #         'item_id': [0,1,0,0,1],
-    #         'item_id': [1,0,1,1,1]
-    #     },
-    # } 
+    item_vector: Dict = None # 장르스 같은 자카드 item_vecots['genres']
 
 
     def login(ID: str, password: str):
@@ -88,6 +81,12 @@ class W4RDatasetManager:
 
 
     def add_train_interaction(train_interaction: pd.DataFrame):
+        # train_interaction = train_interaction.copy()
+        train_interaction = train_interaction.astype({'user_id': str,'item_id': str})
+
+        # train_interaction['user_id'] = train_interaction['user_id'].astype(str)
+        # train_interaction['item_id'] = train_interaction['item_id'].astype(str)
+
         W4RDatasetManager.user_ids = train_interaction['user_id'].unique().tolist()
         W4RDatasetManager.item_ids = train_interaction['item_id'].unique().tolist()
 
@@ -100,6 +99,12 @@ class W4RDatasetManager:
     def add_ground_truth_interaction(ground_truth: pd.DataFrame):
         if W4RDatasetManager.train_interaction is None:
             raise W4RException('ground_truth: You should add train interaction first.')
+        
+                # train_interaction = train_interaction.copy()
+        ground_truth = ground_truth.astype({'user_id': str,'item_id': str})
+
+        # ground_truth['user_id'] = ground_truth['user_id'].astype(str)
+        # ground_truth['item_id'] = ground_truth['item_id'].astype(str)
 
         ground_truth_user_ids = ground_truth['user_id'].unique().tolist()
         ground_truth_item_ids = ground_truth['item_id'].unique().tolist()
@@ -111,6 +116,7 @@ class W4RDatasetManager:
         extra_items = set(ground_truth_item_ids) - set(W4RDatasetManager.item_ids)
         if extra_items:
             print(f'ground_truth: {list(extra_items)[:3]}... items are not in train_interaction.')
+            
 
         W4RDatasetManager.ground_truth = ground_truth[['user_id', 'item_id']]
 
@@ -124,6 +130,9 @@ class W4RDatasetManager:
             raise W4RException('user_side: You should add train interaction first.')
         if W4RDatasetManager.ground_truth is None:
             raise W4RException('user_side: You should add ground truth first.')
+
+
+        user_side = user_side.astype({'user_id': str})
 
         # 그냥 train user 에 없는 유저는 뺀다.
         user_side_user_ids = user_side['user_id'].unique().tolist()
@@ -153,10 +162,13 @@ class W4RDatasetManager:
         if W4RDatasetManager.ground_truth is None:
             raise W4RException('item_side: You should add ground truth first.')
 
+        
+        item_side = item_side.astype({'item_id': str})
+
         item_side_item_ids = item_side['item_id'].unique().tolist()
         extra_items = set(item_side_item_ids) - set(W4RDatasetManager.item_ids)
         if extra_items:
-            print(f'item_side: {list(extra_items)[:3]}... items are not in train_interaction. they will be dropped.')
+            print(f'item_side: {list(extra_items)[:10]} items are not in train_interaction. they will be dropped.')
         item_side = item_side[item_side['item_id'].isin(W4RDatasetManager.item_ids)]
 
         # item_side 를 돌면서 str, int 로만 구성되는지 체크함.
@@ -167,39 +179,40 @@ class W4RDatasetManager:
             if item_side[item_col].dtype == float:
                 raise W4RException(f'item_side: {item_col} column dtype is not str or int.')
 
+
         W4RDatasetManager.item_side = item_side
 
 
-    def add_item_name(item_name: Dict[Union[str, int], str]):
+    def add_item_name(item_name: pd.Series):
         if W4RDatasetManager.item_side is None:
             raise W4RException('item_name: You should add item_side first.')
 
+        item_name.index = item_name.index.astype(str)
         W4RDatasetManager.item_side['item_name'] = \
-            W4RDatasetManager.item_side['item_id'].map(item_name).to_dict()
+            W4RDatasetManager.item_side['item_id'].map(item_name)
 
 
     def add_item_vector(
-        vector_name: str, 
-        item_vector: Dict[Union[str, int], List[Union[int, float]]]
+        item_vector: pd.Series
     ):
         # vector 들의 차원이 동일한지 확인
         # vector 들의 차원이 너무 큰지 확인 ( <= 1024 )
-        if W4RDatasetManager.item_side is None:
-            raise W4RException('item_vecotr: You should add item_side first.')
+        # if W4RDatasetManager.item_side is None:
+        #     raise W4RException('item_vecotr: You should add item_side first.')
 
-        vector_lens = list(map(lambda x: len(x), item_vector.values()))
-        # if np.mean(vector_lens) != len(vector_lens):
-        #     raise W4RException('item_vector: item_vectors values are not same dimension.')
+        # vector_lens = list(map(lambda x: len(x), item_vector.values))
+        # # if np.mean(vector_lens) != len(vector_lens):
+        # #     raise W4RException('item_vector: item_vectors values are not same dimension.')
 
-        if max(vector_lens) > 1024:
-            raise W4RException('item_vector: W4R supports maximum 1024 dimension vector.')
+        # if max(vector_lens) > 1024:
+        #     raise W4RException('item_vector: W4R supports maximum 1024 dimension vector.')
 
-        W4RDatasetManager.item_vectors[vector_name] = \
-            W4RDatasetManager.item_side['item_id'].map(item_vector).to_dict()
+        item_vector.index = item_vector.index.astype(str)
+        W4RDatasetManager.item_side['item_vector'] = W4RDatasetManager.item_side['item_id'].map(item_vector)
 
 
     # upload 하면 된다.
-    def upload_dataset():
+    def upload_dataset(desc: str):
         # popularity 구하기
         train = W4RDatasetManager.train_interaction
         item_popularity = \
@@ -209,12 +222,11 @@ class W4RDatasetManager:
         body = {
             'ID': W4RDatasetManager.__ID, # str
             'dataset_name': W4RDatasetManager.dataset_name,
-            'dataset_desc': 'hi',
-            'train_interaction': df_to_dict(W4RDatasetManager.train_interaction), # dict
-            'ground_truth': df_to_dict(W4RDatasetManager.ground_truth), # dict
-            'user_side': df_to_dict(W4RDatasetManager.user_side), # dict
-            'item_side': df_to_dict(W4RDatasetManager.item_side), # dict
-            'item_vectors': W4RDatasetManager.item_vectors # dict
+            'dataset_desc': desc,
+            'train_interaction': W4RDatasetManager.train_interaction.to_dict('tight'), # dict
+            'ground_truth': W4RDatasetManager.ground_truth.to_dict('tight'), # dict
+            'user_side': W4RDatasetManager.user_side.to_dict('tight'), # dict
+            'item_side': W4RDatasetManager.item_side.to_dict('tight'),
         }
 
         response = requests.post(
@@ -223,7 +235,7 @@ class W4RDatasetManager:
         ).json()
 
         if response['dataset_name'] == body['dataset_name']:
-            print(f'ID: {W4RDatasetManager.ID} Dataset: {W4RDatasetManager.dataset_name} upload complete.')
+            print(f'ID: {W4RDatasetManager.__ID} Dataset: {W4RDatasetManager.dataset_name} upload complete.')
         else:
             raise W4RException('upload dataset: upload failed.')
 
@@ -245,29 +257,32 @@ if __name__=='__main__':
     W4RDatasetManager.add_user_side(user_side[['user_id', 'gender', 'age', 'occupation', 'zip_code_2']])
 
     item_side = pd.read_csv('/opt/ml/final-project-level2-recsys-11/torch_project/data/ml-1m/items.csv')
+    item_side['genres'] = item_side['genres'].apply(lambda s: s.replace('|', ' '))
+    item_side.rename(columns= {'genres': 'genres:multi'}, inplace=True)
 
-    W4RDatasetManager.add_item_side(item_side[['item_id', 'year', 'genres']])
+    W4RDatasetManager.add_item_side(item_side[['item_id', 'year', 'genres:multi']])
 
-    item_name = item_side[['item_id', 'title']].set_index('item_id').to_dict()['title']
+    item_name = item_side[['item_id', 'title']].set_index('item_id')['title'].squeeze()
     W4RDatasetManager.add_item_name(item_name)
 
-    item_side['genres_multi'] = item_side['genres'].apply(lambda x: x.split('|'))
 
-    item_side['genres:multi'] = item_side['genres']
-
+    item_side['genres_vector'] = item_side['genres:multi'].apply(lambda x: x.split(' '))
 
     genres = set()
-    for _, item_genre in item_side['genres_multi'].iteritems():
+    for _, item_genre in item_side['genres_vector'].iteritems():
         genres = genres | set(item_genre)
 
     genre2idx = {v:k for k, v in enumerate(genres)}
-    item_side['genres_multi'] = item_side['genres_multi'].apply(lambda genres: [genre2idx[genre] for genre in genres])
+    item_side['genres_vector'] = item_side['genres_vector'].apply(lambda genres: [genre2idx[genre] for genre in genres])
 
     item_vector = {}
-    for _, values in item_side[['item_id', 'genres_multi']].iterrows():
+    print(item_side[['item_id', 'genres_vector']])
+    for _, values in item_side[['item_id', 'genres_vector']].iterrows():
         vector = np.zeros(len(genres), dtype=int)
-        vector[values['genres_multi']] = 1
+        vector[values['genres_vector']] = 1
         item_vector[values['item_id']] = vector.tolist()
+    
 
-    W4RDatasetManager.add_item_vector('genres', item_vector)
-    W4RDatasetManager.upload_dataset()
+    W4RDatasetManager.add_item_vector(pd.Series(item_vector))
+
+    W4RDatasetManager.upload_dataset('movie lens 1 milion.')
