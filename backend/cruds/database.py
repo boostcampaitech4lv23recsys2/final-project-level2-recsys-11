@@ -70,8 +70,8 @@ async def get_total_info(ID: str, dataset_name:str):
             query = 'SELECT exp_id, experiment_name, alpha, objective_fn, hyperparameters, \
                      recall, map, ndcg, tail_percentage, avg_popularity, coverage, \
                      diversity_cos, diversity_jac, serendipity_pmi, serendipity_jac, novelty, \
-                     metric_per_user FROM Experiments WHERE ID = %s AND dataset_name = %s'
-            await cur.execute(query, (ID, dataset_name))
+                     metric_per_user FROM Experiments WHERE ID = %s AND dataset_name = %s AND alpha = %s'
+            await cur.execute(query, (ID, dataset_name, 1))
             result = await cur.fetchall()
 
     return result
@@ -83,6 +83,6 @@ async def check_password(ID:str, password:str) -> Dict:
     async with conn2 as conn: 
         async with conn.cursor(cursor=DictCursor) as cur:
             query = "SELECT ID, password FROM Users WHERE ID = %s AND password = %s"
-            await cur.execute(query, (ID, password,))
+            await cur.execute(query, (ID, password))
             result = await cur.fetchone()
     return result

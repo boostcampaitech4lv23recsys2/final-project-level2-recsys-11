@@ -26,8 +26,11 @@ async def get_exp_total(ID: str, dataset_name:str):
 
     if not total_exps:
          return {'msg': 'Experiments Not Found'}
-    
-    return total_exps # metric_per_user S3 object name included
+
+    total_exps_pd = pd.DataFrame(total_exps)
+    total_exps_pd.drop('metric_per_user', axis=1, inplace=True)
+
+    return total_exps_pd.to_dict(orient='tight')
 
 
 #### PAGE 2
@@ -52,7 +55,7 @@ async def selected_models(ID:str, dataset_name:str, exp_ids: List[int] = Query(d
 @router.get('/selected_metrics')
 async def selected_metrics(ID:str, dataset_name:str, exp_ids: List[int] = Query(default=None)):
     total_exps = await get_total_info(ID, dataset_name) # cached
-    total_exps_pd = pd.DataFrame(total_exps).set_index('exp_id')
+    total_exps_pd = pd.DataFrame(total_exps).set_index('exp_id') 
 
     model_metrics = total_exps_pd[['recall', 'map', 'ndcg', 'tail_percentage', 'avg_popularity', 'coverage',
                                   'diversity_cos', 'diversity_jac', 'serendipity_pmi', 'serendipity_jac', 
@@ -61,6 +64,7 @@ async def selected_metrics(ID:str, dataset_name:str, exp_ids: List[int] = Query(
     user_metric_s3 = total_exps_pd.loc[exp_ids]['metric_per_user'].to_dict()
     
     index_id = list(user_metric_s3.keys())
+
     models = [await s3_to_pd(s3_loc) for s3_loc in user_metric_s3.values()] 
     user_metrics = pd.concat(models, axis=1).T
     user_metrics.index = index_id
@@ -95,6 +99,7 @@ async def user_info(ID: str, dataset_name: str, exp_id: int):
     user_profile_pd = await inter_to_profile(key_hash=df_row['train_interaction'], group_by='user_id', col='item_id') 
 
     pred_item_pd = await s3_to_pd(key_hash=exp_row['pred_items'])
+    print(type(pred_item_pd))
     user_tsne_pd = await s3_to_pd(key_hash=exp_row['user_tsne'])
 
     dfs = [user_side_pd, user_profile_pd, pred_item_pd, user_tsne_pd]
