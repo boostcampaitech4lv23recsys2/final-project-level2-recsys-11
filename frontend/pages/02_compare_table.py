@@ -80,7 +80,8 @@ layout = html.Div([
     html.Div(id='store_exp_names'),
 
     dcc.Store(id='store_selected_exp', storage_type='memory'),
-    dcc.Store(id='store_exp_names', storage_type='memory')
+    dcc.Store(id='store_exp_names', storage_type='memory'),
+    dcc.Store(id='store_exp_ids', storage_type='memory')
 ])
  
 # @callback(
@@ -163,5 +164,18 @@ def store_selected_exp_names(data):
         raise PreventUpdate
     exp_names = []
     for each in data:
-        exp_names.append(each['age'])
+        exp_names.append(each[pinned_column_name])
     return exp_names
+
+## 선택한 실험에서 실험의 id를 가져와서 model vs model page로 넘겨주기
+@callback(
+    Output('store_exp_ids', 'data'),
+    Input('store_selected_exp', 'data')
+)
+def store_selected_exp_ids(data):
+    if data is None:
+        raise PreventUpdate
+    exp_ids = []
+    for each in data:
+        exp_ids.append(each[pinned_column_name])
+    return exp_ids

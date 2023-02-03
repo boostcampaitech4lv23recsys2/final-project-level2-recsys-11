@@ -12,9 +12,11 @@ from dash import html, dcc, callback, Input, Output, State,  MATCH, ALL
 from dash_bootstrap_templates import load_figure_template
 from dash.exceptions import PreventUpdate
 from . import global_component as gct
-API_url = 'http://127.0.0.1:8000'
+API_url = 'http://127.0.0.1:30004'
 
 dash.register_page(__name__, path='/model-vs-model')
+
+
 
 # total_dict = requests.get(API_url + '/')
 # total_df = pd.DataFrame(total_dict).from_dict(orient='tight')
@@ -158,7 +160,9 @@ layout = html.Div(children=[
     total_graph,
     specific_metric]),
     dcc.Store(id='store_selected_exp', storage_type='session'),
-    dcc.Store(id='store_exp_names', storage_type='session')
+    dcc.Store(id='store_exp_names', storage_type='session'),
+    dcc.Store(id='store_exp_ids', storage_type='session')
+    
 
 ], className="content")
 
@@ -197,6 +201,28 @@ def display_dropdowns(n_clicks, _, store_exp_names, children):
         children.append(model_form)
     return children
 
+### exp_ids가 들어오면 실험 정보들 return 하는 callback
+@callback(
+    Output('selected_model_info', 'data'),
+    Input('store_exp_ids', 'data')
+)
+def get_stored_selected_models(exp_ids:list[int]) -> pd.DataFrame:
+    params = {'ID':'mkdir', 'dataset_name':'ml-1m', 'exp_id': exp_ids}
+    response = requests.get(API_url + '/frontend/selected_models', params = params)
+    a = response.json()
+    return pd.DataFrame.from_dict(data=a, orinet='tight')
+
+### selected_exp 의 hype을 소개하는 callback
+@callback(
+    Output({"type": "exp's_hype", "index": MATCH}, "children"),
+    [
+        Input({"type": "selected_exp", "index": MATCH}, "value"),
+        Input('selected_model_info', 'data')
+    ],
+)
+def display_output(selected_exp:str, df:pd.DataFrame) -> str:
+    exp_hype = df.loc[df['experiment_name'] == selected_exp, 'hyperparameters']
+    return exp_hype.values() 
 
 # TODO: get request(selected user) and plot total_metrics
 # def get_quantative_metrics(form): 
@@ -261,15 +287,6 @@ def sider_custom_trigger_demo(v):
 
 
 
-### selected_exp 의 hype을 소개하는 callback
-@callback(
-    Output({"type": "exp's_hype", "index": MATCH}, "children"),
-    [
-        Input({"type": "selected_exp", "index": MATCH}, "value"),
-    ],
-)
-def display_output(selected_exp:str) -> str:
-    return f'{selected_exp}"s hype '
 
 ### metric lists를 보여주는 callback
 @callback(
