@@ -13,7 +13,7 @@ from routers import database, frontend, web4rec, login
 app = FastAPI()
 
 app.include_router(database.router, prefix='/databsase')
-app.include_router(frontend.router, prefix='/frontend')
+app.include_router(frontend.router,)
 app.include_router(web4rec.router, prefix='/web4rec-lib')
 app.include_router(login.router, prefix='/user')
 

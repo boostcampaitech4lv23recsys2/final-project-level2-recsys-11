@@ -7,8 +7,18 @@ from fastapi.responses import JSONResponse
 
 from routers.database import get_db_inst, get_db_dep
 
-router = APIRouter()  
+router = APIRouter(prefix='/frontend')  
     
+@router.get("/get_dataset", status_code=201)
+async def get_dataset_list(ID:str, connection=Depends(get_db_dep)):
+    async with connection as conn:
+        async with conn.cursor(cursor=DictCursor) as cur:
+            query = 'SELECT dataset_name\
+                    FROM Datasets WHERE ID = %s'
+            await cur.execute(query, (ID, ))
+            result = await cur.fetchall()
+    return result 
+
 
 @router.get('/get_exp')
 async def get_exp_total(ID: str, dataset_name:str, connection=Depends(get_db_dep)) -> Dict:

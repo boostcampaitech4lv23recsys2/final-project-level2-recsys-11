@@ -58,7 +58,7 @@ compare_table = html.Div([
         animateRows=True,
     ),
     html.Br(),
-    dbc.Button('Select done!', id='select_done'),
+    dbc.Button('Select done!', id='select_done', n_clicks=0),
     html.Hr(),
     html.H3('Selected experiments'),
     html.Div(id='table-container'),
@@ -69,7 +69,8 @@ selected_table = html.Div(children=[], id='selected_table')
 
 layout = html.Div([
     gct.get_navbar(has_sidebar=False),
-    html.Div(id='test_store'),
+    html.P(id='test_data'),
+    html.Div(id="test2"),
     html.Div([
         select_dataset,
         compare_table,
@@ -82,6 +83,19 @@ layout = html.Div([
     dcc.Store(id='store_selected_exp', storage_type='memory'),
     dcc.Store(id='store_exp_names', storage_type='memory')
 ])
+
+@callback(
+        Output('dataset-list', 'options'),
+        Input("select_done", "n_clicks"),
+        State("user_state", "data")
+)
+def test_request(n, user_state):
+    params = {
+        "ID": user_state["username"]
+    }
+    response = requests.get(f"{gct.API_URL}/web4rec-lib/check_dataset", params=params)
+    
+    return response.json() 
  
 # @callback(
 #     Output('dataset-list', 'options'),
