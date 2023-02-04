@@ -38,7 +38,7 @@ def get_table(df):
             rowData=df.to_dict('records'),
             id='compare_table',
             columnDefs=[
-                {'headerName': column, 'field':column, 'pinned':'left', 'checkboxSelection':True, 'rowDrag':True, 'headerCheckboxSelection':True} if column == pinned_column_name else {'headerName': column, 'field':column, } for column in df.columns 
+                {'headerName': column, 'field':column, 'pinned':'left', 'checkboxSelection':True, 'rowDrag':True, 'headerCheckboxSelection':True} if column == pinned_column_name else {'headerName': column, 'field':column, } for column in df.columns
             ],
             # columnSize="sizeToFit",
             defaultColDef=dict(
@@ -49,7 +49,7 @@ def get_table(df):
                     headerCheckboxSelectionFilteredOnly=True,
             ),
             dashGridOptions=dict(
-                rowSelection="multiple", 
+                rowSelection="multiple",
                 ),
             rowDragManaged=True,
             animateRows=True,
@@ -57,7 +57,7 @@ def get_table(df):
         html.Br(),
         dbc.Button('Select done!', id='select_done', n_clicks=0),
         html.Hr(),
-        
+
     ], )
     return compare_table
 
@@ -69,7 +69,7 @@ layout = html.Div([
         select_dataset,
         html.Div(id="exp_table_container"),
         # compare_table,
-        
+
         html.Div(id="selected_table_container"),
         # selected_table,
         html.H3(id='output_test')
@@ -93,27 +93,28 @@ def test_request(n, user_state):
     response = requests.get(f"{gct.API_URL}/web4rec-lib/check_dataset", params=params)
     if response.status_code == 201:
         return response.json()
-    
+
 @callback(
         Output('exp_table_container', 'children'),
         Output('store_exp_column','data'),
+        Output('selected_dataset', 'data'),
         State("user_state", "data"),
         Input("dataset-list", "value"),
         prevent_initial_call=True
 )
 def get_exp_data(user_state:dict, dataset_name:str,):
     if dataset_name == None:
-        return dbc.Alert("데이터셋을 먼저 선택해주세요.", color="primary"), None
+        return dbc.Alert("데이터셋을 먼저 선택해주세요.", color="primary"), None, None
     params = {
         "ID": user_state["username"],
         "dataset_name": dataset_name
     }
     response = requests.get(f"{gct.API_URL}/frontend/get_exp_total", params=params)
     df = pd.DataFrame.from_dict(response.json(), orient="tight")
-    return get_table(df), df.columns
+    return get_table(df), df.columns, dataset_name
 
 ## 선택한 실험의 정보를 table로 만들어주고, 그 실험 정보 자체를 return
-@callback(  
+@callback(
     Output('selected_table_container', 'children'),
     Output('store_selected_exp', 'data'),
     Input('select_done', 'n_clicks'),
@@ -137,12 +138,12 @@ def plot_selected_table(n, seleceted_rows, exp_column):
                 headerCheckboxSelectionFilteredOnly=True,
         ),
         dashGridOptions=dict(
-            rowSelection="multiple", 
+            rowSelection="multiple",
             ),
         rowDragManaged=True,
         animateRows=True,
     )
-    
+
     return [html.H3('Selected experiments'),
     html.Div(AgGrid, id='table-container')], seleceted_rows
 
