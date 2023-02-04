@@ -33,27 +33,36 @@ select_dataset = html.Div([
 
 def get_table(df):
     compare_table = html.Div([
-        html.H3('Total experiments'),
-        dag.AgGrid(
-            rowData=df.to_dict('records'),
-            id='compare_table',
-            columnDefs=[
-                {'headerName': column, 'field':column, 'pinned':'left', 'checkboxSelection':True, 'rowDrag':True, 'headerCheckboxSelection':True} if column == pinned_column_name else {'headerName': column, 'field':column, } for column in df.columns 
-            ],
-            # columnSize="sizeToFit",
-            defaultColDef=dict(
-                    resizable= True,
-                    sortable=True,
-                    filter=True,
-                    floatingFilter=True,
-                    headerCheckboxSelectionFilteredOnly=True,
-            ),
-            dashGridOptions=dict(
-                rowSelection="multiple", 
+        html.H3(['Total experiments', html.Span(" �", id="compare-table-tooltip")]),
+        dbc.Tooltip("비교할 실험을 선택해보세요!",
+                     target="compare-table-tooltip"),
+        dbc.Row([
+            dbc.Col([
+                dag.AgGrid(
+                    rowData=df.to_dict('records'),
+                    id='compare_table',
+                    columnDefs=[
+                        {'headerName': column, 'field':column, 'pinned':'left', 'checkboxSelection':True, 'rowDrag':True, 'headerCheckboxSelection':True} if column == pinned_column_name else {'headerName': column, 'field':column, } for column in df.columns 
+                    ],
+                    # columnSize="sizeToFit",
+                    defaultColDef=dict(
+                            resizable= True,
+                            sortable=True,
+                            filter=True,
+                            floatingFilter=True,
+                            headerCheckboxSelectionFilteredOnly=True,
+                    ),
+                    dashGridOptions=dict(
+                        rowSelection="multiple", 
+                        ),
+                    rowDragManaged=True,
+                    animateRows=True,
                 ),
-            rowDragManaged=True,
-            animateRows=True,
-        ),
+                ]),
+            dbc.Col([
+                html.Div(id="selected_table_container", className="mt-0")
+            ]),
+        ]),
         html.Br(),
         dbc.Button('Select done!', id='select_done', n_clicks=0),
         html.Hr(),
@@ -70,7 +79,7 @@ layout = html.Div([
         html.Div(id="exp_table_container"),
         # compare_table,
         
-        html.Div(id="selected_table_container"),
+        # html.Div(id="selected_table_container"),
         # selected_table,
         html.H3(id='output_test')
     ],
@@ -110,6 +119,10 @@ def get_exp_data(user_state:dict, dataset_name:str,):
     }
     response = requests.get(f"{gct.API_URL}/frontend/get_exp_total", params=params)
     df = pd.DataFrame.from_dict(response.json(), orient="tight")
+    # 컬럼 순서 변경
+    temp_col1 = df.columns[4:].to_list()
+    temp_col2 = df.columns[:4].to_list()
+    df = df[temp_col1+temp_col2]
     return get_table(df), df.columns
 
 ## 선택한 실험의 정보를 table로 만들어주고, 그 실험 정보 자체를 return
