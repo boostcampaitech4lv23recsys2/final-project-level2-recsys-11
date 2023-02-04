@@ -75,11 +75,10 @@ layout = html.Div([
         html.H3(id='output_test')
     ],
     className="container"),
-    html.Div(id='store_exp_names'),
 
-    dcc.Store(id='store_selected_exp', storage_type='memory'),
-    dcc.Store(id='store_exp_names', storage_type='memory'),
-    dcc.Store(id='store_exp_column', storage_type='memory')
+    dcc.Store(id='store_selected_exp', storage_type='session'),
+    dcc.Store(id='store_exp_names', storage_type='session'),
+    dcc.Store(id='store_exp_column', storage_type='session')
 ])
 
 @callback(
