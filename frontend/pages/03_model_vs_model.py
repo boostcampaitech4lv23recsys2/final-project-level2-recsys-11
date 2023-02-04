@@ -28,7 +28,7 @@ total_metrics_users = None
 
 # def make_total_metric_df(tmp_df:pd.DataFrame):
 #     # tmp_dict = requests.get(API_url + '/')
-#     total_metric_df = tmp_df.loc[] 
+#     total_metric_df = tmp_df.loc[]
 #     return total_metric_df
 
 # def make_qual_metric_df(tmp_df:pd.DataFrame):
@@ -62,7 +62,7 @@ sidebar = html.Div([
         html.H3("Select Expriements",),
         html.Hr(),
         html.Div(id='model_form', children=[]),
-        
+
         dbc.Button('➕', id='add_button', n_clicks=0, style={'position':'absolute', 'right':0, 'margin-right':'2rem'}),
         dbc.Popover("Add a new expriement", trigger='hover', target='add_button', body=True),
         dbc.Button('Compare!', id='compare_btn', n_clicks=0)
@@ -75,7 +75,7 @@ total_graph = html.Div([
     html.Br(),
     html.H1(children='Model vs Model', style={'text-align': 'center','font-weight': 'bold'}),
     html.Hr(),
-    
+
     html.Div(id='select_model2'),
 
     html.H3('Total Metric'),
@@ -116,9 +116,9 @@ def specific_metric():
                 html.Div(id = 'dist_fig'),  # dcc.Graph(id = 'dist_fig')
             ], width=8)
         ]),
-        
+
         ],
-        className="radio-group", 
+        className="radio-group",
     )
     return specific_metric
 
@@ -165,7 +165,7 @@ def get_stored_selected_models(n, exp_ids:list[int]) -> pd.DataFrame:
     ],
     [State("model_form", "children")],
 )
-def display_dropdowns(n_clicks, _, store_exp_names, children): 
+def display_dropdowns(n_clicks, _, store_exp_names, children):
     input_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
     if "index" in input_id:
         delete_chart = json.loads(input_id)["index"]
@@ -198,7 +198,7 @@ def display_dropdowns(n_clicks, _, store_exp_names, children):
         State('store_selected_exp', 'data')
     ],
 )
-def display_output(selected_dropdown:str, data) -> str: # 
+def display_output(selected_dropdown:str, data) -> str: #
     tmp_df = pd.DataFrame(data).set_index('experiment_name')
     exp_hype = tmp_df.loc[selected_dropdown,'hyperparameters']
     exp_hype = exp_hype[1:-1]
@@ -213,7 +213,6 @@ def display_output(selected_dropdown:str, data) -> str: #
     State('store_selected_exp_names', 'data')
 )
 def save_selected_exp_names(value, data):
-    print('value:', value)
     # if len(data) == 0:
     #     print('data:',data)
     if value is None:
@@ -223,7 +222,7 @@ def save_selected_exp_names(value, data):
     return value
 
 # TODO: get request(selected user) and plot total_metrics
-# def get_quantative_metrics(form): 
+# def get_quantative_metrics(form):
 #     params={'model_name': form['model'], 'str_key': form['values']}
 #     return requests.get(url=f'{API_url}/metric/quantitative/', params=params).json()[0]
 
@@ -319,7 +318,7 @@ def plot_bar(data, sort_of_metric, store):
         )
         fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
         return fig
-    
+
     elif sort_of_metric == 'Quant':
         quant_metrics = total_metrics.iloc[:,:6]
         metrics = list(quant_metrics.columns)
@@ -337,10 +336,10 @@ def plot_bar(data, sort_of_metric, store):
         )
         fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
         return fig
-    
+
     else:
         return html.Div([])
-    
+
 
 ### 선택한 metric에 대한 dist plot을 띄워주는 callback
 @callback(
@@ -364,7 +363,7 @@ def plot_dist(data, value):
 
         fig.update_layout(title_text=f'Distribution of {value}')
         return dcc.Graph(id = 'dist_fig', figure=fig)
-    
+
     elif value in ['recall', 'ndcg', 'map', 'avg_popularity', 'tailpercentage']:
         if value == 'map':
             value = 'avg_precision'

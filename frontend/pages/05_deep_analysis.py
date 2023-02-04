@@ -298,6 +298,9 @@ layout = html.Div(
         ),
         dcc.Store(id="trash"),  # 아무런 기능도 하지 않고, 그냥 콜백의 아웃풋 위치만 잡아주는 녀석
         dcc.Store(id="store_selected_exp"),
+        dcc.Store(id='store_exp_names', storage_type='session'),
+        dcc.Store(id='store_exp_ids', storage_type='session'),
+        dcc.Store(id='store_exp_column', storage_type='session')
     ],
 )
 
@@ -310,35 +313,31 @@ def testing(val):
 
 ### 고객이 정한 장바구니가 담긴 store id가 필요함
 ##그거 토대로 버튼 그룹을 구성해야 함
-# @callback(
-#     Output('exp_id_for_deep_analysis', 'options'),
-#     Output('exp_id_for_deep_analysis', 'value'),
-#     Input('stoted_exp', 'data'),
-# )
-# def show_exp_choice(data):
-#     return data, data[0]
+@callback(
+    Output('exp_id_for_deep_analysis', 'options'),
+    Input('store_exp_names', 'data'),
+    State('store_exp_ids', 'data'),
+)
+def show_exp_choice(exp_name, exp_id):
+    option = [{'label': i, 'value': j} for i,j in zip(exp_name, exp_id)]
+    return option
 
 # 고객이 장바구니에서 원하는 exp_id를 선택하면 그에 대한 user, item을 불러온다.
 @callback(
-    # Output('trash', 'data'),
     Output("show_user_or_item", "options"),
     Input("exp_id_for_deep_analysis", "value"),
-    State("user_state", "data"),
-    ## 데이터셋 이름을 가지고 있는 store도 필요
-    State("store_selected_exp", "data"),
+    State("store_user_state", "data"),
+    State("store_user_dataset", "data"),
     prevent_initial_call=True,
 )
-def choose_experiment(val, vip, exp_id):
+def choose_experiment(exp, vip, dataset_name, ):
+    if exp is None:
+        raise PreventUpdate
     global user
     global item
     global uniq_genre
 
-    # TODO: 백에 호출하여 user와 item 만들기
-    customer = vip["username"]
-    dataset = "ml-1m"
-    # current_exp = exp_id["exp_id"]
-    params = {"ID": "mkdir", "dataset_name": "ml-1m", "exp_id": 9}
-
+    params = {"ID": vip['username'], "dataset_name": dataset_name, "exp_id": exp}
     user = requests.get(gct.API_URL + "/frontend/user_info", params=params).json()
     user = pd.DataFrame.from_dict(data=user, orient="tight")
     user.columns = ['user_id', 'gender', 'age', 'occupation', 'user_profile', 'pred_item', 'xs', 'ys']

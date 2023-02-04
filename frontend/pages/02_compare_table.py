@@ -84,8 +84,8 @@ layout = html.Div([
 
 @callback(
         Output('dataset-list', 'options'),
-        Input("user_state", "data"),
-        State("user_state", "data")
+        Input("store_user_state", "data"),
+        State("store_user_state", "data")
 )
 def test_request(n, user_state):
     params = {
@@ -98,8 +98,8 @@ def test_request(n, user_state):
 @callback(
         Output('exp_table_container', 'children'),
         Output('store_exp_column','data'),
-        Output('selected_dataset', 'data'),
-        State("user_state", "data"),
+        Output('store_user_dataset', 'data'),
+        State("store_user_state", "data"),
         Input("dataset-list", "value"),
         prevent_initial_call=True
 )
