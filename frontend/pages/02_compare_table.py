@@ -23,17 +23,20 @@ pinned_column_setting = dict(
 
 
 select_dataset = html.Div([
-    html.H3('Select a dataset'),
+    html.H3('데이터 선택'),
     dcc.Dropdown(
                  id='dataset-list',
-                 style={'width':'40%'},
+                 className="mt-3 w-25"
                  ),
     html.Hr()
 ])
 
 def get_table(df):
     compare_table = html.Div([
-        html.H3(['Total experiments', html.Span(" �", id="compare-table-tooltip")]),
+        html.Div([
+        html.H3(['전체 실험 목록', html.Span(" �", id="compare-table-tooltip")], className="mb-3s"),
+        dbc.Button('Select done!', id='select_done', n_clicks=0, color="success"),
+        ], className="hstack gap-5 mb-3"),
         dbc.Tooltip("비교할 실험을 선택해보세요!",
                      target="compare-table-tooltip"),
         dbc.Row([
@@ -59,13 +62,13 @@ def get_table(df):
                     animateRows=True,
                 ),
                 ]),
-            dbc.Col([
-                html.Div(id="selected_table_container", className="mt-0")
-            ]),
+            
+                html.Div(id="selected_table_container", className="mt-0 hstack gap-3")
+            
         ]),
         html.Br(),
-        dbc.Button('Select done!', id='select_done', n_clicks=0),
-        html.Hr(),
+        # dbc.Button('Select done!', id='select_done', n_clicks=0),
+        # html.Hr(),
         
     ], )
     return compare_table
@@ -113,7 +116,7 @@ def test_request(n, user_state):
 )
 def get_exp_data(user_state:dict, dataset_name:str,):
     if dataset_name == None:
-        return dbc.Alert("데이터셋을 먼저 선택해주세요.", color="primary"), None
+        return dbc.Alert("데이터셋을 먼저 선택해주세요.", color="primary", className="w-50"), None
     params = {
         "ID": user_state["username"],
         "dataset_name": dataset_name
@@ -136,29 +139,39 @@ def get_exp_data(user_state:dict, dataset_name:str,):
     prevent_initial_call=True
 )
 def plot_selected_table(n, seleceted_rows, exp_column):
-    AgGrid = dag.AgGrid(
-        id = 'selected_table',
-        rowData=seleceted_rows,
-        columnDefs=[
-             {'headerName': column, 'field':column, 'pinned':'left', 'checkboxSelection':True, 'rowDrag':True, 'headerCheckboxSelection':True} if column == pinned_column_name else {'headerName': column, 'field':column, } for column in exp_column
-        ],
-        # columnSize="sizeToFit",
-        defaultColDef=dict(
-                resizable= True,
-                sortable=True,
-                filter=True,
-                floatingFilter=True,
-                headerCheckboxSelectionFilteredOnly=True,
-        ),
-        dashGridOptions=dict(
-            rowSelection="multiple", 
-            ),
-        rowDragManaged=True,
-        animateRows=True,
-    )
-    
-    return [html.H3('Selected experiments'),
-    html.Div(AgGrid, id='table-container')], seleceted_rows
+    # AgGrid = dag.AgGrid(
+    #     id = 'selected_table',
+    #     rowData=seleceted_rows,
+    #     columnDefs=[
+    #          {'headerName': column, 'field':column, 'pinned':'left', 'checkboxSelection':True, 'rowDrag':True, 'headerCheckboxSelection':True} if column == pinned_column_name else {'headerName': column, 'field':column, } for column in exp_column
+    #     ],
+    #     # columnSize="sizeToFit",
+    #     defaultColDef=dict(
+    #             resizable= True,
+    #             sortable=True,
+    #             filter=True,
+    #             floatingFilter=True,
+    #             headerCheckboxSelectionFilteredOnly=True,
+    #     ),
+    #     dashGridOptions=dict(
+    #         rowSelection="multiple", 
+    #         ),
+    #     rowDragManaged=True,
+    #     animateRows=True,
+    # )
+    selects = [html.H6("선택한 실험 목록: ", className="mt-3 ")]
+    if seleceted_rows == None:
+        PreventUpdate
+    else:
+        for row in seleceted_rows:
+            selects.append(
+                dbc.Badge(row["experiment_name"], color="info", className="mt-3")
+                )
+    return selects, seleceted_rows
+    return [dbc.Badge('선택한 실험 목록:', color="info", className="mt-3"),
+    ], seleceted_rows
+    return [html.H3('선택한 실험 목록: '),
+    html.Div( id='table-container')], seleceted_rows
 
 ## 선택한 실험에서 실험의 이름을 가져와서 model vs model page로 넘겨주기 (지금은 age로 임시방편)
 @callback(
