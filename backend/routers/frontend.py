@@ -79,6 +79,7 @@ async def selected_metrics(
             "novelty",
         ]
     ].loc[exp_ids]
+    user_metric_s3 = total_exps_pd.loc[exp_ids]['metric_per_user'].to_dict()
 
     index_id = list(user_metric_s3.keys())
 
@@ -142,10 +143,9 @@ async def item_info(ID: str, dataset_name: str, exp_id: int):
     #                     - xs, ys (item)
 
     df_row = await get_df(ID, dataset_name)
-    exp_row = await get_exp(exp_id)
-
     if df_row == None:
         return {"msg": "Dataset Not Found"}
+
     exp_row = await get_exp(exp_id)
     if exp_row == None:
         return {"msg": "Model Not Found"}
