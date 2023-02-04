@@ -23,7 +23,7 @@ sidebar = html.Div([
         html.H3("Select Expriements",),
         html.Hr(),
         html.Div(id='model_form', children=[]),
-        
+
         dbc.Button('➕', id='add_button', n_clicks=0, style={'position':'absolute', 'right':0, 'margin-right':'2rem'}),
         dbc.Popover("Add a new expriement", trigger='hover', target='add_button', body=True),
         dbc.Button('Compare!', id='compare_btn', n_clicks=0)
@@ -36,7 +36,7 @@ total_graph = html.Div([
     html.Br(),
     html.H1(children='Model vs Model', style={'text-align': 'center','font-weight': 'bold'}),
     html.Hr(),
-    
+
     html.Div(id='select_model2'),
 
     html.H3('Total Metric'),
@@ -79,9 +79,9 @@ def specific_metric():
                 html.Div(id = 'dist_fig'),  # dcc.Graph(id = 'dist_fig')
             ], width=8)
         ]),
-        
+
         ],
-        className="radio-group", 
+        className="radio-group",
     )
     return specific_metric
 
@@ -128,7 +128,7 @@ def get_stored_selected_models(n, exp_ids:list[int]) -> pd.DataFrame:
     ],
     [State("model_form", "children")],
 )
-def display_dropdowns(n_clicks, _, store_exp_names, children): 
+def display_dropdowns(n_clicks, _, store_exp_names, children):
     input_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
     if "index" in input_id:
         delete_chart = json.loads(input_id)["index"]
@@ -161,7 +161,7 @@ def display_dropdowns(n_clicks, _, store_exp_names, children):
         State('store_selected_exp', 'data')
     ],
 )
-def display_output(selected_dropdown:str, data) -> str: # 
+def display_output(selected_dropdown:str, data) -> str: #
     tmp_df = pd.DataFrame(data).set_index('experiment_name')
     exp_hype = tmp_df.loc[selected_dropdown,'hyperparameters']
     exp_hype = exp_hype[1:-1]
@@ -271,7 +271,7 @@ def plot_bar(data, sort_of_metric, store):
         )
         fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
         return fig
-    
+
     elif sort_of_metric == 'Quant':
         quant_metrics = total_metrics.iloc[:,:6]
         metrics = list(quant_metrics.columns)
@@ -289,10 +289,10 @@ def plot_bar(data, sort_of_metric, store):
         )
         fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
         return fig
-    
+
     else:
         return html.Div([])
-    
+
 # ### 선택한 metric 뭔지 보여주는 test callback
 # @callback(
 #     Output('print_metric', 'children'),
@@ -319,7 +319,7 @@ def plot_dist(data, value):
 
         fig.update_layout(title_text=f'Distribution of {value}')
         return dcc.Graph(figure=fig)
-    
+
     elif value in ['recall', 'ndcg', 'map', 'avg_popularity', 'tail_percentage']:
         if value == 'map':
             value = 'avg_precision'

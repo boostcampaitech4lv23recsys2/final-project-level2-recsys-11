@@ -15,7 +15,7 @@ dash.register_page(__name__, path='/login')
 
 layout =  html.Div([
         html.H1('Web4Rec', style={
-                                # 'padding': 10, 
+                                # 'padding': 10,
                                 'text-align': 'center'}),
         html.Br(),
         dcc.Location(id='url_login', refresh=True)
@@ -48,16 +48,16 @@ layout =  html.Div([
             )),
             ]),
             html.Div(id='login-value')
-            
-        ], 
+
+        ],
         # style={'width':"40%"},
         className="mx-auto w-25"
         ) #end div
 
 @callback(
         Output(component_id='login-value', component_property='children'),
-        Output(component_id='user_state', component_property='data'),
-        
+        Output(component_id='store_user_state', component_property='data'),
+
         Input('login-button', 'n_clicks'),
         State('uname-box', 'value'),
         State('pwd-box', 'value'),

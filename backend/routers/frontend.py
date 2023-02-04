@@ -107,23 +107,23 @@ async def user_info(ID: str, dataset_name: str, exp_id: int):
     # GET: exp(exp-id) - pred_items
     #                  - xs,ys (user)
 
-    df_row = await get_df(ID, dataset_name) 
+    df_row = await get_df(ID, dataset_name)
     if df_row == None:
         return {'msg': 'Dataset Not Found'}
-    
-    exp_row = await get_exp(exp_id) 
+
+    exp_row = await get_exp(exp_id)
     if exp_row == None:
-        return {'msg': 'Model Not Found'} 
-    
+        return {'msg': 'Model Not Found'}
+
     user_side = await s3_to_pd(key_hash=df_row['user_side'])
     user_side_pd = user_side[['user_id', 'gender', 'age', 'occupation']]
-    user_profile_pd = await inter_to_profile(key_hash=df_row['train_interaction'], group_by='user_id', col='item_id') 
+    user_profile_pd = await inter_to_profile(key_hash=df_row['train_interaction'], group_by='user_id', col='item_id')
 
     pred_item_pd = await s3_to_pd(key_hash=exp_row['pred_items'])
     pred_item_pd = pred_item_pd.rename_axis('user_id').reset_index()
 
     user_tsne_pd = await s3_to_pd(key_hash=exp_row['user_tsne'])
-    user_tsne_pd = user_tsne_pd.rename_axis('user_id').reset_index() 
+    user_tsne_pd = user_tsne_pd.rename_axis('user_id').reset_index()
 
     recall_per_user_pd = await recall_per_user(key_hash=exp_row['metric_per_user'])
 
@@ -131,7 +131,7 @@ async def user_info(ID: str, dataset_name: str, exp_id: int):
     user_merged = reduce(lambda left,right: pd.merge(left,right,on='user_id'), dfs)
 
     return user_merged.to_dict(orient='tight')
-    
+
 
 
 @router.get("/item_info")
@@ -161,9 +161,9 @@ async def item_info(ID: str, dataset_name: str, exp_id: int):
 
     item_rec_users_pd = await predicted_per_item(pred_item_hash=exp_row["pred_items"])
     item_tsne_pd = await s3_to_pd(key_hash=exp_row["item_tsne"])
-    item_tsne_pd = item_tsne_pd.rename_axis('item_id').reset_index() 
+    item_tsne_pd = item_tsne_pd.rename_axis('item_id').reset_index()
 
     dfs = [item_side_pd, item_profile_pd, item_rec_users_pd, item_tsne_pd]
     item_merged = reduce(lambda left, right: pd.merge(left, right, on="item_id"), dfs)
-    
+
     return item_merged.to_dict(orient="tight")
