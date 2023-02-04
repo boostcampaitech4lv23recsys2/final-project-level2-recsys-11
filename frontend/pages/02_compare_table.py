@@ -35,7 +35,7 @@ def get_table(df):
     compare_table = html.Div([
         html.Div([
         html.H3(['전체 실험 목록', html.Span(" �", id="compare-table-tooltip")], className="mb-3s"),
-        dbc.Button('Select done!', id='select_done', n_clicks=0, color="success"),
+        dbc.Button('선택 완료', id='select_done', n_clicks=0,),
         ], className="hstack gap-5 mb-3"),
         dbc.Tooltip("비교할 실험을 선택해보세요!",
                      target="compare-table-tooltip"),
@@ -116,7 +116,7 @@ def test_request(n, user_state):
 )
 def get_exp_data(user_state:dict, dataset_name:str,):
     if dataset_name == None:
-        return dbc.Alert("데이터셋을 먼저 선택해주세요.", color="primary", className="w-50"), None
+        return dbc.Alert("데이터셋을 먼저 선택해주세요.", color="info", className="w-50"), None
     params = {
         "ID": user_state["username"],
         "dataset_name": dataset_name
