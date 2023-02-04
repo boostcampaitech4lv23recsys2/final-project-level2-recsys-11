@@ -19,45 +19,6 @@ dash.register_page(__name__, path='/model-vs-model')
 total_metrics = None
 total_metrics_users = None
 
-# params = {'ID':'mkdir', 'dataset_name':'ml-1m', 'exp_ids': [9]}
-# response = requests.get(API_url + '/frontend/selected_metrics', params = params)
-# a = response.json()
-
-# total_dict = requests.get(API_url + '/')
-# total_df = pd.DataFrame(total_dict).from_dict(orient='tight')
-
-# def make_total_metric_df(tmp_df:pd.DataFrame):
-#     # tmp_dict = requests.get(API_url + '/')
-#     total_metric_df = tmp_df.loc[] 
-#     return total_metric_df
-
-# def make_qual_metric_df(tmp_df:pd.DataFrame):
-#     qual_metric_df = tmp_df.loc[]
-#     return qual_metric_df
-
-# def make_quan_metric_df(tmp_df:pd.DataFrame):
-#     quan_metric_df = tmp_df.loc[]
-#     return quan_metric_df
-
-
-
-# 옵션으로 선택된 실험들을 불러옴
-# 불러온 실험들로 df를 제작함
-# 만약 새로운 실험이 + 되면 그 실험 정보를 df에 추가함 e.g.,) df.loc[] = ...
-
-# total_metrics = pd.read_csv('/opt/ml/total_metrics_df.csv')
-# total_metrics = make_total_metrics_df()
-# qual_metrics = pd.read_csv('/opt/ml/qual_metrics_df.csv')  # 정성 지표들이 array로 담겨있음
-# qual_metrics = make_qual_metrics_df()
-# quan_metrics = pd.read_csv('/opt/ml/quan_metrics_df.csv') # 정량 지표들이 array로 담겨있음
-# quan_metrics = pd.read_csv('/opt/ml/quan_metrics_df.csv') # 정량 지표들이 array로 담겨있음
-
-# fig_total = plot_total_metrics(total_metrics)
-# fig_qual = plot_qual_metrics(qual_metrics)
-# fig_dist = plot_dist_for_metrics(qual_metrics, 'Diversity(jaccard)')
-
-### layout 정의
-#### side bar : 비교하고 싶은 실험 추가하고 삭제하는 부분
 sidebar = html.Div([
         html.H3("Select Expriements",),
         html.Hr(),
@@ -353,12 +314,8 @@ def plot_bar(data, sort_of_metric, store):
     Input("metric_list", 'value'),
 )
 def plot_dist(data, value):
-    # print(total_metrics_users['novelty'])
-    # print('value:', value)
     colors = ['#A56CC1', '#A6ACEC', '#63F5EF', '#425FEF']
-    # print(pd.DataFrmae().from_dict(total_metrics_users, orient='tight')[value])
     if value in ['diversity_jac', 'diversity_cos', 'serendipity_pmi', 'serendipity_jac', 'novelty']:
-        # print('HERHEHREHREHREHRHERHEHR:',data)
         group_labels = data
         colors = colors[:len(data)]
         hist_data = total_metrics_users[value].values
