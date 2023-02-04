@@ -19,45 +19,6 @@ dash.register_page(__name__, path='/model-vs-model')
 total_metrics = None
 total_metrics_users = None
 
-# params = {'ID':'mkdir', 'dataset_name':'ml-1m', 'exp_ids': [9]}
-# response = requests.get(API_url + '/frontend/selected_metrics', params = params)
-# a = response.json()
-
-# total_dict = requests.get(API_url + '/')
-# total_df = pd.DataFrame(total_dict).from_dict(orient='tight')
-
-# def make_total_metric_df(tmp_df:pd.DataFrame):
-#     # tmp_dict = requests.get(API_url + '/')
-#     total_metric_df = tmp_df.loc[] 
-#     return total_metric_df
-
-# def make_qual_metric_df(tmp_df:pd.DataFrame):
-#     qual_metric_df = tmp_df.loc[]
-#     return qual_metric_df
-
-# def make_quan_metric_df(tmp_df:pd.DataFrame):
-#     quan_metric_df = tmp_df.loc[]
-#     return quan_metric_df
-
-
-
-# 옵션으로 선택된 실험들을 불러옴
-# 불러온 실험들로 df를 제작함
-# 만약 새로운 실험이 + 되면 그 실험 정보를 df에 추가함 e.g.,) df.loc[] = ...
-
-# total_metrics = pd.read_csv('/opt/ml/total_metrics_df.csv')
-# total_metrics = make_total_metrics_df()
-# qual_metrics = pd.read_csv('/opt/ml/qual_metrics_df.csv')  # 정성 지표들이 array로 담겨있음
-# qual_metrics = make_qual_metrics_df()
-# quan_metrics = pd.read_csv('/opt/ml/quan_metrics_df.csv') # 정량 지표들이 array로 담겨있음
-# quan_metrics = pd.read_csv('/opt/ml/quan_metrics_df.csv') # 정량 지표들이 array로 담겨있음
-
-# fig_total = plot_total_metrics(total_metrics)
-# fig_qual = plot_qual_metrics(qual_metrics)
-# fig_dist = plot_dist_for_metrics(qual_metrics, 'Diversity(jaccard)')
-
-### layout 정의
-#### side bar : 비교하고 싶은 실험 추가하고 삭제하는 부분
 sidebar = html.Div([
         html.H3("Select Expriements",),
         html.Hr(),
@@ -110,7 +71,9 @@ def specific_metric():
                 ),
                 html.Br(),
                 dcc.Dropdown(id='metric_list')
-                ], width=4),
+                ], width=3),
+                html.Br(),
+                html.Div([html.P(id="print_metric"),]),
             dbc.Col([
                 dcc.Graph(id = 'bar_fig'), #figure=fig_qual
                 html.Div(id = 'dist_fig'),  # dcc.Graph(id = 'dist_fig')
@@ -213,7 +176,7 @@ def display_output(selected_dropdown:str, data) -> str: #
     State('store_selected_exp_names', 'data')
 )
 def save_selected_exp_names(value, data):
-    print('value:', value)
+
     # if len(data) == 0:
     #     print('data:',data)
     if value is None:
@@ -221,11 +184,6 @@ def save_selected_exp_names(value, data):
     # data.append(value)
     # print('selected_exp_list:', data)
     return value
-
-# TODO: get request(selected user) and plot total_metrics
-# def get_quantative_metrics(form): 
-#     params={'model_name': form['model'], 'str_key': form['values']}
-#     return requests.get(url=f'{API_url}/metric/quantitative/', params=params).json()[0]
 
 
 ### compare! 버튼을 누르면 plot을 그려주는 callback
@@ -341,6 +299,13 @@ def plot_bar(data, sort_of_metric, store):
     else:
         return html.Div([])
     
+# ### 선택한 metric 뭔지 보여주는 test callback
+# @callback(
+#     Output('print_metric', 'children'),
+#     Input("metric_list", 'value'),
+# )
+# def print_metric(value):
+#     return f'user selection : {value}'
 
 ### 선택한 metric에 대한 dist plot을 띄워주는 callback
 @callback(
@@ -349,12 +314,8 @@ def plot_bar(data, sort_of_metric, store):
     Input("metric_list", 'value'),
 )
 def plot_dist(data, value):
-    # print(total_metrics_users['novelty'])
-    # print('value:', value)
     colors = ['#A56CC1', '#A6ACEC', '#63F5EF', '#425FEF']
-    # print(pd.DataFrmae().from_dict(total_metrics_users, orient='tight')[value])
     if value in ['diversity_jac', 'diversity_cos', 'serendipity_pmi', 'serendipity_jac', 'novelty']:
-        # print('HERHEHREHREHREHRHERHEHR:',data)
         group_labels = data
         colors = colors[:len(data)]
         hist_data = total_metrics_users[value].values
@@ -363,7 +324,7 @@ def plot_dist(data, value):
 
 
         fig.update_layout(title_text=f'Distribution of {value}')
-        return dcc.Graph(id = 'dist_fig', figure=fig)
+        return dcc.Graph(figure=fig)
     
     elif value in ['recall', 'ndcg', 'map', 'avg_popularity', 'tailpercentage']:
         if value == 'map':
@@ -373,6 +334,6 @@ def plot_dist(data, value):
         hist_data = total_metrics_users[value].values
         fig = ff.create_distplot(hist_data, group_labels, colors=colors,
                                 bin_size=0.025, show_rug=True, curve_type='kde')
-        return dcc.Graph(id = 'dist_fig', figure=fig)
+        return dcc.Graph(figure=fig)
     else:
         return html.Div([])
