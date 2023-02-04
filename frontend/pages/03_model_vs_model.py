@@ -176,13 +176,8 @@ def display_output(selected_dropdown:str, data) -> str: #
     State('store_selected_exp_names', 'data')
 )
 def save_selected_exp_names(value, data):
-
-    # if len(data) == 0:
-    #     print('data:',data)
-    if value is None:
+    if value == [None]:
         raise PreventUpdate
-    # data.append(value)
-    # print('selected_exp_list:', data)
     return value
 
 
@@ -204,11 +199,10 @@ def plot_total_metrics(data, _, state, store): # df:pd.DataFrame
         # ])
     else:
         # 모델간 정량, 정성 지표 plot (Compare Table에 있는 모든 정보들 활용)
-        colors = ['#A56CC1', '#A6ACEC', '#63F5EF', '#425FEF'] # 사용자 입력으로 받을 수 있어야 함
+        colors = ['#9771D0', '#D47DB2', '#5C1F47', '#304591', '#BAE8C8', '#ECEBC6', '#3D3D3D'] # 사용자 입력으로 받을 수 있어야 함
         store_df = pd.DataFrame(store).set_index('experiment_name')
         tmp_metrics = total_metrics.drop(['diversity_jac','serendipity_jac'], axis=1)
         metrics = list(tmp_metrics.columns)
-        # print('store data :',data)
         fig = go.Figure()
         for i,exp_name in enumerate(data):
             exp_id = store_df.loc[exp_name, 'exp_id'] # exp_name에 맞는 exp_id 찾아주기
@@ -259,7 +253,7 @@ def load_metric_list(sort_of_metric:str) -> list:
 )
 def plot_bar(data, sort_of_metric, store):
     store_df = pd.DataFrame(store).set_index('experiment_name')
-    colors = ['#A56CC1', '#A6ACEC', '#63F5EF', '#425FEF']
+    colors = ['#9771D0', '#D47DB2', '#5C1F47', '#304591', '#BAE8C8', '#ECEBC6', '#3D3D3D']
     if sort_of_metric == 'Qual':
         qual_metrics = total_metrics.iloc[:,6:]
         metrics = list(qual_metrics.columns)
@@ -314,7 +308,7 @@ def plot_bar(data, sort_of_metric, store):
     Input("metric_list", 'value'),
 )
 def plot_dist(data, value):
-    colors = ['#A56CC1', '#A6ACEC', '#63F5EF', '#425FEF']
+    colors = ['#9771D0', '#D47DB2', '#5C1F47', '#304591', '#BAE8C8', '#ECEBC6', '#3D3D3D']
     if value in ['diversity_jac', 'diversity_cos', 'serendipity_pmi', 'serendipity_jac', 'novelty']:
         group_labels = data
         colors = colors[:len(data)]
@@ -326,7 +320,7 @@ def plot_dist(data, value):
         fig.update_layout(title_text=f'Distribution of {value}')
         return dcc.Graph(figure=fig)
     
-    elif value in ['recall', 'ndcg', 'map', 'avg_popularity', 'tailpercentage']:
+    elif value in ['recall', 'ndcg', 'map', 'avg_popularity', 'tail_percentage']:
         if value == 'map':
             value = 'avg_precision'
         group_labels = data
