@@ -247,18 +247,18 @@ def display_output(selected_dropdown:str, data) -> str: #
 ### selected_exp의 experiment_name을 저장
 @callback(
     Output('store_selected_exp_names', 'data'),
-    Input("selected_exp", 'value'),
+    Input({"type": "selected_exp", "index": ALL}, 'value'),
     State('store_selected_exp_names', 'data')
 )
 def save_selected_exp_names(value, data):
     print('value:', value)
-    if len(data) == 0:
-        print('data:',data)
+    # if len(data) == 0:
+    #     print('data:',data)
     if value is None:
         raise PreventUpdate
-    data.append(value)
-    print('selected_exp_list:', data)
-    return data
+    # data.append(value)
+    # print('selected_exp_list:', data)
+    return value
 
 # TODO: get request(selected user) and plot total_metrics
 # def get_quantative_metrics(form): 
@@ -273,9 +273,10 @@ def save_selected_exp_names(value, data):
         Input('store_selected_exp_names', 'data'),
         Input('compare_btn', 'n_clicks'),
         State('compare_btn', 'n_clicks'),
+        State('store_selected_exp','data')
         # prevent_initial_call=True
 )
-def plot_total_metrics(data, inp, state): # df:pd.DataFrame
+def plot_total_metrics(data, inp, state, store): # df:pd.DataFrame
     if state == 0:
         return html.Div([]), dbc.Alert("Compare 버튼을 눌러 실험들의 지표를 확인해보세요!", color="info")
         # html.Div([
@@ -286,11 +287,13 @@ def plot_total_metrics(data, inp, state): # df:pd.DataFrame
         print(total_metrics)
         metrics = list(total_metrics.columns)
         colors = ['#A56CC1', '#A6ACEC'] #, '#63F5EF', '#425FEF'] # 사용자 입력으로 받을 수 있어야 함
-        
+        # print(store)
+        store_df = pd.DataFrame(store).set_index('experiment_name')
         fig = go.Figure()
-        print('store data :',data)
-        for exp_name in data:
-            fig.add_bar(name=exp_name, x=metrics, y=list(total_metrics.loc[exp_name,:]), text=list(total_metrics.loc[exp_name,:]), marker={'color' : colors[i]})
+        # print('store data :',data)
+        for i,exp_name in enumerate(data):
+            exp_id = store_df.loc[exp_name, 'exp_id'] # exp_name에 맞는 exp_id 찾아주기
+            fig.add_bar(name=exp_name, x=metrics, y=list(total_metrics.loc[exp_id,:]), text=list(total_metrics.loc[exp_id,:]), marker={'color' : colors[i]})
             # .apply(eval)은 np.array나 list를 문자열로 인식할 때만 활용해주면 됨
             # 아니면 TypeError: eval() arg 1 must be a string, bytes or code object 발생
         fig.update_layout(
