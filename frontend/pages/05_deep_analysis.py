@@ -281,12 +281,12 @@ user_rerank = dbc.Row(id="rerank_box")
 # 유저 분석
 user_analysis = html.Div(id="user_deep_analysis")
 
-test = html.Div(html.P(id="testin", children="gogo"))
+# test = html.Div(html.P(id="testin", children="gogo"))
 
 layout = html.Div(
     children=[
         gct.get_navbar(has_sidebar=False),
-        test,
+        # test,
         html.Div(
             children=[
                 header,
@@ -305,10 +305,10 @@ layout = html.Div(
 )
 
 
-@callback(Output("testin", "children"), Input("store_selected_exp", "data"))
-def testing(val):
-    tmp = val
-    return str(tmp)
+# @callback(Output("testin", "children"), Input("store_selected_exp", "data"))
+# def testing(val):
+#     tmp = val
+#     return str(tmp)
 
 
 ### 고객이 정한 장바구니가 담긴 store id가 필요함
@@ -337,11 +337,19 @@ def choose_experiment(exp, vip, dataset_name, ):
     global item
     global uniq_genre
 
-    params = {"ID": vip['username'], "dataset_name": dataset_name, "exp_id": exp}
+    # params = {"ID": vip['username'], "dataset_name": dataset_name, "exp_id": exp}
+    params = {"ID": 'mkdir', "dataset_name": 'ml-1m', "exp_id": 9}
     user = requests.get(gct.API_URL + "/frontend/user_info", params=params).json()
+    # print(user)
     user = pd.DataFrame.from_dict(data=user, orient="tight")
-    user.columns = ['user_id', 'gender', 'age', 'occupation', 'user_profile', 'pred_item', 'xs', 'ys']
+    # print(user)
+    user.columns = ['user_id', 'gender', 'age', 'occupation', 'user_profile', 'pred_item', 'xs', 'ys', 'recall']
+
+
     user = user.set_index('user_id')
+    # print(user)
+    # print(user.loc[1]['recall'])
+    # print(type(user.loc[1]['recall']))
     item = requests.get(gct.API_URL + "/frontend/item_info", params=params).json()
     item = pd.DataFrame.from_dict(data=item, orient="tight")
     item.columns = [
@@ -478,25 +486,21 @@ def display_overall(val):
                                     html.P("연령대"),
                                     dcc.Checklist(
                                         options=sorted(user["age"].unique()),
-                                        value=[],
                                         id="selected_age",
                                     ),
                                     html.P("성별"),
                                     dcc.Dropdown(
                                         options=["M", "F"],
-                                        value=[],
                                         id="selected_gender",
                                     ),
                                     html.P("직업"),
                                     dcc.Dropdown(
                                         options=sorted(user["occupation"].unique()),
-                                        value=[],
                                         multi=True,
                                         id="selected_occupation",
                                     ),
                                     dcc.Checklist(
                                         options=["틀린 유저들만(0.5 기준으로)"],
-                                        value=[],
                                         id="selected_wrong",
                                     ),
                                     html.Br(),
@@ -756,7 +760,7 @@ def save_users_selected_by_option(age, gender, occupation, wrong):
     if occupation:
         user_lst = user_lst[user_lst["occupation"].isin(occupation)]
     if wrong:
-        user_lst = user_lst[user_lst["div_jac"] <= 0.77]  # 당장의 데이터에 recall이 없다.
+        user_lst = user_lst[user_lst["recall"] <= 0.5]
     return user_lst.index.to_list()
 
 

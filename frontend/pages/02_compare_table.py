@@ -121,7 +121,7 @@ def test_request(n, user_state):
 )
 def get_exp_data(user_state:dict, dataset_name:str,):
     if dataset_name == None:
-        return dbc.Alert("데이터셋을 먼저 선택해주세요.", color="info", className="w-50"), None
+        return dbc.Alert("데이터셋을 먼저 선택해주세요.", color="info", className="w-50"), None, None
     params = {
         "ID": user_state["username"],
         "dataset_name": dataset_name
@@ -132,7 +132,7 @@ def get_exp_data(user_state:dict, dataset_name:str,):
     temp_col1 = df.columns[4:].to_list()
     temp_col2 = df.columns[:4].to_list()
     df = df[temp_col1+temp_col2]
-    return get_table(df), df.columns
+    return get_table(df), df.columns, dataset_name
 
 ## 선택한 실험의 정보를 table로 만들어주고, 그 실험 정보 자체를 return
 @callback(
