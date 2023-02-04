@@ -6,7 +6,7 @@ import pandas as pd
 import plotly.express as px
 from dash_bootstrap_templates import load_figure_template
 from dash.exceptions import PreventUpdate
-import feffery_antd_components as fac
+# import feffery_antd_components as fac
 from . import global_component as gct
 from collections import Counter
 from plotly.subplots import make_subplots

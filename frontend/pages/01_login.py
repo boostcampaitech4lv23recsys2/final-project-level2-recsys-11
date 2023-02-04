@@ -19,29 +19,30 @@ layout =  html.Div([
                                 'text-align': 'center'}),
         html.Br(),
         dcc.Location(id='url_login', refresh=True)
-            , html.H5('''Please sign-in to continue:''', id='h1')
-            , dbc.Input(placeholder='Enter your username',
+            , html.H5('''가입한 아이디로 로그인 해주세요''', id='h1')
+            , dbc.Input(placeholder='아이디',
                     type='text',
                     id='uname-box',
                     className='login-form'),
             html.Br()
-            , dbc.Input(placeholder='Enter your password',
+            , dbc.Input(placeholder='비밀번호',
                     type='password',
                     id='pwd-box',
                     className='login-form'),
             html.Br(),
             dbc.Row([
                     dbc.Col([
-                dbc.Button(children='Sign-in',
+                dbc.Button(children='로그인',
                     n_clicks=0,
                     type='submit',
                     id='login-button',
-                #     style={'margin':10},
+                    className='pt1'
+                #   style={'margin':10},
                 ),
              html.Div(children='', id='output-state')]),
                      dbc.Col(
                         dcc.Link(
-                        children=dbc.Button(children='Sign-up',
+                        children=dbc.Button(children='회원가입', className='pt-'
                                 #      style={'margin':10}
                 ),
                     href='/signup'

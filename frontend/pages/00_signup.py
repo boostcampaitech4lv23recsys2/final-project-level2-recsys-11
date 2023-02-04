@@ -17,22 +17,22 @@ dash.register_page(__name__, path='/signup')
 
 
 layout = html.Div([
-    html.H1('Create User Account')
+    html.H1('회원가입')
         , dcc.Location(id='create_user', refresh=True)
         , dbc.Input(id="username"
             , type="text"
-            , placeholder="Enter user name"
+            , placeholder="아이디"
             , maxLength =15,
             ),
             html.Br()
         , dbc.Input(id="password1"
             , type="password"
-            , placeholder="Enter password",
+            , placeholder="비밀번호",
             ),
             html.Br()
         , dbc.Input(id="password2"
             , type="password"
-            , placeholder="Confirm password",
+            , placeholder="비밀번호 확인",
             ),
             html.Br(),
           
@@ -40,9 +40,9 @@ layout = html.Div([
             id='container-button-basic'
             ),
             html.Br(),
-            dbc.Button('Create User', id='submit-val', n_clicks=0, ),
+            dbc.Button('회원가입', id='submit-val', n_clicks=0, ),
             dcc.Link(
-                dbc.Button('Back', n_clicks=0, style={'margin': 20}),
+                dbc.Button('뒤로가기', n_clicks=0, style={'margin': 20}),
                 href='/'),
                   ], className="mx-auto w-25")
 

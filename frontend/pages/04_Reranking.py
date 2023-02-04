@@ -5,7 +5,7 @@ import requests
 import pandas as pd
 import plotly.express as px
 from dash.exceptions import PreventUpdate
-import feffery_antd_components as fac
+# import feffery_antd_components as fac
 from . import global_component as gct
 import json
 import copy
