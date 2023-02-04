@@ -3,6 +3,7 @@ from dash import html, dcc, callback, Input, Output, State, ctx
 import dash_bootstrap_components as dbc
 import requests
 import pandas as pd
+import numpy as np
 import plotly.express as px
 from dash_bootstrap_templates import load_figure_template
 from dash.exceptions import PreventUpdate
@@ -340,16 +341,23 @@ def choose_experiment(val, vip, exp_id):
 
     user = requests.get(gct.API_URL + "/frontend/user_info", params=params).json()
     user = pd.DataFrame.from_dict(data=user, orient="tight")
+    user.columns = ['user_id', 'gender', 'age', 'occupation', 'user_profile', 'pred_item', 'xs', 'ys']
+    user = user.set_index('user_id')
     item = requests.get(gct.API_URL + "/frontend/item_info", params=params).json()
     item = pd.DataFrame.from_dict(data=item, orient="tight")
-    # user = pd.read_csv("/opt/ml/user.csv", index_col="user_id")
-    print(user.columns)
-    print(item.columns)
-    item = pd.read_csv("/opt/ml/item.csv", index_col="item_id")
-    item.fillna(value="[]", inplace=True)
-    item["item_profile_user"] = item["item_profile_user"].apply(eval)
-    item["recommended_users"] = item["recommended_users"].apply(eval)
-    # 리스트와 같은 객체는 json으로 넘어올 때 문자열로 들어올 가능성이 있으니 이 코드가 필요할 수도 있다. 상황에 따라 판단하기.
+    item.columns = [
+        "item_id",
+        "movie_title",
+        "genre",
+        "release_year",
+        "item_pop",
+        "item_profile_user",
+        "recommended_users",
+        "xs",
+        "ys",
+    ]
+    item["release_year"] = item["release_year"].astype(np.int16)
+    item = item.set_index('item_id')
     item["selected"] = 0
     item["len"] = item["recommended_users"].apply(len)
     uniq_genre = set()
@@ -372,6 +380,9 @@ def choose_experiment(val, vip, exp_id):
 )
 def display_overall(val):
     if val == 1:  # 아이템을 선택함
+        year_min = item['release_year'].min()
+        year_max = item['release_year'].max()
+
         item_selection = html.Div(
             children=[
                 dbc.Row(
@@ -388,21 +399,14 @@ def display_overall(val):
                                     ),
                                     html.P("년도"),
                                     dcc.RangeSlider(
-                                        min=item["release_year"].min(),
-                                        max=item["release_year"].max(),
+                                        min=year_min,
+                                        max=year_max,
                                         value=[
-                                            item["release_year"].min(),
-                                            item["release_year"].max(),
+                                            year_min,
+                                            year_max,
                                         ],
                                         step=1,
-                                        marks={
-                                            item["release_year"].min(): str(
-                                                item["release_year"].min()
-                                            ),
-                                            item["release_year"].max(): str(
-                                                item["release_year"].max()
-                                            ),
-                                        },
+                                        marks=None,
                                         tooltip={
                                             "placement": "bottom",
                                             "always_visible": True,
@@ -784,25 +788,25 @@ def prepare_analysis(val1, val2):
 
 
 # 최근에 저장된 store 기준으로 유저 임베딩 그래프를 그림
-# @callback(
-#     Output('user_emb_graph', 'figure'),
-#     Input('users_selected_by_option', 'data'),
-# )
-# def update_graph(store1):
-#     user['selected'] = 'Not Selected'
-#     user.loc[store1, 'selected'] = 'Selected'
-#     emb = px.scatter(
-#         user, x = 'xs', y = 'ys', color='selected', # 갯수에 따라 색깔이 유동적인 것 같다..
-#         opacity=0.9,
-#         marginal_x="histogram",
-#         marginal_y="histogram",
-#     )
-#     emb.update_layout(
-#         clickmode='event+select',
-#         width=700,
-#         height=700,
-#     )
-#     return emb
+@callback(
+    Output('user_emb_graph', 'figure'),
+    Input('users_selected_by_option', 'data'),
+)
+def update_graph(store1):
+    user['selected'] = 'Not Selected'
+    user.loc[store1, 'selected'] = 'Selected'
+    emb = px.scatter(
+        user, x = 'xs', y = 'ys', color='selected', # 갯수에 따라 색깔이 유동적인 것 같다..
+        opacity=0.9,
+        marginal_x="histogram",
+        marginal_y="histogram",
+    )
+    emb.update_layout(
+        clickmode='event+select',
+        width=700,
+        height=700,
+    )
+    return emb
 
 # #최근에 저장된 store 기준으로 사이드 그래프를 그림
 @callback(

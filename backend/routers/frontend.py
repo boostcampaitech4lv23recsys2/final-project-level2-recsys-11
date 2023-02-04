@@ -28,7 +28,10 @@ async def get_exp_total(ID: str, dataset_name: str):
     if not total_exps:
         return {"msg": "Experiments Not Found"}
 
-    return total_exps  # metric_per_user S3 object name included
+    total_exps_pd = pd.DataFrame(total_exps)
+    total_exps_pd.drop("metric_per_user", axis=1, inplace=True)
+
+    return total_exps_pd.to_dict(orient="tight")
 
 
 #### PAGE 2
@@ -77,9 +80,8 @@ async def selected_metrics(
         ]
     ].loc[exp_ids]
 
-    user_metric_s3 = total_exps_pd.loc[exp_ids]["metric_per_user"].to_dict()
-
     index_id = list(user_metric_s3.keys())
+
     models = [await s3_to_pd(s3_loc) for s3_loc in user_metric_s3.values()]
     user_metrics = pd.concat(models, axis=1).T
     user_metrics.index = index_id
@@ -149,19 +151,19 @@ async def item_info(ID: str, dataset_name: str, exp_id: int):
         return {"msg": "Model Not Found"}
 
     item_side = await s3_to_pd(key_hash=df_row["item_side"])
-    item_side_pd = item_side[["genre", "title", "year", "popularity"]]
+    item_side_pd = item_side[
+        ["item_id", "item_name", "genres:multi", "year", "item_popularity"]
+    ]
     item_profile_pd = await inter_to_profile(
         key_hash=df_row["train_interaction"], group_by="item_id", col="user_id"
     )
+    item_profile_pd.columns = ["item_id", "item_profile"]
 
     item_rec_users_pd = await predicted_per_item(pred_item_hash=exp_row["pred_items"])
     item_tsne_pd = await s3_to_pd(key_hash=exp_row["item_tsne"])
-    pred_item_pd = pred_item_pd.reset_index()
-    user_tsne_pd = user_tsne_pd.reset_index()
-    pred_item_pd.columns = ["user_id", "pred_items"]
-    user_tsne_pd.columns = ["user_id", "xs", "ys"]
+    item_tsne_pd = item_tsne_pd.reset_index()  # 얘도 나중에 수정
+    item_tsne_pd.columns = ["item_id", "xs", "ys"]
 
     dfs = [item_side_pd, item_profile_pd, item_rec_users_pd, item_tsne_pd]
     item_merged = reduce(lambda left, right: pd.merge(left, right, on="item_id"), dfs)
-
     return item_merged.to_dict(orient="tight")
