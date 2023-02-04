@@ -19,19 +19,19 @@ class Quant_Metrics:
         self.train_df = pd.DataFrame(dataset.train_df)
         self.ground_truth = pd.DataFrame(dataset.ground_truth)
 
-        self.pred_item = pd.Series(pred_item.values(), index=[int(k) for k in pred_item.keys()], 
+        self.pred_item = pd.Series(pred_item.values(), index=[int(k) for k in pred_item.keys()],
                                     name='item_id').apply(lambda x: x.astype(int))
 
         self.total_users = self.ground_truth.index
 
         self.n_user = dataset.n_user
-        self.n_item = dataset.n_item 
+        self.n_item = dataset.n_item
 
         self.pop_per_item = dataset.popularity_per_item
         self.popularity_df = self.pred_item.apply(lambda R: [self.pop_per_item[int(item)] for item in R])
-    
+
         self.K = K
-    
+
     def Recall_K(self, users: None, predicted: None) -> Dict:
         if users == None:
             users = self.total_users
@@ -49,7 +49,7 @@ class Quant_Metrics:
                 recall[user] = len(act_set & pred_set) / min(len(act_set), len(pred_set))
 
         return recall
-        
+
     def apk(self, actual, predicted, k) -> float:
         """
         Source:
@@ -95,12 +95,12 @@ class Quant_Metrics:
         """
         if users == None:
             users = self.total_users
-                    
+
         actual = self.ground_truth.loc[users, 'item_id']
         predicted = self.pred_item.loc[users]
 
         return {user: self.apk(a, p, self.K) for user, a, p in zip(users, actual, predicted)}
-        
+
     def NDCG(self, users: np.array) -> Dict:
         '''
         NDCG = DCG / IDCG
@@ -108,16 +108,16 @@ class Quant_Metrics:
         '''
         if users == None:
             users = self.total_users
-                    
-        ndcg = {} 
+
+        ndcg = {}
         for user in users:
             k = min(self.K, len(self.ground_truth['item_id'].loc[1]))
             idcg = sum([1 / np.log2(j + 2) for j in range(k)]) # 최대 dcg. +2는 range가 0에서 시작해서
-            dcg = sum([int(self.pred_item[user][j] in set(self.ground_truth['item_id'].loc[user])) 
+            dcg = sum([int(self.pred_item[user][j] in set(self.ground_truth['item_id'].loc[user]))
                        / np.log2(j + 2) for j in range(self.K)])
             ndcg[user] = dcg / idcg
 
-        return ndcg 
+        return ndcg
 
     def AveragePopularity(self, users:None) -> Dict:
         '''
@@ -130,7 +130,7 @@ class Quant_Metrics:
         popularity_metric = self.popularity_df.loc[users].apply(lambda R: np.mean(R))
 
         return popularity_metric.to_dict()
-    
+
     def Coverage(self) -> float:
         '''
         return: 추천된 아이템의 고유값 수 / 전체 아이템 수
@@ -140,7 +140,7 @@ class Quant_Metrics:
             total_n_unique |= set(i)
 
         return len(total_n_unique) / self.n_item
-    
+
     def TailPercentage(self, tail_ratio=0.1) -> float:
         item_count = self.train_df.groupby('item_id').agg('count')
         item_count.drop(['rating', 'timestamp','origin_timestamp'], axis=1, inplace=True)
@@ -153,7 +153,7 @@ class Quant_Metrics:
         Tp = np.mean([sum([1 if item in T else 0 for item in self.pred_item[idx]]) / self.K
                             for idx in self.pred_item.index])
         return Tp
-    
+
     def get_total_metrics(self, users: None) -> Dict:
         if users == None:
             users = self.total_users
@@ -168,14 +168,14 @@ class Quant_Metrics:
 def avg_metric(rows: Dict) -> Dict:
     metrics = ['recall', 'ap', 'ndcg', 'tail_percentage', 'avg_popularity', \
                 'diversity_cos', 'diversity_jac', 'serendipity_pmi', 'serendipity_jac', 'novelty'] # coverage not measured per user
-    
+
     for row in rows: # row = experiment(dict)
         for key, value in row.items(): # key = column  # value = column value
             if key in metrics: # key = metric
-                # get from s3 
+                # get from s3
                 dict_of_per_user = get_from_s3(value) # {user1: (float),}
                 row[key] = sum(dict_of_per_user.values()) / len(dict_of_per_user.values())
-    
+
     return rows
 
 
@@ -191,7 +191,7 @@ async def recall_per_user(key_hash: str):
     metric_per_user_pd = await s3_to_pd(key_hash=key_hash)
     recall_per_user = metric_per_user_pd.loc['recall', 'metric_per_used']
     n_user = len(recall_per_user)+1
-    recall_per_user_pd = pd.DataFrame({'user_id': [str(i) for i in range(1,n_user)], 
+    recall_per_user_pd = pd.DataFrame({'user_id': [str(i) for i in range(1,n_user)],
                                        'recall': recall_per_user})
     recall_per_user_pd['user_id'] = recall_per_user_pd['user_id'].astype('object')
 

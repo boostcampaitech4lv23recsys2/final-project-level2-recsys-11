@@ -17,7 +17,7 @@ def get_feature_component(img_url:str, emoji:str,
                         html.Img(src=img_url, className=feature_cn),
                     width=IMAGE_COL_WIDTH),
                     dbc.Col([
-                        html.H1(emoji, className="text-end"),
+                        html.H1(emoji, className="text-start"),
                         html.H3(title),
                         html.H5(description),
                         ], width=TEXT_COL_WIDTH)
@@ -61,26 +61,30 @@ feature2 = get_feature_component(
     img_position="right"
 )
 
-
+problem_intro = html.Div([
+            html.H1("🤔"),
+            html.H3("추천시스템 문제는 조금 다릅니다."),
+            html.H5("일반적으로 AI 모델에서는 높은 정확성, 혹은 재현율이 서비스 사용자의 만족으로 이어집니다."),
+            html.H5("하지만 추천시스템에서는 그렇지 않습니다.", className="fst-italic"),
+            html.H5(["정량적 지표인 정확성, 재현율 외에도 ", html.Span("정성적 지표", className="text-danger"), "(다양성, 참신성 의외성 등)를 같이 고려해야 합니다."], ),
+])
 layout = html.Div([
     dbc.NavbarSimple([
-        # dbc.NavItem(dcc.Link(dbc.Button("평가 시작하기!", className="position-fixed top-50 end-0 translate-middle-y w-25 fs-2 mt-3 mb-4",),href="/login"),)
-        dbc.NavItem(dcc.Link(dbc.Button("시작하기!", className=" fs-6 mt-3 mb-4", color="light"),href="/login"),)
-], color="primary", className="navbar ", sticky="top", brand=",             𝙒𝙚𝙗𝟰𝙍𝙚𝙘",),
+        dbc.NavItem(dcc.Link(dbc.Button("시작하기!", className=" fs-6 mt-3 mb-4 m-0", color="light"),href="/login"),),
+        dbc.NavbarBrand("𝙒𝙚𝙗𝟰𝙍𝙚𝙘", class_name="fs-2text-center position-absolute top-50 start-50 translate-middle")
+        ], color="primary", className="navbar position-relative", sticky="top", brand="𝙒𝙚𝙗𝟰𝙍𝙚𝙘"),
     html.Div([
         html.Div([
-            html.H1('𝙒𝙚𝙗𝟰𝙍𝙚𝙘', className="pt-4 pb-4 text-center fs-1"),
+            html.Div([
+            html.H1('💡 프로젝트 소개', className="pt-4 text-center fs-1 mx-auto"),
+            # dcc.Link(dbc.Button("시작하기!", className=" fs-6 mt-3 mb-4", color="light"),href="/login"),
+            ], className="hstack"),
             html.Hr(),
-            dcc.Markdown(
-                """
-                # 🤔<br>
-                ## 추천시스템 문제는 조금 다릅니다.
-                일반적으로 AI 모델에서는 높은 정확성, 혹은 재현율이 서비스 사용자의 만족으로 이어집니다.  
-                하지만 추천시스템에서는 _그렇지 않습니다._<br>
-                정량적 지표인 정확성, 재현율 외에도 **정성적 지표**(다양성, 참신성 의외성 등)를 같이 고려해야 합니다.
-                """
-            , className="h5 lh-base", dangerously_allow_html=True),
-            html.H4('🔧 𝙒𝙚𝙗𝟰𝙍𝙚𝙘은 이를 해결할 수 있는 실험 관리 툴입니다.', className="pt-4 pb-4 text-center fs-1"),
+            
+            problem_intro,
+            
+            html.H4(['🔧 𝙒𝙚𝙗𝟰𝙍𝙚𝙘은 이를 해결할 수 있는 ', html.Span('실험 관리 툴', className="text-info"),'입니다.'], className="mt-5 pt-4 pb-4 text-center fs-1"),
+            html.Hr(),
             feature_compare_table,
             feature1,
             feature2,
@@ -91,5 +95,3 @@ layout = html.Div([
             ], className="container position-relative pb-4"),
     ]),
 ])
-
-

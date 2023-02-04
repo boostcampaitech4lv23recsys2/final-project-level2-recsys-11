@@ -281,12 +281,12 @@ user_rerank = dbc.Row(id="rerank_box")
 # 유저 분석
 user_analysis = html.Div(id="user_deep_analysis")
 
-test = html.Div(html.P(id="testin", children="gogo"))
+# test = html.Div(html.P(id="testin", children="gogo"))
 
 layout = html.Div(
     children=[
         gct.get_navbar(has_sidebar=False),
-        test,
+        # test,
         html.Div(
             children=[
                 header,
@@ -298,51 +298,58 @@ layout = html.Div(
         ),
         dcc.Store(id="trash"),  # 아무런 기능도 하지 않고, 그냥 콜백의 아웃풋 위치만 잡아주는 녀석
         dcc.Store(id="store_selected_exp"),
+        dcc.Store(id='store_exp_names', storage_type='session'),
+        dcc.Store(id='store_exp_ids', storage_type='session'),
+        dcc.Store(id='store_exp_column', storage_type='session')
     ],
 )
 
 
-@callback(Output("testin", "children"), Input("store_selected_exp", "data"))
-def testing(val):
-    tmp = val
-    return str(tmp)
+# @callback(Output("testin", "children"), Input("store_selected_exp", "data"))
+# def testing(val):
+#     tmp = val
+#     return str(tmp)
 
 
 ### 고객이 정한 장바구니가 담긴 store id가 필요함
 ##그거 토대로 버튼 그룹을 구성해야 함
-# @callback(
-#     Output('exp_id_for_deep_analysis', 'options'),
-#     Output('exp_id_for_deep_analysis', 'value'),
-#     Input('stoted_exp', 'data'),
-# )
-# def show_exp_choice(data):
-#     return data, data[0]
+@callback(
+    Output('exp_id_for_deep_analysis', 'options'),
+    Input('store_exp_names', 'data'),
+    State('store_exp_ids', 'data'),
+)
+def show_exp_choice(exp_name, exp_id):
+    option = [{'label': i, 'value': j} for i,j in zip(exp_name, exp_id)]
+    return option
 
 # 고객이 장바구니에서 원하는 exp_id를 선택하면 그에 대한 user, item을 불러온다.
 @callback(
-    # Output('trash', 'data'),
     Output("show_user_or_item", "options"),
     Input("exp_id_for_deep_analysis", "value"),
-    State("user_state", "data"),
-    ## 데이터셋 이름을 가지고 있는 store도 필요
-    State("store_selected_exp", "data"),
+    State("store_user_state", "data"),
+    State("store_user_dataset", "data"),
     prevent_initial_call=True,
 )
-def choose_experiment(val, vip, exp_id):
+def choose_experiment(exp, vip, dataset_name, ):
+    if exp is None:
+        raise PreventUpdate
     global user
     global item
     global uniq_genre
 
-    # TODO: 백에 호출하여 user와 item 만들기
-    customer = vip["username"]
-    dataset = "ml-1m"
-    # current_exp = exp_id["exp_id"]
-    params = {"ID": "mkdir", "dataset_name": "ml-1m", "exp_id": 9}
-
+    # params = {"ID": vip['username'], "dataset_name": dataset_name, "exp_id": exp}
+    params = {"ID": 'mkdir', "dataset_name": 'ml-1m', "exp_id": 9}
     user = requests.get(gct.API_URL + "/frontend/user_info", params=params).json()
+    # print(user)
     user = pd.DataFrame.from_dict(data=user, orient="tight")
-    user.columns = ['user_id', 'gender', 'age', 'occupation', 'user_profile', 'pred_item', 'xs', 'ys']
+    # print(user)
+    user.columns = ['user_id', 'gender', 'age', 'occupation', 'user_profile', 'pred_item', 'xs', 'ys', 'recall']
+
+
     user = user.set_index('user_id')
+    # print(user)
+    # print(user.loc[1]['recall'])
+    # print(type(user.loc[1]['recall']))
     item = requests.get(gct.API_URL + "/frontend/item_info", params=params).json()
     item = pd.DataFrame.from_dict(data=item, orient="tight")
     item.columns = [
@@ -479,25 +486,21 @@ def display_overall(val):
                                     html.P("연령대"),
                                     dcc.Checklist(
                                         options=sorted(user["age"].unique()),
-                                        value=[],
                                         id="selected_age",
                                     ),
                                     html.P("성별"),
                                     dcc.Dropdown(
                                         options=["M", "F"],
-                                        value=[],
                                         id="selected_gender",
                                     ),
                                     html.P("직업"),
                                     dcc.Dropdown(
                                         options=sorted(user["occupation"].unique()),
-                                        value=[],
                                         multi=True,
                                         id="selected_occupation",
                                     ),
                                     dcc.Checklist(
                                         options=["틀린 유저들만(0.5 기준으로)"],
-                                        value=[],
                                         id="selected_wrong",
                                     ),
                                     html.Br(),
@@ -757,7 +760,7 @@ def save_users_selected_by_option(age, gender, occupation, wrong):
     if occupation:
         user_lst = user_lst[user_lst["occupation"].isin(occupation)]
     if wrong:
-        user_lst = user_lst[user_lst["div_jac"] <= 0.77]  # 당장의 데이터에 recall이 없다.
+        user_lst = user_lst[user_lst["recall"] <= 0.5]
     return user_lst.index.to_list()
 
 
