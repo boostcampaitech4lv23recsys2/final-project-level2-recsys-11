@@ -110,7 +110,9 @@ def specific_metric():
                 ),
                 html.Br(),
                 dcc.Dropdown(id='metric_list')
-                ], width=4),
+                ], width=3),
+                html.Br(),
+                html.Div([html.P(id="print_metric"),]),
             dbc.Col([
                 dcc.Graph(id = 'bar_fig'), #figure=fig_qual
                 html.Div(id = 'dist_fig'),  # dcc.Graph(id = 'dist_fig')
@@ -213,7 +215,7 @@ def display_output(selected_dropdown:str, data) -> str: #
     State('store_selected_exp_names', 'data')
 )
 def save_selected_exp_names(value, data):
-    print('value:', value)
+
     # if len(data) == 0:
     #     print('data:',data)
     if value is None:
@@ -221,11 +223,6 @@ def save_selected_exp_names(value, data):
     # data.append(value)
     # print('selected_exp_list:', data)
     return value
-
-# TODO: get request(selected user) and plot total_metrics
-# def get_quantative_metrics(form): 
-#     params={'model_name': form['model'], 'str_key': form['values']}
-#     return requests.get(url=f'{API_url}/metric/quantitative/', params=params).json()[0]
 
 
 ### compare! 버튼을 누르면 plot을 그려주는 callback
@@ -341,6 +338,13 @@ def plot_bar(data, sort_of_metric, store):
     else:
         return html.Div([])
     
+# ### 선택한 metric 뭔지 보여주는 test callback
+# @callback(
+#     Output('print_metric', 'children'),
+#     Input("metric_list", 'value'),
+# )
+# def print_metric(value):
+#     return f'user selection : {value}'
 
 ### 선택한 metric에 대한 dist plot을 띄워주는 callback
 @callback(
@@ -363,7 +367,7 @@ def plot_dist(data, value):
 
 
         fig.update_layout(title_text=f'Distribution of {value}')
-        return dcc.Graph(id = 'dist_fig', figure=fig)
+        return dcc.Graph(figure=fig)
     
     elif value in ['recall', 'ndcg', 'map', 'avg_popularity', 'tailpercentage']:
         if value == 'map':
@@ -373,6 +377,6 @@ def plot_dist(data, value):
         hist_data = total_metrics_users[value].values
         fig = ff.create_distplot(hist_data, group_labels, colors=colors,
                                 bin_size=0.025, show_rug=True, curve_type='kde')
-        return dcc.Graph(id = 'dist_fig', figure=fig)
+        return dcc.Graph(figure=fig)
     else:
         return html.Div([])
