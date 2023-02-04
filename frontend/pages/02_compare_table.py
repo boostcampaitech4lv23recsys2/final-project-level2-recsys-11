@@ -75,12 +75,11 @@ layout = html.Div([
         html.H3(id='output_test')
     ],
     className="container"),
-    html.Div(id='store_exp_names'),
 
-    dcc.Store(id='store_selected_exp', storage_type='memory'),
-    dcc.Store(id='store_exp_names', storage_type='memory'),
-    dcc.Store(id='store_exp_ids', storage_type='memory'),
-    dcc.Store(id='store_exp_column', storage_type='memory')
+    dcc.Store(id='store_selected_exp', storage_type='session'),
+    dcc.Store(id='store_exp_names', storage_type='session'),
+    dcc.Store(id='store_exp_ids', storage_type='session'),
+    dcc.Store(id='store_exp_column', storage_type='session')
 ])
 
 @callback(
@@ -113,7 +112,6 @@ def get_exp_data(user_state:dict, dataset_name:str,):
     response = requests.get(f"{gct.API_URL}/frontend/get_exp_total", params=params)
     df = pd.DataFrame(response.json())
     df['exp_id']
-    print("jdfaslfjeow;dsj",df)
     return get_table(df), df.columns
 
 ## 선택한 실험의 정보를 table로 만들어주고, 그 실험 정보 자체를 return
@@ -173,5 +171,5 @@ def store_selected_exp_ids(data):
         raise PreventUpdate
     exp_ids = []
     for each in data:
-        exp_ids.append(each[pinned_column_name])
+        exp_ids.append(each['exp_id'])
     return exp_ids
