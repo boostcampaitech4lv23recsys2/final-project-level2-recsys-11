@@ -40,7 +40,7 @@ def get_table(df):
             columnDefs=[
                 {'headerName': column, 'field':column, 'pinned':'left', 'checkboxSelection':True, 'rowDrag':True, 'headerCheckboxSelection':True} if column == pinned_column_name else {'headerName': column, 'field':column, } for column in df.columns 
             ],
-            columnSize="sizeToFit",
+            # columnSize="sizeToFit",
             defaultColDef=dict(
                     resizable= True,
                     sortable=True,
@@ -110,8 +110,7 @@ def get_exp_data(user_state:dict, dataset_name:str,):
         "dataset_name": dataset_name
     }
     response = requests.get(f"{gct.API_URL}/frontend/get_exp_total", params=params)
-    df = pd.DataFrame(response.json())
-    df['exp_id']
+    df = pd.DataFrame.from_dict(response.json(), orient="tight")
     return get_table(df), df.columns
 
 ## 선택한 실험의 정보를 table로 만들어주고, 그 실험 정보 자체를 return
@@ -130,7 +129,7 @@ def plot_selected_table(n, seleceted_rows, exp_column):
         columnDefs=[
              {'headerName': column, 'field':column, 'pinned':'left', 'checkboxSelection':True, 'rowDrag':True, 'headerCheckboxSelection':True} if column == pinned_column_name else {'headerName': column, 'field':column, } for column in exp_column
         ],
-        columnSize="sizeToFit",
+        # columnSize="sizeToFit",
         defaultColDef=dict(
                 resizable= True,
                 sortable=True,

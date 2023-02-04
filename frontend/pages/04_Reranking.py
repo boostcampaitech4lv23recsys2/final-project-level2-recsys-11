@@ -8,6 +8,7 @@ from dash.exceptions import PreventUpdate
 import feffery_antd_components as fac
 from . import global_component as gct
 import json
+import copy
 
 dash.register_page(__name__, path='/reranking')
 
@@ -33,12 +34,8 @@ fig_total = px.bar(
             color = 'model',
             color_discrete_sequence=exp_df['colors'].values
             )
-
-model_form = html.Div([html.Div([
-    dbc.Row([
-        dbc.Col([
-            html.P('Alpha:'),
-            dbc.RadioItems(
+alpha_radio = html.Div([
+    dbc.RadioItems(
             id="alpha",
             className="btn-group",
             inputClassName="btn-check",
@@ -50,21 +47,27 @@ model_form = html.Div([html.Div([
             ],
             value=1,
                         ),
-], className="radio-group",
-            ),
-]),
-    html.P("Select objective function with distance function"),
-    dcc.Dropdown(options=metric_list),
-], className='form-style'),
-                       html.Br()])
-
+], className="radio-group ",)
+model_form = html.Div([
+    html.H6("Select experiment"),
+    dcc.Dropdown(id="selected_model_by_name"),
+            html.Hr(),
+            html.H6("Alpha: "),
+            # html.P('Alpha:', className="p-0 m-0"),
+            alpha_radio,
+               html.H6("Select objective function with distance function"),
+    dcc.Checklist(
+    metric_list,
+    metric_list,
+    id="obj_funcs",)
+], className='form-style')
 
 sidebar = html.Div(
     [
         html.H3("Select options",),
         html.Hr(),
         html.Div(id='rerank_form', children=model_form),
-        dbc.Button('Rerank!')
+        dbc.Button('Rerank!', id="rerank_btn", n_clicks=0, className="mt-3")
     ],
     className='sidebar'
 )
@@ -74,14 +77,12 @@ total_graph = html.Div([
     html.H1(children='Reranking', style={'text-align': 'center','font-weight': 'bold'}),
     html.Hr(),
     
-    html.Div(id='select_model'),
-    html.Div(id='select_model2'),
+    html.Div(id='reranked_graph'),
     
-
     html.H3('Total Metric'),
     dbc.Row([
       dbc.Col([
-          dcc.Graph(figure=fig_total, id='total_metric')
+          dcc.Graph(figure=fig_total, id='reranked_total_graph')
             ]),
             ])
                     ])
@@ -110,8 +111,6 @@ specific_metric = html.Div([
             dcc.Graph(figure=fig_total),
         ], width=8)
     ]),
-
-           
     ],
     className="radio-group", 
 )
@@ -122,25 +121,34 @@ layout = html.Div(children=[
     html.Div([
     sidebar,
     total_graph,
-    specific_metric])
+    specific_metric,
+    dcc.Store(id='store_exp_names', storage_type="session"),
+    ])
 ], className="content")
 
 
-# @callback(
-#         Output('map', 'children'),
-#         Input('compare_btn', 'n_clicks'),
-#         prevent_initial_call=True
-# )
-# def get_quantative_metrics(form):
-#     params={'model_name': form['model'], 'str_key': form['values']}
-#     return requests.get(url=f'{gct.API_URL}/metric/quantitative/', params=params).json()[0]
+@callback(
+    Output("selected_model_by_name", "options"),
+    Input("rerank_btn", "n_clicks"),
+    State("store_exp_names", "data"),
+)
+def print_selected_exp_name(n, exp_name):
+    if n != 0:
+        PreventUpdate
+    exp_name = copy.deepcopy(exp_name)
+    exp_name = list(set(exp_name))
+    return exp_name
 
-
-# @callback(
-#     Output('metric_list', 'options'),
-#     Input('sort_of_metric', 'value'),
-# )
-# def load_metric_list(sort_of_metric:str) -> list:
-    
-#     metric_list = ['fdsa', '123','fdsavcx']
-#     return metric_list
+@callback(
+    Output("reranked_graph", "children"),
+    Input("rerank_btn", "n_clicks"),
+    State("selected_model_by_name", "value"),
+    State("alpha", "value"),
+    State("obj_funcs", "value"),
+    prevent_initial_update=False,
+)
+def plot_graph(n, model_name, alpha, obj_funcs):
+    if n == 0:
+        PreventUpdate
+    return html.H3(str(f"{model_name}\n{alpha}\n{obj_funcs}"))
+    pass

@@ -76,9 +76,7 @@ total_graph = html.Div([
     html.H1(children='Model vs Model', style={'text-align': 'center','font-weight': 'bold'}),
     html.Hr(),
     
-    html.Div(id='select_model'),
     html.Div(id='select_model2'),
-    
 
     html.H3('Total Metric'),
     dbc.Row([
