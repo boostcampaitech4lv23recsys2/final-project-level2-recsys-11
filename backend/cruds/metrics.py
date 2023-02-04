@@ -183,4 +183,14 @@ async def predicted_per_item(pred_item_hash: str) -> pd.DataFrame:
     pred_item_pd = await s3_to_pd(pred_item_hash)
     predicted_per_item = pred_item_pd.explode('item_id').groupby('item_id').agg(list)
     return predicted_per_item
-    
+
+
+async def recall_per_user(key_hash: str):
+    metric_per_user_pd = await s3_to_pd(key_hash=key_hash)
+    recall_per_user = metric_per_user_pd.loc['recall', 'metric_per_used']
+    n_user = len(recall_per_user)+1
+    recall_per_user_pd = pd.DataFrame({'user_id': [i for i in range(1,n_user)], 
+                                       'recall': recall_per_user})
+    recall_per_user_pd['user_id'] = recall_per_user_pd['user_id'].astype('object')
+
+    return recall_per_user_pd
