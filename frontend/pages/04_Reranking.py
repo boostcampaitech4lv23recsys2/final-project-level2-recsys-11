@@ -1,23 +1,24 @@
 import dash
-from dash import html, dcc, callback, Input, Output, State,  MATCH, ALL
-import dash_bootstrap_components as dbc
-import requests
-import pandas as pd
-import plotly.express as px
-from dash.exceptions import PreventUpdate
-import feffery_antd_components as fac
-from . import global_component as gct
 import json
 import copy
+import requests
+import numpy as np
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import plotly.figure_factory as ff
+import dash_bootstrap_components as dbc
 
+from dash import html, dcc, callback, Input, Output, State,  MATCH, ALL
+from dash_bootstrap_templates import load_figure_template
+from dash.exceptions import PreventUpdate
+from . import global_component as gct
+API_url = 'http://127.0.0.1:30004'
 dash.register_page(__name__, path='/reranking')
 
-exp_df = pd.DataFrame(columns = ['model','recall','ndcg','map','popularity','colors'])
+total_metrics = None
+total_metrics_users = None
 
-exp_df.loc[1,:] = ['M1',0.1084,0.0847,0.1011,0.0527,'red']
-exp_df.loc[2,:] = ['M2',0.1124,0.0777,0.1217,0.0781,'green']
-exp_df.loc[3,:] = ['M3',0.1515,0.1022,0.1195,0.0999,'blue']
-exp_df.loc[4,:] = ['M4',0.0917,0.0698,0.0987,0.0315,'goldenrod']
 
 metric_list = [
     'Diversity(jaccard)',
@@ -27,13 +28,9 @@ metric_list = [
     'Novelty',
 ]
 
-fig_total = px.bar(
-            exp_df,
-            x = 'model',
-            y ='recall',
-            color = 'model',
-            color_discrete_sequence=exp_df['colors'].values
-            )
+
+
+### alpha 선택하는 부분, radio
 alpha_radio = html.Div([
     dbc.RadioItems(
             id="alpha",
@@ -43,19 +40,20 @@ alpha_radio = html.Div([
             labelCheckedClassName="active",
             options=[
                 {"label": "0.5", "value": 0.5},
-                {"label": "1", "value": 1},
+                {"label": "1", "value": 1},  # 사용자가 지정한 alpha로 지정
             ],
-            value=1,
+            value=0.5,
                         ),
-], className="radio-group ",)
+], className="radio-group")
+
 model_form = html.Div([
-    html.H6("Select experiment"),
+    html.H6("Select Experiment"),
     dcc.Dropdown(id="selected_model_by_name"),
             html.Hr(),
             html.H6("Alpha: "),
             # html.P('Alpha:', className="p-0 m-0"),
             alpha_radio,
-               html.H6("Select objective function with distance function"),
+               html.H6("Select objective function(distance function)"),
     dcc.Checklist(
     metric_list,
     metric_list,
@@ -64,7 +62,7 @@ model_form = html.Div([
 
 sidebar = html.Div(
     [
-        html.H3("Select options",),
+        html.H3("Select Options",),
         html.Hr(),
         html.Div(id='rerank_form', children=model_form),
         dbc.Button('Rerank!', id="rerank_btn", n_clicks=0, className="mt-3")
@@ -81,39 +79,47 @@ total_graph = html.Div([
     
     html.H3('Total Metric'),
     dbc.Row([
-      dbc.Col([
-          dcc.Graph(figure=fig_total, id='reranked_total_graph')
+        dbc.Col([
+            html.Div([
+                html.Br(),
             ]),
-            ])
-                    ])
+            html.Div(id='total_metric')
+            ]),
+        ])
+     ])
 
-specific_metric = html.Div([
-    html.H3('Specific Metric'),
-    dbc.Row([
-        dbc.Col([
-            dbc.RadioItems(
-            id="sort_of_metric",
-            className="btn-group",
-            inputClassName="btn-check",
-            labelClassName="btn btn-outline-primary",
-            labelCheckedClassName="active",
-            options=[
-                {"label": "Qualitive", "value": 'Qual'},
-                {"label": "Quantitive", "value": 'Quant'},
-            ],
-            value='Qual',
-                        ),
-            html.Br(),
-            dcc.Dropdown(options=['123', '12342'], id='metric_list')
-            ], width=2),
-        dbc.Col([
-            dcc.Graph(figure=fig_total),
-            dcc.Graph(figure=fig_total),
-        ], width=8)
-    ]),
-    ],
-    className="radio-group", 
-)
+def specific_metric():
+    specific_metric = html.Div([
+        html.H3('Specific Metric'),
+        dbc.Row([
+            dbc.Col([
+                dbc.RadioItems(
+                    id="sort_of_metric",
+                    className="btn-group",
+                    inputClassName="btn-check",
+                    labelClassName="btn btn-outline-primary",
+                    labelCheckedClassName="active",
+                    options=[
+                        {"label": "Qualitative", "value": 'Qual'},
+                        {"label": "Quantitative", "value": 'Quant'},
+                    ],
+                    value='Qual',
+                ),
+                html.Br(),
+                dcc.Dropdown(id='metric_list')
+                ], width=3),
+                html.Br(),
+                html.Div([html.P(id="print_metric"),]),
+            dbc.Col([
+                dcc.Graph(id = 'bar_fig'), #figure=fig_qual
+                html.Div(id = 'dist_fig'),  # dcc.Graph(id = 'dist_fig')
+            ], width=8)
+        ]),
+
+        ],
+        className="radio-group",
+    )
+    return specific_metric
 
 
 layout = html.Div(children=[
@@ -121,12 +127,34 @@ layout = html.Div(children=[
     html.Div([
     sidebar,
     total_graph,
-    specific_metric,
+    html.Div(id = 'specific_metric_children')
+    ]),
+    html.Div(id='trash'),
+    dcc.Store(id='store_selected_exp', storage_type='session'),
     dcc.Store(id='store_exp_names', storage_type="session"),
-    ])
+    dcc.Store(id='store_exp_ids', storage_type='session'),
+    dcc.Store(id='store_selected_exp_names', data=[], storage_type='session')
+
 ], className="content")
 
+### exp_names가 들어오면 실험 정보들 return 하는 callback
+@callback(
+    Output('trash', 'children'),
+    Input('compare_btn', 'n_clicks'),
+    State('store_exp_names', 'data')
+)
+def get_stored_selected_models(n, exp_names:list[str]) -> pd.DataFrame:
+    global total_metrics
+    global total_metrics_users
+    params = {'ID':'mkdir', 'dataset_name':'ml-1m', 'exp_names': exp_names}
+    response = requests.get(API_url + '/frontend/selected_metrics', params = params)  # TODO: rerank backend로 요청
+    a = response.json()
+    total_metrics = pd.DataFrame().from_dict(a['model_metrics'], orient='tight')
+    total_metrics_users = pd.DataFrame().from_dict(a['user_metrics'], orient='tight')
+    return html.Div([])
 
+
+### 어떤 실험이 선택 가능한지 store에서 가져옴 (실험의 이름으로)
 @callback(
     Output("selected_model_by_name", "options"),
     Input("rerank_btn", "n_clicks"),
