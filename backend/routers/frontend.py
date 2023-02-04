@@ -10,8 +10,8 @@ from typing import Dict, List
 import pandas as pd
 from functools import reduce
 
-from cruds.database import check_user, get_exp, get_df, get_total_info, inter_to_profile
-from cruds.metrics import avg_metric, predicted_per_item
+from cruds.database import get_exp, get_df, get_total_info, inter_to_profile
+from cruds.metrics import predicted_per_item, recall_per_user
 from database.rds import get_db_dep
 from database.s3 import get_from_s3, s3_dict_to_pd, s3_to_pd
 
@@ -107,31 +107,31 @@ async def user_info(ID: str, dataset_name: str, exp_id: int):
     # GET: exp(exp-id) - pred_items
     #                  - xs,ys (user)
 
-    df_row = await get_df(ID, dataset_name)
-
+    df_row = await get_df(ID, dataset_name) 
     if df_row == None:
-        return {"msg": "Dataset Not Found"}
-    exp_row = await get_exp(exp_id)
+        return {'msg': 'Dataset Not Found'}
+    
+    exp_row = await get_exp(exp_id) 
     if exp_row == None:
-        return {"msg": "Model Not Found"}
+        return {'msg': 'Model Not Found'} 
+    
+    user_side = await s3_to_pd(key_hash=df_row['user_side'])
+    user_side_pd = user_side[['user_id', 'gender', 'age', 'occupation']]
+    user_profile_pd = await inter_to_profile(key_hash=df_row['train_interaction'], group_by='user_id', col='item_id') 
 
-    user_side = await s3_to_pd(key_hash=df_row["user_side"])
-    user_side_pd = user_side[["user_id", "gender", "age", "occupation"]]
-    user_profile_pd = await inter_to_profile(
-        key_hash=df_row["train_interaction"], group_by="user_id", col="item_id"
-    )
+    pred_item_pd = await s3_to_pd(key_hash=exp_row['pred_items'])
+    pred_item_pd = pred_item_pd.rename_axis('user_id').reset_index()
 
-    pred_item_pd = await s3_to_pd(key_hash=exp_row["pred_items"])
-    user_tsne_pd = await s3_to_pd(key_hash=exp_row["user_tsne"])
-    pred_item_pd = pred_item_pd.reset_index()
-    user_tsne_pd = user_tsne_pd.reset_index()
-    pred_item_pd.columns = ["user_id", "pred_items"]
-    user_tsne_pd.columns = ["user_id", "xs", "ys"]
+    user_tsne_pd = await s3_to_pd(key_hash=exp_row['user_tsne'])
+    user_tsne_pd = user_tsne_pd.rename_axis('user_id').reset_index() 
 
-    dfs = [user_side_pd, user_profile_pd, pred_item_pd, user_tsne_pd]
-    user_merged = reduce(lambda left, right: pd.merge(left, right, on="user_id"), dfs)
+    recall_per_user_pd = await recall_per_user(key_hash=exp_row['metric_per_user'])
 
-    return user_merged.to_dict(orient="tight")
+    dfs = [user_side_pd, user_profile_pd, pred_item_pd, user_tsne_pd, recall_per_user_pd]
+    user_merged = reduce(lambda left,right: pd.merge(left,right,on='user_id'), dfs)
+
+    return user_merged.to_dict(orient='tight')
+    
 
 
 @router.get("/item_info")
@@ -161,9 +161,9 @@ async def item_info(ID: str, dataset_name: str, exp_id: int):
 
     item_rec_users_pd = await predicted_per_item(pred_item_hash=exp_row["pred_items"])
     item_tsne_pd = await s3_to_pd(key_hash=exp_row["item_tsne"])
-    item_tsne_pd = item_tsne_pd.reset_index()  # 얘도 나중에 수정
-    item_tsne_pd.columns = ["item_id", "xs", "ys"]
+    item_tsne_pd = item_tsne_pd.rename_axis('item_id').reset_index() 
 
     dfs = [item_side_pd, item_profile_pd, item_rec_users_pd, item_tsne_pd]
     item_merged = reduce(lambda left, right: pd.merge(left, right, on="item_id"), dfs)
+    
     return item_merged.to_dict(orient="tight")
