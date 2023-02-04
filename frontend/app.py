@@ -8,8 +8,9 @@ from dash_bootstrap_templates import load_figure_template
 from dash.exceptions import PreventUpdate
 
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
+font_awsome = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.2/css/all.min.css"
 app = Dash(
-    __name__, external_stylesheets=[dbc.themes.JOURNAL], 
+    __name__, external_stylesheets=[dbc.themes.JOURNAL, font_awsome], 
     use_pages=True, 
     suppress_callback_exceptions=True,
 ) # 페이지 스타일 변경
