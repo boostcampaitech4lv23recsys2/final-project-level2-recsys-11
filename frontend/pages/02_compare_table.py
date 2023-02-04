@@ -35,10 +35,14 @@ def get_table(df):
     compare_table = html.Div([
         html.Div([
         html.H3(['전체 실험 목록', html.Span(" �", id="compare-table-tooltip")], className="mb-3s"),
-        dbc.Button('선택 완료', id='select_done', n_clicks=0,),
+        dbc.Button('선택 완료', id='select_done', n_clicks=0, color="success"),
+        html.Div(id="guide-to-model-vs"),
         ], className="hstack gap-5 mb-3"),
-        dbc.Tooltip("비교할 실험을 선택해보세요!",
-                     target="compare-table-tooltip"),
+        dbc.Tooltip("비교할 실험을 선택하고 "
+                    "'선택 완료' 버튼을 "
+                    "눌러보세요!",
+                     target="compare-table-tooltip",
+                     className="w-auto"),
         dbc.Row([
             dbc.Col([
                 dag.AgGrid(
@@ -168,10 +172,6 @@ def plot_selected_table(n, seleceted_rows, exp_column):
                 dbc.Badge(row["experiment_name"], color="info", className="mt-3")
                 )
     return selects, seleceted_rows
-    return [dbc.Badge('선택한 실험 목록:', color="info", className="mt-3"),
-    ], seleceted_rows
-    return [html.H3('선택한 실험 목록: '),
-    html.Div( id='table-container')], seleceted_rows
 
 ## 선택한 실험에서 실험의 이름을 가져와서 model vs model page로 넘겨주기 (지금은 age로 임시방편)
 @callback(
@@ -198,3 +198,14 @@ def store_selected_exp_ids(data):
     for each in data:
         exp_ids.append(each['exp_id'])
     return exp_ids
+
+@callback(
+    Output("guide-to-model-vs", "children"),
+    Input('select_done', 'n_clicks'),
+    prevent_initial_update=True
+)
+def guide_to_model_vs(n):
+    if n == 0:
+        return None
+    return dbc.Alert("Model vs Model 페이지로 이동해보세요!", color="info", className="mb-0 mt-0"),
+    
