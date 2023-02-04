@@ -77,13 +77,12 @@ total_graph = html.Div([
     html.H1(children='Reranking', style={'text-align': 'center','font-weight': 'bold'}),
     html.Hr(),
     
-    html.Div(id='select_model'),
-    html.Div(id='select_model2'),
+    html.Div(id='reranked_graph'),
     
     html.H3('Total Metric'),
     dbc.Row([
       dbc.Col([
-          dcc.Graph(figure=fig_total, id='total_metric')
+          dcc.Graph(figure=fig_total, id='reranked_total_graph')
             ]),
             ])
                     ])
@@ -141,10 +140,15 @@ def print_selected_exp_name(n, exp_name):
     return exp_name
 
 @callback(
-    Output(),
-    Input(),
+    Output("reranked_graph", "children"),
+    Input("rerank_btn", "n_clicks"),
     State("selected_model_by_name", "value"),
     State("alpha", "value"),
     State("obj_funcs", "value"),
+    prevent_initial_update=False,
 )
-def plot_graph()
+def plot_graph(n, model_name, alpha, obj_funcs):
+    if n == 0:
+        PreventUpdate
+    return html.H3(str(f"{model_name}\n{alpha}\n{obj_funcs}"))
+    pass
