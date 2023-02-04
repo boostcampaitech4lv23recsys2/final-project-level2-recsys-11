@@ -40,42 +40,6 @@ total_metrics_users = None
 #     return quan_metric_df
 
 
-def plot_qual_metrics(df:pd.DataFrame):
-    # 모델간 정량, 정성 지표 plot (Compare Table에 있는 모든 정보들 활용)
-    metrics = list(df.columns[1:])
-    colors = ['#A56CC1', '#A6ACEC', '#63F5EF', '#425FEF'] # 사용자 입력으로 받을 수 있어야 함
-    
-    fig = go.Figure()
-
-    for i in df.index:
-        fig.add_bar(name=df['Name'][i], x=metrics, y=list(df.iloc[i,1:].apply(eval).apply(np.mean)), text=list(df.iloc[i,1:].apply(eval).apply(np.mean)), marker={'color' : colors[i]})
-        # .apply(eval)은 np.array나 list를 문자열로 인식할 때만 활용해주면 됨
-        # 아니면 TypeError: eval() arg 1 must be a string, bytes or code object 발생
-    fig.update_layout(
-        barmode='group',
-        bargap=0.15, # gap between bars of adjacent location coordinates.
-        bargroupgap=0.1, # gap between bars of the same location coordinate.)
-        title_text='Metric indicators'
-    )
-    fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
-
-    return fig
-
-
-def plot_dist_for_metrics(qual_df:pd.DataFrame, metric:str):
-    assert metric in qual_df.columns, 'Metric is not in the column'
-    hist_data = [eval(each)[0] for each in qual_df[metric]]
-    group_labels = qual_df['Name'].values
-    colors = ['#A56CC1', '#A6ACEC', '#63F5EF', '#425FEF'] # 사용자 입력으로 받을 수 있어야 함
-    # colors = qual_df['colors]
-    # Create distplot with curve_type set to 'normal'
-    fig = ff.create_distplot(hist_data, group_labels, colors=colors,
-                            bin_size=0.025, show_rug=True, curve_type='kde')
-
-    # Add title
-    fig.update_layout(title_text='Distribution of metrics')
-
-    return fig
 
 # 옵션으로 선택된 실험들을 불러옴
 # 불러온 실험들로 df를 제작함
@@ -141,8 +105,8 @@ def specific_metric():
                     labelClassName="btn btn-outline-primary",
                     labelCheckedClassName="active",
                     options=[
-                        {"label": "Qualitive", "value": 'Qual'},
-                        {"label": "Quantitive", "value": 'Quant'},
+                        {"label": "Qualitative", "value": 'Qual'},
+                        {"label": "Quantitative", "value": 'Quant'},
                     ],
                     value='Qual',
                 ),
@@ -276,7 +240,7 @@ def save_selected_exp_names(value, data):
         State('store_selected_exp','data')
         # prevent_initial_call=True
 )
-def plot_total_metrics(data, inp, state, store): # df:pd.DataFrame
+def plot_total_metrics(data, _, state, store): # df:pd.DataFrame
     if state == 0:
         return html.Div([]), dbc.Alert("Compare 버튼을 눌러 실험들의 지표를 확인해보세요!", color="info")
         # html.Div([
@@ -284,16 +248,15 @@ def plot_total_metrics(data, inp, state, store): # df:pd.DataFrame
         # ])
     else:
         # 모델간 정량, 정성 지표 plot (Compare Table에 있는 모든 정보들 활용)
-        print(total_metrics)
-        metrics = list(total_metrics.columns)
-        colors = ['#A56CC1', '#A6ACEC'] #, '#63F5EF', '#425FEF'] # 사용자 입력으로 받을 수 있어야 함
-        # print(store)
+        colors = ['#A56CC1', '#A6ACEC', '#63F5EF', '#425FEF'] # 사용자 입력으로 받을 수 있어야 함
         store_df = pd.DataFrame(store).set_index('experiment_name')
-        fig = go.Figure()
+        tmp_metrics = total_metrics.drop(['diversity_jac','serendipity_jac'], axis=1)
+        metrics = list(tmp_metrics.columns)
         # print('store data :',data)
+        fig = go.Figure()
         for i,exp_name in enumerate(data):
             exp_id = store_df.loc[exp_name, 'exp_id'] # exp_name에 맞는 exp_id 찾아주기
-            fig.add_bar(name=exp_name, x=metrics, y=list(total_metrics.loc[exp_id,:]), text=list(total_metrics.loc[exp_id,:]), marker={'color' : colors[i]})
+            fig.add_bar(name=exp_name, x=metrics, y=list(tmp_metrics.loc[exp_id,:]), text=list(tmp_metrics.loc[exp_id,:]), marker={'color' : colors[i]})
             # .apply(eval)은 np.array나 list를 문자열로 인식할 때만 활용해주면 됨
             # 아니면 TypeError: eval() arg 1 must be a string, bytes or code object 발생
         fig.update_layout(
@@ -314,22 +277,69 @@ def plot_total_metrics(data, inp, state, store): # df:pd.DataFrame
 )
 def load_metric_list(sort_of_metric:str) -> list:
     if sort_of_metric == 'Quant':
-        metric_list = ['Recall_k', 'NDCG', 'AP@K', 'AvgPopularity', 'TailPercentage']
+        metric_list = [
+            {'label': 'Recall_k', 'value' : 'recall'},
+            {'label':'NDCG', 'value':'ndcg'},
+            {'label':'AP@K', 'value':'map'},
+            {'label':'AvgPopularity', 'value':'avg_popularity'},
+            {'label':'TailPercentage', 'value':'tail_percentage'}
+            ]
     elif sort_of_metric == 'Qual':
-        metric_list = ['Diversity(jaccard)', 'Diversity(cosine)', 'Serendipity(jaccard)', 'Serendipity(PMI)', 'Novelty']
+        metric_list = [
+            {'label':'Diversity(jaccard)', 'value':'diversity_jac'},
+            {'label':'Diversity(cosine)', 'value':'diversity_cos'},
+            {'label':'Serendipity(jaccard)', 'value':'serendipity_jac'},
+            {'label':'Serendipity(PMI)', 'value':'serendipity_pmi'},
+            {'label':'Novelty', 'value':'novelty'},
+            ]
     return metric_list
 
 ### Qual or Quant 선택하면 metric bar plot 띄워주는 Callback
 @callback(
     Output('bar_fig', 'figure'),
+    State('store_selected_exp_names', 'data'),
     Input("sort_of_metric", 'value'),
+    State('store_selected_exp','data')
 )
-def plot_bar(sort_of_metric):
+def plot_bar(data, sort_of_metric, store):
+    store_df = pd.DataFrame(store).set_index('experiment_name')
+    colors = ['#A56CC1', '#A6ACEC', '#63F5EF', '#425FEF']
     if sort_of_metric == 'Qual':
-        fig = plot_qual_metrics(qual_metrics)
+        qual_metrics = total_metrics.iloc[:,6:]
+        metrics = list(qual_metrics.columns)
+
+        fig = go.Figure()
+        for i,exp_name in enumerate(data):
+            exp_id = store_df.loc[exp_name, 'exp_id'] # exp_name에 맞는 exp_id 찾아주기
+            fig.add_bar(name=exp_name, x=metrics, y=list(qual_metrics.loc[exp_id,:]), text=list(qual_metrics.loc[exp_id,:]), marker={'color' : colors[i]})
+
+        fig.update_layout(
+            barmode='group',
+            bargap=0.15, # gap between bars of adjacent location coordinates.
+            bargroupgap=0.1, # gap between bars of the same location coordinate.)
+            title_text='Specific Qualitative Metrics'
+        )
+        fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
         return fig
-    # elif sort_of_metric == 'Quant':
-    #     fig = plot_quant_metrics(quant_metrics)
+    
+    elif sort_of_metric == 'Quant':
+        quant_metrics = total_metrics.iloc[:,:6]
+        metrics = list(quant_metrics.columns)
+
+        fig = go.Figure()
+        for i,exp_name in enumerate(data):
+            exp_id = store_df.loc[exp_name, 'exp_id'] # exp_name에 맞는 exp_id 찾아주기
+            fig.add_bar(name=exp_name, x=metrics, y=list(quant_metrics.loc[exp_id,:]), text=list(quant_metrics.loc[exp_id,:]), marker={'color' : colors[i]})
+
+        fig.update_layout(
+            barmode='group',
+            bargap=0.15, # gap between bars of adjacent location coordinates.
+            bargroupgap=0.1, # gap between bars of the same location coordinate.)
+            title_text='Quantitative indicators'
+        )
+        fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
+        return fig
+    
     else:
         return html.Div([])
     
@@ -337,24 +347,34 @@ def plot_bar(sort_of_metric):
 ### 선택한 metric에 대한 dist plot을 띄워주는 callback
 @callback(
     Output('dist_fig', 'children'),
+    State('store_selected_exp_names', 'data'),
     Input("metric_list", 'value'),
 )
-def plot_dist(value):
-    if value in ['Diversity(jaccard)', 'Diversity(cosine)', 'Serendipity(jaccard)', 'Serendipity(PMI)', 'Novelty']:
-        fig = plot_dist_for_metrics(qual_metrics, value)
+def plot_dist(data, value):
+    # print(total_metrics_users['novelty'])
+    # print('value:', value)
+    colors = ['#A56CC1', '#A6ACEC', '#63F5EF', '#425FEF']
+    # print(pd.DataFrmae().from_dict(total_metrics_users, orient='tight')[value])
+    if value in ['diversity_jac', 'diversity_cos', 'serendipity_pmi', 'serendipity_jac', 'novelty']:
+        # print('HERHEHREHREHREHRHERHEHR:',data)
+        group_labels = data
+        colors = colors[:len(data)]
+        hist_data = total_metrics_users[value].values
+        fig = ff.create_distplot(hist_data, group_labels, colors=colors,
+                                bin_size=0.025, show_rug=True, curve_type='kde')
+
+
+        fig.update_layout(title_text=f'Distribution of {value}')
         return dcc.Graph(id = 'dist_fig', figure=fig)
-    # elif value in ['Recall_k', 'NDCG', 'AP@K', 'AvgPopularity', 'TailPercentage']:
-        # fig = plot_dist_for_metrics(quan_metrics, value)    
-        # return dcc.Graph(id = 'dist_fig', figure=fig)
+    
+    elif value in ['recall', 'ndcg', 'map', 'avg_popularity', 'tailpercentage']:
+        if value == 'map':
+            value = 'avg_precision'
+        group_labels = data
+        colors = colors[:len(data)]
+        hist_data = total_metrics_users[value].values
+        fig = ff.create_distplot(hist_data, group_labels, colors=colors,
+                                bin_size=0.025, show_rug=True, curve_type='kde')
+        return dcc.Graph(id = 'dist_fig', figure=fig)
     else:
         return html.Div([])
-    
-
-# ### Quant 지표 선택시 그림 그려지는 callback
-# @callback(
-#     Output('Quant_fig', 'figure'),
-#     Input('metric_list', 'options')
-# )
-# def plot_Quant_dist():
-#     fig = go.Figure()
-#     return fig
