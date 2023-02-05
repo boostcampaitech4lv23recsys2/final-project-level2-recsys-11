@@ -7,6 +7,7 @@ import numpy as np
 import plotly.express as px
 from dash_bootstrap_templates import load_figure_template
 from dash.exceptions import PreventUpdate
+
 # import feffery_antd_components as fac
 from . import global_component as gct
 from collections import Counter
@@ -239,7 +240,7 @@ def plot_occupation_counter(
     return fig
 
 
-header = html.Div(
+header_exp = html.Div(
     children=[
         dbc.Row(
             [
@@ -249,7 +250,12 @@ header = html.Div(
                     options=["exp1"],
                 ),
             ]
-        ),
+        )
+    ]
+)
+
+header_user_or_item = html.Div(
+    children=[
         dbc.Row(
             [
                 html.Div("해당 실험의 아이템, 유저 페이지"),
@@ -289,9 +295,13 @@ layout = html.Div(
         # test,
         html.Div(
             children=[
-                header,
-                html.Div(
-                    id="deep_analysis_page",
+                header_exp,
+                dbc.Spinner(header_user_or_item),
+                # 스피너로 묶었는데 생각대로 안 나옴
+                dbc.Spinner(
+                    html.Div(
+                        id="deep_analysis_page",
+                    ),
                 ),
             ],
             className="container",
@@ -1046,15 +1056,25 @@ def item_reset_selection(value):
     State("users_for_analysis", "data"),
     State("rerank_obj", "value"),
     State("rerank_alpha", "value"),
+    State("exp_id_for_deep_analysis", "value"),
+    State("store_user_state", "data"),
+    State("store_user_dataset", "data"),
     prevent_initial_call=True,
 )
-def draw_rerank(value, user_lst, obj, alpha):
+def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
     if value != 1:
         raise PreventUpdate
     else:
         tmp = user.loc[user_lst]
         # TODO: user_lst, obj, alpha를 통해 백엔드에 리랭킹 요청
-        params = {"user_lst": user_lst, "obj": obj, "alpha": alpha}
+        params = {
+            "user_lst": user_lst,
+            "obj": obj,
+            "alpha": alpha,
+            "ID": id,
+            "dataset": dataset,
+            "exp_id": exp_id,
+        }
         diff_metric, reranked_lst = requests.get(
             gct.API_URL + "/rerank_selected_users", params
         )
@@ -1201,14 +1221,14 @@ def draw_rerank(value, user_lst, obj, alpha):
             fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
 
             fig.add_annotation(
-                text=f"Total users num in this group : {len(users)}",
+                text=f"Total users num in this group : ",
                 x=0.5,
                 y=0.5,
                 font_size=20,
                 showarrow=False,
             )
             fig.update_layout(
-                title_text=f"age:{age}, gender:{gender}, occupation:{occupation} User group genre pie chart",
+                title_text=f"age:, gender:, occupation: User group genre pie chart",
                 width=1000,
                 height=800,
             )
