@@ -78,13 +78,6 @@ async def get_total_info(ID: str, dataset_name: str):
     return result
 
 
-@alru_cache(maxsize=5)
-async def get_total_reranked(ID:str, dataset_name:str, exp_names:Tuple[str]):
-    placeholders = ", ".join(["%s"] * len(exp_names))
-
-    connection = get_db_inst()
-
-
 # 웹포렉 라이브러리 로그인용
 async def check_token(token: str) -> Dict:
     conn2 = get_db_inst()
