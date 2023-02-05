@@ -20,32 +20,33 @@ total_metrics = None
 total_metrics_users = None
 
 sidebar = html.Div([
-        html.H3("Select Expriements",),
+        html.H3("실험 선택",),
         html.Hr(),
         html.Div(id='model_form', children=[]),
 
-        dbc.Button('➕', id='add_button', n_clicks=0, style={'position':'absolute', 'right':0, 'margin-right':'2rem'}),
-        dbc.Popover("Add a new expriement", trigger='hover', target='add_button', body=True),
-        dbc.Button('Compare!', id='compare_btn', n_clicks=0)
+        html.Div([
+            dbc.Button('➕', id='add_button', n_clicks=0, 
+                    #    style={'position':'absolute', 'right':0, 'margin-right':'2rem'}, 
+                    className="mt-1 me-5"),
+            dbc.Popover("Add a new expriement", trigger='hover', target='add_button', body=True),
+            dbc.Button('비교하기', id='compare_btn', n_clicks=0, 
+                    className="ms-5 mt-1 w-50"
+                    )
+        ], className="hstack gap-5")
     ],
     className='sidebar'
 )
 
 #### total metric 그래프 그릴 부분
 total_graph = html.Div([
-    html.Br(),
-    html.H1(children='Model vs Model', style={'text-align': 'center','font-weight': 'bold'}),
-    html.Hr(),
-
     html.Div(id='select_model2'),
-
-    html.H3('Total Metric'),
+    html.Div(id='total_metric'),
     dbc.Row([
         dbc.Col([
             html.Div([
-                html.Br(),
+                
             ]),
-            html.Div(id='total_metric')
+            # html.Div(id='total_metric')
             # dcc.Graph(id='total_metric') # html.Div(id='total_metric')
         ]),
     ])
@@ -54,7 +55,7 @@ total_graph = html.Div([
 #### 정량, 정성 지표 그래프 그릴 부분
 def specific_metric():
     specific_metric = html.Div([
-        html.H3('Specific Metric'),
+        html.H3('세부 지표 분석'),
         dbc.Row([
             dbc.Col([
                 dbc.RadioItems(
@@ -64,8 +65,8 @@ def specific_metric():
                     labelClassName="btn btn-outline-primary",
                     labelCheckedClassName="active",
                     options=[
-                        {"label": "Qualitative", "value": 'Qual'},
-                        {"label": "Quantitative", "value": 'Quant'},
+                        {"label": "정성 지표", "value": 'Qual'},
+                        {"label": "정량 지표", "value": 'Quant'},
                     ],
                     value='Qual',
                 ),
@@ -86,20 +87,23 @@ def specific_metric():
     return specific_metric
 
 
-layout = html.Div(children=[
-    gct.get_navbar(has_sidebar=False),
+layout = html.Div([html.Div(
+    [gct.get_navbar(has_sidebar=False),]),
     html.Div([
     sidebar,
+    html.Br(),
+    html.H1(children='Model vs Model', style={'font-weight': 'bold'}, ),
+    html.Hr(),
     total_graph,
     html.Div(id = 'specific_metric_children')
-    ]),
+    ], className="content"),
     html.Div(id='trash'),
     dcc.Store(id='store_selected_exp', storage_type='session'),
     dcc.Store(id='store_exp_names', storage_type='session'),
     dcc.Store(id='store_exp_ids', storage_type='session'),
     dcc.Store(id='store_selected_exp_names', data=[], storage_type='session')
 
-], className="content")
+])
 
 
 ### exp_ids가 들어오면 실험 정보들 return 하는 callback
@@ -118,6 +122,11 @@ def get_stored_selected_models(n, exp_ids:list[int]) -> pd.DataFrame:
     total_metrics_users = pd.DataFrame().from_dict(a['user_metrics'], orient='tight')
     return html.Div([])
 
+# @callback(
+#         Output(),
+#         Input("store_exp_names", "data")
+# )
+
 ### 어떤 실험을 고를지 select하는 dropdown을 보여주는 callback
 @callback(
     Output("model_form", "children"),
@@ -129,6 +138,8 @@ def get_stored_selected_models(n, exp_ids:list[int]) -> pd.DataFrame:
     [State("model_form", "children")],
 )
 def display_dropdowns(n_clicks, _, store_exp_names, children):
+    if store_exp_names == None:
+        raise PreventUpdate
     input_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
     if "index" in input_id:
         delete_chart = json.loads(input_id)["index"]
@@ -139,16 +150,16 @@ def display_dropdowns(n_clicks, _, store_exp_names, children):
         ]
     else:
         model_form = html.Div([
-                dbc.Button('➖', className='delete-btn', id={'type':'delete_btn', 'index':n_clicks}),
+                dbc.Button('➖', className='mb-3', id={'type':'delete_btn', 'index':n_clicks}),
                 # dbc.Popover("Delete this experiment", trigger='hover', target={'type':'delete_btn', 'index':ALL}, body=True), # 동적 컴포넌트에는 어떻게 적용해야 할지 모르겠음
                 dcc.Dropdown(
                     store_exp_names, id={'type':'selected_exp', 'index':n_clicks},
-                    placeholder="Select or Search experiment", optionHeight=50, # options=[{'label':'exp_name', 'value':'exp_id'}, ... ], # label은 보여지는거, value는 실제 어떤 데이터인지
+                    placeholder="실험을 선택하세요.", optionHeight=50, # options=[{'label':'exp_name', 'value':'exp_id'}, ... ], # label은 보여지는거, value는 실제 어떤 데이터인지
                 ),
                 html.Hr(),
-                html.P(id={'type':"exp's_hype", 'index':n_clicks}),
+                dcc.Markdown(id={'type':"exp's_hype", 'index':n_clicks}, dangerously_allow_html=True),
                 html.Br()
-            ], className='form-style')
+            ], className='form-style my-2')
         children.append(model_form)
     return children
 
@@ -169,7 +180,9 @@ def display_output(selected_dropdown:str, data) -> str: #
     exp_hype = tmp_df.loc[selected_dropdown,'hyperparameters']
     exp_hype = exp_hype[1:-1]
     exp_hype = exp_hype.split(',')
-    # exp_hype = "\n".join(exp_hype)
+    # TODO: 마크다운으로 리턴
+    
+    exp_hype = "<br>".join(exp_hype)
     return exp_hype
 
 ### selected_exp의 experiment_name을 저장
@@ -196,10 +209,8 @@ def save_selected_exp_names(value, data):
 )
 def plot_total_metrics(data, n, state, store): # df:pd.DataFrame
     if state == 0:
-        return html.Div([]), dbc.Alert("Compare 버튼을 눌러 실험들의 지표를 확인해보세요!", color="info")
-        # html.Div([
-        #     html.P("If you want to metric compare between selected models, Click Compare!"),
-        # ])
+        return html.Div([]), dbc.Alert(["왼쪽에서 모델을 선택하고 Compare 버튼을 눌러 실험들의 지표를 확인해보세요! ",html.Span("(2개 이상부터 가능합니다.)", className="fw-bold")], color="info", className="w-75")
+        
     else:
         # 모델간 정량, 정성 지표 plot (Compare Table에 있는 모든 정보들 활용)
         colors = ['#9771D0', '#D47DB2', '#5C1F47', '#304591', '#BAE8C8', '#ECEBC6', '#3D3D3D'] # 사용자 입력으로 받을 수 있어야 함
@@ -220,7 +231,7 @@ def plot_total_metrics(data, n, state, store): # df:pd.DataFrame
         )
         fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
 
-        return specific_metric(), dcc.Graph(figure=fig)  # id = 'total_metric'
+        return specific_metric(), [html.H3('전체 지표 정보'),dcc.Graph(figure=fig)]  # id = 'total_metric'
 
 
 ### metric lists를 보여주는 callback
@@ -318,7 +329,6 @@ def plot_dist(data, value):
         hist_data = total_metrics_users[value].values
         fig = ff.create_distplot(hist_data, group_labels, colors=colors,
                                 bin_size=0.025, show_rug=True, curve_type='kde')
-
 
         fig.update_layout(title_text=f'Distribution of {value}')
         return dcc.Graph(figure=fig)

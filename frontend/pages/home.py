@@ -71,8 +71,13 @@ problem_intro = html.Div([
 layout = html.Div([
     dbc.NavbarSimple([
         dbc.NavItem(dcc.Link(dbc.Button("시작하기!", className=" fs-6 mt-3 mb-4 m-0", color="light"),href="/login"),),
+<<<<<<< HEAD
         dbc.NavbarBrand("𝙒𝙚𝙗𝟰𝙍𝙚𝙘", class_name="fs-2text-center position-absolute top-50 start-50 translate-middle large-font")
         ], color="primary", className="navbar position-relative", sticky="top", brand="Web4Rec"),
+=======
+        dbc.NavbarBrand("𝙒𝙚𝙗𝟰𝙍𝙚𝙘", class_name="fs-2text-center position-absolute top-50 start-50 translate-middle")
+        ], color="primary", className=" sticky  ms-n5", sticky="top", brand="𝙒𝙚𝙗𝟰𝙍𝙚𝙘", dark=True),
+>>>>>>> MKDIR-157-model-vs-model-Design
     html.Div([
         html.Div([
             html.Div([
@@ -88,10 +93,8 @@ layout = html.Div([
             feature_compare_table,
             feature1,
             feature2,
-            dcc.Link(dbc.Button("시작하기!", className="position-absolute top-100 start-50 translate-middle w-25 fs-2 mt-3 mb-4 "), href="/login"),
-            html.Br(),
-            html.Br(),
+            dcc.Link(dbc.Button("시작하기!", className="position-absolute top-100 start-50 translate-middle w-25 fs-2 my-3 "), href="/login"),
             html.Br(className="h-25")
             ], className="container position-relative pb-4"),
-    ]),
+    ], className="my-5"),
 ])

@@ -11,8 +11,10 @@
   bottom: 0;
   width: var(--sidebar-width);
   padding : 2rem 1rem;
+  padding-top: 4rem;
   background-color: #f8f9fa;
   overflow: scroll;
+  /* margin-top: 4rem; */
 }
 /* 
 .login-from {
@@ -24,20 +26,21 @@
     margin-left: var(--sidebar-width);
     /* margin-right: 2rem; */
     padding: 2rem 1rem;
+    margin-top: 4rem;
 }
 
 .navbar {
-
-  /* margin-left: var(--sidebar-width); */
-  margin-left: -10rem;
-  height: 5rem;
+  margin-left: var(--sidebar-width);
+  /* margin-left: -10rem; */
+  height: 4rem; 
+  z-index: 1020;
   /* margin-right: 2rem; */
   /* padding: 2rem 1rem; */
 }
 
 .nosidebar-navbar {
   margin-left: 0;
-  height: 5rem;
+  /*height: 5rem; */
 }
 
 .delete-btn {
@@ -52,9 +55,9 @@
   #  'border-radius': 15,
   # 'align': 'center',
   */
-  margin-right: 0.5rem;
-  margin-bottom: 0.5rem;
-  text-anchor: middle;
+  /* margin-right: 0.5rem; */
+  /* margin-bottom: 0.5rem; */
+  /* text-anchor: middle; */
 }
 
 .form-style {
@@ -90,8 +93,11 @@
   margin-top: 5rem;
 }
 
-.logo-font {
-  font-family: "Brush Script MT", Cursive;
+.sticky {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  margin-bottom: 2rem;
 }
 
 .no-transform {

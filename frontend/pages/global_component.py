@@ -42,13 +42,16 @@ def get_navbar(has_sidebar=True):
                 in_navbar=True,
                 label="Settings",
             ),
-
         ],
         brand="𝙒𝙚𝙗𝟰𝙍𝙚𝙘",
-        brand_href="/compare-table",
+        brand_href="/",
         color="primary",
         dark=True,
-        className=classname
+        sticky="top",
+        className=classname + " p-0 sticky",
+    #     style={"position": "fixed",
+    #            "top": 0,
+    #            "width": "100%",}
     )
     return navbar
 
