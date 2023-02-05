@@ -11,7 +11,13 @@ import pandas as pd
 import numpy as np
 from functools import reduce
 
-from cruds.database import get_exp, get_df, get_total_info, inter_to_profile, get_total_reranked
+from cruds.database import (
+    get_exp,
+    get_df,
+    get_total_info,
+    inter_to_profile,
+    get_total_reranked,
+)
 from cruds.metrics import predicted_per_item, recall_per_user, get_metric_per_users
 from database.rds import get_db_dep
 from database.s3 import get_from_s3, s3_dict_to_pd, s3_to_pd
@@ -24,6 +30,7 @@ router = APIRouter(prefix="/frontend")
 
 #### PAGE 1
 ## Compare Table dataset
+
 
 @router.get("/get_exp_total", status_code=201)
 async def get_exp_total(ID: str, dataset_name: str):
@@ -92,7 +99,7 @@ async def selected_metrics(
             "diversity_jac",
             "serendipity_pmi",
             "serendipity_jac",
-            "novelty"
+            "novelty",
         ]
     ]
 
@@ -109,13 +116,16 @@ async def selected_metrics(
 #### PAGE 3
 ## Reranking
 
+
 @router.get("/reranked_exp")
-async def reranked_exp(ID: str, dataset_name: str, exp_names: Tuple[str] = Query(default=None)):
+async def reranked_exp(
+    ID: str, dataset_name: str, exp_names: Tuple[str] = Query(default=None)
+):
     exps = await get_total_reranked(ID, dataset_name, exp_names)
     reranked_pd = pd.DataFrame(exps)
-   
+
     model_info = reranked_pd[
-       [
+        [
             "experiment_name",
             "alpha",
             "objective_fn",
@@ -129,22 +139,23 @@ async def reranked_exp(ID: str, dataset_name: str, exp_names: Tuple[str] = Query
             "diversity_jac",
             "serendipity_pmi",
             "serendipity_jac",
-            "novelty"
-       ]
-   ] 
+            "novelty",
+        ]
+    ]
 
     user_metrics = await get_metric_per_users(reranked_pd)
 
     metrics = {
-       "model_info": model_info.to_dict(orient="tight"),
-       "user_metrics": user_metrics.to_dict(orient="tight")
-   }
+        "model_info": model_info.to_dict(orient="tight"),
+        "user_metrics": user_metrics.to_dict(orient="tight"),
+    }
 
     return metrics
 
 
 #### PAGE 4
 ##  Deep Analysis: User, Item
+
 
 @router.get("/user_info")
 async def user_info(ID: str, dataset_name: str, exp_id: int):
@@ -156,29 +167,37 @@ async def user_info(ID: str, dataset_name: str, exp_id: int):
 
     df_row = await get_df(ID, dataset_name)
     if df_row == None:
-        return {'msg': 'Dataset Not Found'}
+        return {"msg": "Dataset Not Found"}
 
     exp_row = await get_exp(exp_id)
     if exp_row == None:
-        return {'msg': 'Model Not Found'}
+        return {"msg": "Model Not Found"}
 
-    user_side = await s3_to_pd(key_hash=df_row['user_side'])
-    user_side_pd = user_side[['user_id', 'gender', 'age', 'occupation']]
-    user_profile_pd = await inter_to_profile(key_hash=df_row['train_interaction'], group_by='user_id', col='item_id')
+    user_side = await s3_to_pd(key_hash=df_row["user_side"])
+    user_side_pd = user_side[["user_id", "gender", "age", "occupation"]]
+    user_profile_pd = await inter_to_profile(
+        key_hash=df_row["train_interaction"], group_by="user_id", col="item_id"
+    )
 
-    pred_item_pd = await s3_to_pd(key_hash=exp_row['pred_items'])
+    pred_item_pd = await s3_to_pd(key_hash=exp_row["pred_items"])
 
-    user_tsne_pd = await s3_to_pd(key_hash=exp_row['user_tsne'])
-    user_tsne_pd = user_tsne_pd.rename(columns={'item_id':'user_id'})
+    user_tsne_pd = await s3_to_pd(key_hash=exp_row["user_tsne"])
+    user_tsne_pd = user_tsne_pd.rename(columns={"item_id": "user_id"})
     # pred_item_pd = pred_item_pd.rename_axis('user_id').reset_index()
     # user_tsne_pd = user_tsne_pd.rename_axis('user_id').reset_index()
 
-    recall_per_user_pd = await recall_per_user(key_hash=exp_row['metric_per_user'])
+    recall_per_user_pd = await recall_per_user(key_hash=exp_row["metric_per_user"])
 
-    dfs = [user_side_pd, user_profile_pd, pred_item_pd, user_tsne_pd, recall_per_user_pd]
-    user_merged = reduce(lambda left,right: pd.merge(left,right,on='user_id'), dfs)
+    dfs = [
+        user_side_pd,
+        user_profile_pd,
+        pred_item_pd,
+        user_tsne_pd,
+        recall_per_user_pd,
+    ]
+    user_merged = reduce(lambda left, right: pd.merge(left, right, on="user_id"), dfs)
 
-    return user_merged.to_dict(orient='tight')
+    return user_merged.to_dict(orient="tight")
 
 
 @router.get("/item_info")
@@ -212,7 +231,10 @@ async def item_info(ID: str, dataset_name: str, exp_id: int):
 
     dfs = [item_side_pd, item_profile_pd, item_rec_users_pd, item_tsne_pd]
     # print([i.describe() for i in dfs])
-    item_merged = reduce(lambda left, right: pd.merge(left, right, on="item_id"), dfs)
+    item_merged = reduce(
+        lambda left, right: pd.merge(left, right, on="item_id", how="outer"), dfs
+    )
+    item_merged = item_merged.fillna("")
 
     return item_merged.to_dict(orient="tight")
 
@@ -336,8 +358,9 @@ async def rerank_users(
     else:
         dist_mat = jac_dist
         
+    objective_fn = objective_fn if objective_fn == 'novelty' else objective_fn[:-5]
     rerank_predicts = await get_total_reranks(
-        mode=objective_fn[:-5],
+        mode=objective_fn,
         candidates=candidates,
         prediction_mat=pred_mat,
         distance_mat=dist_mat,

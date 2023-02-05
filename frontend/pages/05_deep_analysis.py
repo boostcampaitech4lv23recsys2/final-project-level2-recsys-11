@@ -7,6 +7,7 @@ import numpy as np
 import plotly.express as px
 from dash_bootstrap_templates import load_figure_template
 from dash.exceptions import PreventUpdate
+
 # import feffery_antd_components as fac
 from . import global_component as gct
 from collections import Counter
@@ -239,7 +240,7 @@ def plot_occupation_counter(
     return fig
 
 
-header = html.Div(
+header_exp = html.Div(
     children=[
         dbc.Row(
             [
@@ -249,7 +250,12 @@ header = html.Div(
                     options=["exp1"],
                 ),
             ]
-        ),
+        )
+    ]
+)
+
+header_user_or_item = html.Div(
+    children=[
         dbc.Row(
             [
                 html.Div("해당 실험의 아이템, 유저 페이지"),
@@ -289,12 +295,17 @@ layout = html.Div(
         # test,
         html.Div(
             children=[
-                header,
+                header_exp,
+                dbc.Spinner(header_user_or_item),
+                # 스피너로 묶었는데 생각대로 안 나옴
+                # dbc.Spinner(
                 html.Div(
                     id="deep_analysis_page",
                 ),
+                # ),
             ],
             className="container",
+            style={"margin-top": "4rem"} # navbar에 가려지는것 방지
         ),
         dcc.Store(id="trash"),  # 아무런 기능도 하지 않고, 그냥 콜백의 아웃풋 위치만 잡아주는 녀석
         dcc.Store(id="store_selected_exp"),
@@ -345,6 +356,7 @@ def choose_experiment(
 
     params = {"ID": vip["username"], "dataset_name": dataset_name, "exp_id": exp}
     # params = {"ID": 'mkdir', "dataset_name": 'ml-1m', "exp_id": 1}
+    # print(params)
     user = requests.get(gct.API_URL + "/frontend/user_info", params=params).json()
     # print(user)
     user = pd.DataFrame.from_dict(data=user, orient="tight")
@@ -362,9 +374,6 @@ def choose_experiment(
     ]
 
     user = user.set_index("user_id")
-    # print(user)
-    # print(user.loc[1]['recall'])
-    # print(type(user.loc[1]['recall']))
     item = requests.get(gct.API_URL + "/frontend/item_info", params=params).json()
     item = pd.DataFrame.from_dict(data=item, orient="tight")
     item.columns = [
@@ -378,6 +387,9 @@ def choose_experiment(
         "xs",
         "ys",
     ]
+    item["recommended_users"] = item["recommended_users"].apply(
+        lambda d: d if isinstance(d, list) else []
+    )
     item["release_year"] = item["release_year"].astype(np.int16)
     item = item.set_index("item_id")
     item["selected"] = 0
@@ -662,21 +674,38 @@ def prepare_analysis(val1, val2):
 def update_graph(store1):
     item["selected"] = "Not Selected"
     item.loc[store1, "selected"] = "Selected"
-    emb = px.scatter(
-        item,
-        x="xs",
-        y="ys",
-        color="selected",  # 갯수에 따라 색깔이 유동적인 것 같다..
-        opacity=0.9,
-        marginal_x="histogram",
-        marginal_y="histogram",
+
+    selected_item = item.loc[item["selected"] == "Selected"]
+    Notselected_item = item.loc[item["selected"] != "Selected"]
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Scatter(
+            x=Notselected_item["xs"],
+            y=Notselected_item["ys"],
+            name="Not selected",
+            marker_color="red",
+        )
     )
-    emb.update_layout(
-        clickmode="event+select",
-        width=700,
-        height=700,
+    fig.add_trace(
+        go.Scatter(
+            x=selected_item["xs"],
+            y=selected_item["ys"],
+            name="selected       ",
+            mode="markers",
+            marker_color="green",
+        )
     )
-    return emb
+    fig.add_trace(go.Scatter(x=[0], y=[0], name=" ", marker_color="white"))
+
+    fig.update_traces(mode="markers", opacity=0.6)
+    fig.update_layout(
+        title="Item embedding plot",
+        yaxis_zeroline=True,
+        xaxis_zeroline=False,
+        margin={},
+    )
+    return fig
 
 
 # 최근에 저장된 store 기준으로 사이드 그래프를 그림
@@ -843,6 +872,38 @@ def prepare_analysis(val1, val2):
 def update_graph(store1):
     user["selected"] = "Not Selected"
     user.loc[store1, "selected"] = "Selected"
+
+    selected_user = user.loc[user["selected"] == "Selected"]
+    Notselected_user = user.loc[user["selected"] != "Selected"]
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Scatter(
+            x=Notselected_user["xs"],
+            y=Notselected_user["ys"],
+            name="Not selected",
+            marker_color="red",
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=selected_user["xs"],
+            y=selected_user["ys"],
+            name="selected       ",
+            mode="markers",
+            marker_color="green",
+        )
+    )
+    fig.add_trace(go.Scatter(x=[0], y=[0], name=" ", marker_color="white"))
+
+    fig.update_traces(mode="markers", opacity=0.6)
+    fig.update_layout(
+        title="user embedding plot",
+        yaxis_zeroline=True,
+        xaxis_zeroline=False,
+        margin={},
+    )
+    return fig
     emb = px.scatter(
         user,
         x="xs",
@@ -1046,15 +1107,25 @@ def item_reset_selection(value):
     State("users_for_analysis", "data"),
     State("rerank_obj", "value"),
     State("rerank_alpha", "value"),
+    State("exp_id_for_deep_analysis", "value"),
+    State("store_user_state", "data"),
+    State("store_user_dataset", "data"),
     prevent_initial_call=True,
 )
-def draw_rerank(value, user_lst, obj, alpha):
+def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
     if value != 1:
         raise PreventUpdate
     else:
         tmp = user.loc[user_lst]
         # TODO: user_lst, obj, alpha를 통해 백엔드에 리랭킹 요청
-        params = {"user_lst": user_lst, "obj": obj, "alpha": alpha}
+        params = {
+            "user_lst": user_lst,
+            "obj": obj,
+            "alpha": alpha,
+            "ID": id,
+            "dataset": dataset,
+            "exp_id": exp_id,
+        }
         diff_metric, reranked_lst = requests.get(
             gct.API_URL + "/rerank_selected_users", params
         )
@@ -1201,14 +1272,14 @@ def draw_rerank(value, user_lst, obj, alpha):
             fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
 
             fig.add_annotation(
-                text=f"Total users num in this group : {len(users)}",
+                text=f"Total users num in this group : ",
                 x=0.5,
                 y=0.5,
                 font_size=20,
                 showarrow=False,
             )
             fig.update_layout(
-                title_text=f"age:{age}, gender:{gender}, occupation:{occupation} User group genre pie chart",
+                title_text=f"age:, gender:, occupation: User group genre pie chart",
                 width=1000,
                 height=800,
             )
