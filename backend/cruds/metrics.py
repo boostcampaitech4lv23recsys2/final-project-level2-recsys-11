@@ -181,7 +181,7 @@ def avg_metric(rows: Dict) -> Dict:
 
 async def predicted_per_item(pred_item_hash: str) -> pd.DataFrame:
     pred_item_pd = await s3_to_pd(pred_item_hash)
-    pred_item_pd = pred_item_pd.reset_index()
+    # pred_item_pd = pred_item_pd.reset_index()
     pred_item_pd.columns = ['rec_user', 'item_id']  ####### 나중에 수정
     predicted_per_item = pred_item_pd.explode('item_id').groupby('item_id').agg(list)
     return predicted_per_item
