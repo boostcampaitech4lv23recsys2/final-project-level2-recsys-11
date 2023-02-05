@@ -305,6 +305,7 @@ layout = html.Div(
                 # ),
             ],
             className="container",
+            style={"margin-top": "4rem"} # navbar에 가려지는것 방지
         ),
         dcc.Store(id="trash"),  # 아무런 기능도 하지 않고, 그냥 콜백의 아웃풋 위치만 잡아주는 녀석
         dcc.Store(id="store_selected_exp"),
