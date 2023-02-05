@@ -166,6 +166,9 @@ def display_dropdowns(n_clicks, _, store_exp_names, children):
     ],
 )
 def display_output(selected_dropdown:str, data) -> str: #
+    if selected_dropdown is None:
+        raise PreventUpdate
+    
     tmp_df = pd.DataFrame(data).set_index('experiment_name')
     exp_hype = tmp_df.loc[selected_dropdown,'hyperparameters']
     exp_hype = exp_hype[1:-1]
@@ -197,7 +200,7 @@ def save_selected_exp_names(value, data):
         State('store_selected_exp','data')
         # prevent_initial_call=True
 )
-def plot_total_metrics(data, _, state, store): # df:pd.DataFrame
+def plot_total_metrics(data, n, state, store): # df:pd.DataFrame
     if state == 0:
         return html.Div([]), dbc.Alert("왼쪽에서 모델을 선택하고 Compare 버튼을 눌러 실험들의 지표를 확인해보세요!", color="info", sclassName="w-auto")
         # html.Div([
@@ -333,6 +336,7 @@ def plot_dist(data, value):
         hist_data = total_metrics_users[value].values
         fig = ff.create_distplot(hist_data, group_labels, colors=colors,
                                 bin_size=0.025, show_rug=True, curve_type='kde')
+        fig.update_layout(title_text=f'Distribution of {value}')
         return dcc.Graph(figure=fig)
     else:
         return html.Div([])
