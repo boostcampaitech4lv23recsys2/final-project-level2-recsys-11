@@ -26,8 +26,11 @@ layout = html.Div([
         dcc.Markdown(
     '''
     ## 1. 정량지표와 정성지표란?
+
     - **정량지표**란 _Recall@K_, _NDCG@K_, _MAP@K_ 등 예측한 아이템과 실제 정답으로 계산된 지표로, 쉽게 말해 추천 모델이 얼마나 잘 맞혔는지 의미하는 지표입니다.
+
     - **정성지표**란 _Diversity_, _Serendipity_, _Novelty_와 같은 지표로, 예측한 아이템 혹은 추천된 아이템 리스트가 얼마나 참신하고 다양한, 새로운 아이템을 갖고 있는지 의미하는 지표입니다.
+    
     - 정량지표가 조금 낮더라도 정성지표값이 중요하다고 생각될 때는, 이러한 지표들간의 trade-off를 잘 살펴보면서 모델을 선택할 수도 있습니다.
     
     - **정량지표 수식**
@@ -46,20 +49,37 @@ layout = html.Div([
     
     - **정성지표 수식**
         - **objective function**
-            - _Diversity_
-            - _Serendipity_
-            - _Novelty_
-        - **dist function**
-            - _rating_
-            - _jaccard_
-            - _PMI_
-            - _latent_
+
+            $\\mathrm{Diversity(R)}=\\frac{\\sum_{i \\in R} \\sum_{j \\in R \\setminus \\{i\\} }  dist(i,j)}{|R|(|R|-1)}$
             
+            $\\mathrm{Serendipity(R,u)=\\frac{|R_unexp \\cap R_useful|}{|R|}}$
+            
+            $\\mathrm{Novelty(R)}=\\frac{\\sum_{i \\in R} - \\log_2 p(i)}{|R|}$ 
+        - **dist function**
+            - _rating (cosine)_ : interaction matrix를 이용한 함수입니다.
+            
+            $\\mathrm{dist(i,j)}=\\frac{1}{2} - \\frac{\\sum_{u \\in U}(r_{ui}-\\bar{r_i})}{2\\sqrt{\\sum_u \\in U (r_{ui}-\\bar{r_i}^2)}\\sqrt{\\sum_u \\in U (r_{uj}-\\bar{r_j}^2)}}$
+
+            - _jaccard_ : genre와 같은 item side information 등을 이용한 함수입니다.
+            
+            $\\mathrm{dist(i,j)}=1-\\frac{|L_i \\cap L_j|}{|L_i \\cup L_j|}$
+
+            - _PMI_ : interaction matrix를 이용한 함수입니다.
+            
+            $\\mathrm{dist(i,j)}=\\frac{\\log_2\\frac{p(i,j)}{p(i)p(j)}}{-\\log_2p(i,j)}$, $p(i)=\\frac{|\\{u \\in U, r_{ui} \\neq \\emptyset\\}|}{|U|}$, $p(i,j)=\\frac{|\\{u \\in U, r_{ui} \\neq \\emptyset \\wedge r_{uj} \\neq \\emptyset\\}|}{|U|}$
+
+        - reference : https://dl.acm.org/doi/abs/10.1145/2926720
+
     ## 2. Reranking이란?
 
     ## 3. Web4Rec Library란?
 
-    ## 4. Item vector와 t-sne는 어떻게 이루어지나요?
+    ### 성훈이형 여기에 써줘
+
+
+
+    ## 4. Item vector 추출과 t-sne는 어떻게 이루어지나요?
+
     - prediction matrix 만들기
         - 모든 모델에서 Item vector를 추출하기 위해서는 prediction matrix가 필요합니다. 
         - prediction matrix란, 모델이 모든 User별로 예측한 Item의 선호도 혹은 score를 의미합니다. 
