@@ -33,6 +33,7 @@ def get_navbar(has_sidebar=True):
             dbc.NavItem(dbc.NavLink('Model vs Model', href="/model-vs-model")),
             dbc.NavItem(dbc.NavLink('Reranking', href="/reranking")),
             dbc.NavItem(dbc.NavLink('Deep Analysis', href="/deep_analysis")),
+            dbc.NavItem(dbc.NavLink('FAQ', href="/FAQ")),
             dbc.DropdownMenu(
                 children=[
                     dbc.DropdownMenuItem("Get API Key", href="#"),
