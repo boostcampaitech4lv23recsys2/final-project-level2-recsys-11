@@ -15,13 +15,14 @@ async def insert_from_dict(row: Dict, table: str) -> Tuple:
     return query, tuple(row.values())
 
 
+
 # 유저가 등록되있는지 여부 확인
 async def check_user(ID: str) -> Dict:
     connection = get_db_inst()
 
     async with connection as conn:
         async with conn.cursor(cursor=DictCursor) as cur:
-            query = "SELECT ID FROM Users WHERE ID = %s"
+            query = "SELECT ID, token FROM Users WHERE ID = %s"
             await cur.execute(query, (ID,))
             result = await cur.fetchone()
     return result
@@ -81,6 +82,23 @@ async def get_total_info(ID: str, dataset_name: str):
 async def get_total_reranked(ID:str, dataset_name:str, exp_names:Tuple[str]):
     placeholders = ", ".join(["%s"] * len(exp_names))
 
+    connection = get_db_inst()
+
+
+# 웹포렉 라이브러리 로그인용
+async def check_token(token: str) -> Dict:
+    conn2 = get_db_inst()
+    
+    async with conn2 as conn:
+        async with conn.cursor(cursor=DictCursor) as cur:
+            query = "SELECT ID FROM Users WHERE token = %s"
+            await cur.execute(query, (token,))
+            result = await cur.fetchone()
+    return result
+
+@alru_cache(maxsize=5)
+async def get_total_reranked(ID: str, dataset_name: str, exp_names: Tuple[str]):
+    placeholders = ", ".join(["%s"] * len(exp_names))
     connection = get_db_inst()
     
     async with connection as conn:
