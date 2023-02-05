@@ -32,6 +32,18 @@ async def get_exp_total(ID: str, dataset_name: str):
 
     return total_exps_pd.to_dict(orient="tight")
 
+@router.get("/check_dataset", status_code=201)
+async def check_dataset(ID: str, connection=Depends(get_db_dep)) -> List:
+    async with connection as conn:
+        async with conn.cursor(cursor=DictCursor) as cur:
+            query = 'SELECT dataset_name FROM Datasets WHERE ID = %s'
+            await cur.execute(query, (ID,))
+            result = await cur.fetchall() 
+
+    if result:
+        return [row['dataset_name'] for row in result]
+    else:
+        return []
 
 #### PAGE 2
 ## Model vs. Model
@@ -150,10 +162,11 @@ async def user_info(ID: str, dataset_name: str, exp_id: int):
     user_profile_pd = await inter_to_profile(key_hash=df_row['train_interaction'], group_by='user_id', col='item_id')
 
     pred_item_pd = await s3_to_pd(key_hash=exp_row['pred_items'])
-    pred_item_pd = pred_item_pd.rename_axis('user_id').reset_index()
 
     user_tsne_pd = await s3_to_pd(key_hash=exp_row['user_tsne'])
-    user_tsne_pd = user_tsne_pd.rename_axis('user_id').reset_index()
+    user_tsne_pd = user_tsne_pd.rename(columns={'item_id':'user_id'})
+    # pred_item_pd = pred_item_pd.rename_axis('user_id').reset_index()
+    # user_tsne_pd = user_tsne_pd.rename_axis('user_id').reset_index()
 
     recall_per_user_pd = await recall_per_user(key_hash=exp_row['metric_per_user'])
 
@@ -190,9 +203,11 @@ async def item_info(ID: str, dataset_name: str, exp_id: int):
 
     item_rec_users_pd = await predicted_per_item(pred_item_hash=exp_row["pred_items"])
     item_tsne_pd = await s3_to_pd(key_hash=exp_row["item_tsne"])
-    item_tsne_pd = item_tsne_pd.rename_axis('item_id').reset_index()
+    # item_tsne_pd = item_tsne_pd.rename_axis('item_id').reset_index()
 
     dfs = [item_side_pd, item_profile_pd, item_rec_users_pd, item_tsne_pd]
+    # print([i.describe() for i in dfs])
     item_merged = reduce(lambda left, right: pd.merge(left, right, on="item_id"), dfs)
 
     return item_merged.to_dict(orient="tight")
+
