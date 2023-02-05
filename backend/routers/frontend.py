@@ -358,8 +358,9 @@ async def rerank_users(
     else:
         dist_mat = jac_dist
         
+    objective_fn = objective_fn if objective_fn == 'novelty' else objective_fn[:-5]
     rerank_predicts = await get_total_reranks(
-        mode=objective_fn[:-5],
+        mode=objective_fn,
         candidates=candidates,
         prediction_mat=pred_mat,
         distance_mat=dist_mat,
