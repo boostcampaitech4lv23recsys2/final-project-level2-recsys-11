@@ -18,6 +18,7 @@ dash.register_page(__name__, path='/reranking')
 
 rerank_total_metrics = None
 rerank_total_metrics_users = None
+SPECIFIC_PLOT_WIDTH = 500
 
 rerank_metric_option = [
     {'label':' Diversity(jaccard)', 'value':'diversity(jac)'},
@@ -80,7 +81,7 @@ model_form = html.Div([
 
 sidebar = html.Div(
     [
-        html.H3("Select Options",),
+        html.H3("옵션 선택", className="mt-3", style={"margin-bottom":25}),
         html.Hr(),
         html.Div(id='rerank_form', children=model_form),
         dbc.Button('Rerank!', id="rerank_btn", n_clicks=0, className="mt-3")
@@ -95,7 +96,7 @@ total_graph = html.Div([
     
     html.Div(id='reranked_graph'),
     
-    html.H3('Total Metric'),
+    
     dbc.Row([
         dbc.Col([
             html.Div([
@@ -108,30 +109,31 @@ total_graph = html.Div([
 
 def specific_metric():
     specific_metric = html.Div([
-        html.H3('Specific Metric'),
+        html.H3('세부 지표 분석'),
         dbc.Row([
             dbc.Col([
                 dbc.RadioItems(
                     id="rerank_sort_of_metric",
-                    className="btn-group",
+                    className="btn-group mb-2",
                     inputClassName="btn-check",
                     labelClassName="btn btn-outline-primary",
                     labelCheckedClassName="active",
                     options=[
-                        {"label": "Qualitative", "value": 'Qual'},
-                        {"label": "Quantitative", "value": 'Quant'},
+                        {"label": "정성 지표", "value": 'Qual'},
+                        {"label": "정량 지표", "value": 'Quant'},
                     ],
                     value='Qual',
+                    
                 ),
                 html.Br(),
-                dcc.Dropdown(id='rerank_metric_list')
+                dcc.Dropdown(id='rerank_metric_list', className="specific-metric")
                 ], width=3),
                 html.Br(),
                 html.Div([html.P(id="print_metric"),]),
-            dbc.Col([
+            html.Div([
                 dcc.Graph(id = 'rerank_bar_fig'), #figure=fig_qual
-                html.Div(id = 'rerank_dist_fig'),  # dcc.Graph(id = 'dist_fig')
-            ], width=8)
+                dbc.Col(dbc.Spinner(html.Div(id = 'rerank_dist_fig'), color="primary")),  # dcc.Graph(id = 'dist_fig')
+            ], className="hstack")
         ]),
 
         ],
@@ -250,11 +252,10 @@ def plot_total_metrics(data, n, obj_funcs, state, store): # df:pd.DataFrame
             barmode='group',
             bargap=0.15, # gap between bars of adjacent location coordinates.
             bargroupgap=0.1, # gap between bars of the same location coordinate.)
-            title_text='Metric indicators'
         )
         fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
 
-        return specific_metric(), dcc.Graph(figure=fig)  # id = 'total_metric'
+        return specific_metric(), [html.H3('전체 지표 정보'),dcc.Graph(figure=fig)]  # id = 'total_metric'
 
 
 ### metric lists를 보여주는 callback
@@ -306,7 +307,8 @@ def plot_bar(data, obj_funcs, sort_of_metric, store):
             barmode='group',
             bargap=0.15, # gap between bars of adjacent location coordinates.
             bargroupgap=0.1, # gap between bars of the same location coordinate.)
-            title_text='Specific Qualitative Metrics'
+            title_text='전체 정성 지표',
+            width = SPECIFIC_PLOT_WIDTH
         )
         fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
         return fig
@@ -325,7 +327,8 @@ def plot_bar(data, obj_funcs, sort_of_metric, store):
             barmode='group',
             bargap=0.15, # gap between bars of adjacent location coordinates.
             bargroupgap=0.1, # gap between bars of the same location coordinate.)
-            title_text='Quantitative indicators'
+            title_text='전체 정량 지표',
+            width=SPECIFIC_PLOT_WIDTH
         )
         fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
         return fig
@@ -358,8 +361,15 @@ def plot_dist(obj_funcs, value):
         fig = ff.create_distplot(np.array(hist_data), group_labels, colors=colors,
                                 bin_size=0.025, show_rug=True, curve_type='kde')
 
-
-        fig.update_layout(title_text=f'Distribution of {value}')
+        metric_list = {
+            "diversity_jac": "Diversity(jaccard)",
+            "diversity_cos": "Diversity(cosine)",
+            'serendipity_jac':'Serendipity(jaccard)',
+            'serendipity_pmi':'Serendipity(PMI)',
+            'novelty':'Novelty',
+            }
+        fig.update_layout(title_text=f'유저별 {metric_list[value]} 분포',
+                            width=SPECIFIC_PLOT_WIDTH)
         return dcc.Graph(figure=fig)
 
     elif value in ['recall', 'ndcg', 'map', 'avg_popularity', 'tail_percentage']:
@@ -370,7 +380,16 @@ def plot_dist(obj_funcs, value):
         hist_data = rerank_total_metrics_users.loc[obj_funcs, value].values
         fig = ff.create_distplot(hist_data, group_labels, colors=colors,
                                 bin_size=0.025, show_rug=True, curve_type='kde')
-        fig.update_layout(title_text=f'Distribution of {value}')
+
+        metric_list = {
+            'recall':'Recall@k',
+            "ndcg": "NDCG",
+            "avg_precision": "AP@K",
+            "avg_popularity":"AvgPopularity",
+            "tail_percentage":"TailPercentage"
+            }                                
+        fig.update_layout(title_text=f'유저별 {metric_list[value]} 분포',
+                          width=SPECIFIC_PLOT_WIDTH)
         return dcc.Graph(figure=fig)
     else:
         return html.Div([])

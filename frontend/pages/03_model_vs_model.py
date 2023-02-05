@@ -69,9 +69,10 @@ def specific_metric():
                         {"label": "정량 지표", "value": 'Quant'},
                     ],
                     value='Qual',
+                    
                 ),
                 html.Br(),
-                dcc.Dropdown(id='metric_list')
+                dcc.Dropdown(id='metric_list', className="specific-metric")
                 ], width=3),
                 html.Br(),
                 html.Div([html.P(id="print_metric"),]),
@@ -101,7 +102,7 @@ layout = html.Div([html.Div(
     html.Div([
     sidebar,
     html.Br(),
-    html.H1(children='Model vs Model', style={'font-weight': 'bold'}, ),
+    html.H1(children='Model vs Model', style={'text-align': 'center','font-weight': 'bold'}),
     html.Hr(),
     total_graph,
     html.Div(id = 'specific_metric_children')
