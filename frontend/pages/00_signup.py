@@ -19,7 +19,7 @@ dash.register_page(__name__, path='/signup')
 layout = html.Div([
 
     html.Br(),
-    html.H1('Web4Rec', style={
+    html.H1(gct.BRAND_LOGO, style={
                                 # 'padding': 10,
                                 'text-align': 'center'}),
     html.Hr(),
