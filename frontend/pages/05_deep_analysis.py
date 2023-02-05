@@ -122,7 +122,7 @@ def plot_age_counter(age_Counter_profile: Counter, age_Counter_rec: Counter):
         rows=1,
         cols=2,
         specs=[[{"type": "domain"}, {"type": "domain"}]],
-        subplot_titles=("Age rtio(profile)", "Age ratio(rec)"),
+        subplot_titles=("Age(profile)", "Age(rec)"),
     )
     fig.add_trace(
         go.Pie(
@@ -147,7 +147,7 @@ def plot_age_counter(age_Counter_profile: Counter, age_Counter_rec: Counter):
 
     fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
     fig.update_layout(
-        title_text="Selected Item profile vs Selected Item rec list (Age)",
+        # title_text="Selected Item profile vs Selected Item rec list (Age)",
         #     width=1000,
         #     height=500
     )
@@ -165,7 +165,7 @@ def plot_gender_counter(gender_Counter_profile: Counter, gender_Counter_rec: Cou
         rows=1,
         cols=2,
         specs=[[{"type": "domain"}, {"type": "domain"}]],
-        subplot_titles=("Gender ratio(profile)", "Gender ratio(rec)"),
+        subplot_titles=("Gender(profile)", "Gender(rec)"),
     )
     fig.add_trace(
         go.Pie(
@@ -189,7 +189,7 @@ def plot_gender_counter(gender_Counter_profile: Counter, gender_Counter_rec: Cou
     )
     fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
     fig.update_layout(
-        title_text="Selected Item profile vs Selected Item rec list (Gender)",
+        # title_text="Selected Item profile vs Selected Item rec list (Gender)",
         # width=1000,
         # height=500
     )
@@ -208,7 +208,7 @@ def plot_occupation_counter(
         rows=1,
         cols=2,
         specs=[[{"type": "domain"}, {"type": "domain"}]],
-        subplot_titles=("Occupation ratio(profile)", "Occupation ratio(rec)"),
+        subplot_titles=("Occupation(profile)", "Occupation(rec)"),
     )
     fig.add_trace(
         go.Pie(
@@ -232,7 +232,7 @@ def plot_occupation_counter(
     )
     fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
     fig.update_layout(
-        title_text="Selected Item profile vs Selected Item rec list (Occupation)",
+        # title_text="Selected Item profile vs Selected Item rec list (Occupation)",
         # width=1000,
         # height=500
     )
@@ -248,7 +248,7 @@ header_exp = html.Div(
     children=[
         dbc.Row(
             [
-                html.Div("선택하신 아이텝들입니다!"),
+                html.Div("선택하신 아이템들입니다!"),
                 dcc.Dropdown(
                     id="exp_id_for_deep_analysis",
                     options=["exp1"],
@@ -435,7 +435,7 @@ def display_overall(val, exp_id):
                             dbc.Col(
                                 html.Div(
                                     children=[
-                                        html.H3("옵션을 통한 선택"),
+                                        html.H6("옵션을 통한 선택"),
                                         html.P("장르"),
                                         dcc.Dropdown(
                                             options=uniq_genre,
@@ -487,7 +487,7 @@ def display_overall(val, exp_id):
                             dbc.Col(
                                 html.Div(
                                     children=[
-                                        html.H3("아이템 2차원 임베딩"),
+                                        html.H6("아이템 2차원 임베딩"),
                                         html.P("참고로 리랭킹 관련한 지원은 유저 페이지에서만 됩니다."),
                                         html.Br(),
                                         dcc.Graph(
@@ -500,7 +500,7 @@ def display_overall(val, exp_id):
                             dbc.Col(
                                 html.Div(
                                     children=[
-                                        html.H3("사이드인포"),
+                                        html.H6("사이드인포"),
                                         html.Div(id="item_side_graph"),
                                     ],
                                     style={"overflow": "scroll", "height": 700},
@@ -516,7 +516,7 @@ def display_overall(val, exp_id):
         else:
             option_age = html.Div(
                 children=[
-                    html.H3("옵션을 통한 선택"),
+                    html.H6("옵션을 통한 선택"),
                     html.P("연령대"),
                     dcc.Checklist(
                         options=sorted(user["age"].unique()),
@@ -591,7 +591,7 @@ def display_overall(val, exp_id):
                             dbc.Col(
                                 html.Div(
                                     children=[
-                                        html.H3("유저 2차원 임베딩"),
+                                        html.H6("유저 2차원 임베딩"),
                                         dcc.Graph(
                                             id="user_emb_graph",
                                             style={"config.responsive": True},
@@ -603,7 +603,7 @@ def display_overall(val, exp_id):
                             dbc.Col(
                                 html.Div(
                                     children=[
-                                        html.H3("사이드인포"),
+                                        html.H6("사이드인포"),
                                         html.Div(id="user_side_graph"),
                                     ],
                                     style={"overflow": "scroll", "height": 700},
@@ -804,7 +804,7 @@ def draw_item_related_users(value, data):
         )
 
         children = [
-            html.H3("유저 프로필, 유저 추천 리스트"),
+            html.H3("유저가 시청한 아이템, 유저에게 추천된 아이템 비교"),
             dbc.Row(
                 [
                     dbc.Col(age),
@@ -924,7 +924,7 @@ def update_graph(store1, store2):
             rows=1,
             cols=1,
             specs=[[{"type": "domain"}]],
-            subplot_titles=("Age ratio(profile)"),
+            subplot_titles=("Age(profile)"),
         )
         fig.add_trace(
             go.Pie(
@@ -1037,7 +1037,11 @@ def prepare_rerank(value):
         raise PreventUpdate
     else:
         tmp = [
-            html.P("Reranking Options  a *rel(i) + (1-a) * obj(i)"),
+            html.P("Reranking Options"),
+            dcc.Markdown(
+                """$$\\alpha \\cdot rel(i) + (1 - \\alpha) \\cdot obj(i)$$
+                """, mathjax=True
+            ),
             html.Br(),
             html.Div(
                 dbc.RadioItems(
@@ -1145,7 +1149,7 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
         # 첫번째 - 지표 변화
         sub = diff_metric.loc["rerank"] - diff_metric.loc["origin"]
 
-        print(len(tmp.loc["1", "pred_item"][:10]))
+        # print(len(tmp.loc["1", "pred_item"][:10]))
         # 두번째 - 아이템 포스터
         origin_item = set()
         rerank_item = set()
@@ -1155,7 +1159,7 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
             rerank_item |= set(tmp.loc[i, "reranked_item"])
             profile_item |= set(tmp.loc[i, "user_profile"])
         new_item = rerank_item - origin_item
-        print(new_item)
+        # print(new_item)
         pop = (
             item.loc[list(origin_item)]
             .sort_values(by=["len"], ascending=False)
@@ -1282,14 +1286,14 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
             fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
 
             fig.add_annotation(
-                text=f"Total users num in this group : ",
+                text=f"Total users num in this group : {len(tmp)}",
                 x=0.5,
                 y=0.5,
                 font_size=20,
                 showarrow=False,
             )
             fig.update_layout(
-                title_text=f"age:, gender:, occupation: User group genre pie chart",
+                # title_text=f"User group genre pie chart",
                 width=1000,
                 height=800,
             )
@@ -1298,7 +1302,7 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
 
         indicator = dbc.Row(
             children=[
-                html.P("지표 비교. 리랭킹했더니 지표가 어떻게 변화했는지 +-로"),
+                html.H3("리랭킹 후 지표 변화"),
                 html.Div(
                     children=[
                         dbc.Badge(
@@ -1312,7 +1316,7 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
         )
         item_poster = html.Div(
             children=[
-                html.H3("기존 많이 추천된 아이템 top 10"),
+                html.H3("리랭킹 전 많이 추천된 아이템 top 10"),
                 dbc.Row(children=pop_lst, style={"overflow": "scroll", "height": 500}),
                 html.H3("리랭킹 후 많이 추천된 아이템 top 10"),
                 dbc.Row(children=rer_lst, style={"overflow": "scroll", "height": 500}),
@@ -1322,7 +1326,7 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
         )
         item_side = dbc.Row(
             children=[
-                # 장르 파이차트에서 유저 프로파일 필요. 이외에는 사용되지 않음
+                html.H3("리랭킹 관련한 장르 분포"),
                 dcc.Graph(figure=plot_usergroup_genre(tmp)),
             ],
         )
