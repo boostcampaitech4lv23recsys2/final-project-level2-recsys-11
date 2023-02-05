@@ -122,6 +122,11 @@ def get_stored_selected_models(n, exp_ids:list[int]) -> pd.DataFrame:
     total_metrics_users = pd.DataFrame().from_dict(a['user_metrics'], orient='tight')
     return html.Div([])
 
+# @callback(
+#         Output(),
+#         Input("store_exp_names", "data")
+# )
+
 ### 어떤 실험을 고를지 select하는 dropdown을 보여주는 callback
 @callback(
     Output("model_form", "children"),
@@ -133,6 +138,8 @@ def get_stored_selected_models(n, exp_ids:list[int]) -> pd.DataFrame:
     [State("model_form", "children")],
 )
 def display_dropdowns(n_clicks, _, store_exp_names, children):
+    if store_exp_names == None:
+        raise PreventUpdate
     input_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
     if "index" in input_id:
         delete_chart = json.loads(input_id)["index"]

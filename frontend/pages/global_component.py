@@ -48,10 +48,10 @@ def get_navbar(has_sidebar=True):
         color="primary",
         dark=True,
         sticky="top",
-        className=classname + " p-0 ",
-        style={"position": "fixed",
-               "top": 0,
-               "width": "100%",}
+        className=classname + " p-0 sticky",
+    #     style={"position": "fixed",
+    #            "top": 0,
+    #            "width": "100%",}
     )
     return navbar
 
