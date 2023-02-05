@@ -32,6 +32,18 @@ async def get_exp_total(ID: str, dataset_name: str):
 
     return total_exps_pd.to_dict(orient="tight")
 
+@router.get("/check_dataset", status_code=201)
+async def check_dataset(ID: str, connection=Depends(get_db_dep)) -> List:
+    async with connection as conn:
+        async with conn.cursor(cursor=DictCursor) as cur:
+            query = 'SELECT dataset_name FROM Datasets WHERE ID = %s'
+            await cur.execute(query, (ID,))
+            result = await cur.fetchall() 
+
+    if result:
+        return [row['dataset_name'] for row in result]
+    else:
+        return []
 
 #### PAGE 2
 ## Model vs. Model

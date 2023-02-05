@@ -107,7 +107,7 @@ def test_request(n, user_state):
     params = {
         "ID": user_state["username"]
     }
-    response = requests.get(f"{gct.API_URL}/web4rec-lib/check_dataset", params=params)
+    response = requests.get(f"{gct.API_URL}/frontend/check_dataset", params=params)
     if response.status_code == 201:
         return response.json()
 
