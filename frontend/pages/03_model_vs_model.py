@@ -60,7 +60,7 @@ def specific_metric():
             dbc.Col([
                 dbc.RadioItems(
                     id="sort_of_metric",
-                    className="btn-group",
+                    className="btn-group mb-2",
                     inputClassName="btn-check",
                     labelClassName="btn btn-outline-primary",
                     labelCheckedClassName="active",
@@ -77,7 +77,7 @@ def specific_metric():
                 html.Div([html.P(id="print_metric"),]),
             html.Div([
                 dcc.Graph(id = 'bar_fig'),
-                dbc.Col(html.Div(id = 'dist_fig')),
+                dbc.Col(dbc.Spinner(html.Div(id = 'dist_fig'), color="primary")),
             ], className="hstack")
             # dbc.Col([
             #     dbc.Row([
@@ -361,14 +361,16 @@ def plot_dist(data, value, store):
             value = 'avg_precision'
         group_labels = data
         colors = colors[:len(data)]
+        # TODO: check recall, avg_precision
+        
         hist_data = total_metrics_users.loc[selected_id, value].values
         fig = ff.create_distplot(hist_data, group_labels, colors=colors,
                                 bin_size=0.025, show_rug=True, curve_type='kde')
         
         metric_list = {
-            'recalls':'Recall@k',
+            'recall':'Recall@k',
             "ndcg": "NDCG",
-            "map": "AP@K",
+            "avg_precision": "AP@K",
             "avg_popularity":"AvgPopularity",
             "tail_percentage":"TailPercentage"
             }
