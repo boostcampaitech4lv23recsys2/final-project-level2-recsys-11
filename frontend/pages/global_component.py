@@ -20,6 +20,8 @@ def get_login_setting():
 
 API_URL = 'http://127.0.0.1:30004'
 
+BRAND_LOGO = "𝙒𝙚𝙗𝟰𝙍𝙚𝙘"
+
 def get_navbar(has_sidebar=True):
     if has_sidebar:
         classname = "navbar"

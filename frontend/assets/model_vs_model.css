@@ -38,6 +38,20 @@
   /* padding: 2rem 1rem; */
 }
 
+.home-navbar {
+  margin-left: 0;
+  /* margin-left: -10rem; */
+  height: 4rem; 
+  z-index: 1020;
+  margin-bottom: 0;
+  /* margin-right: 2rem; */
+  /* padding: 2rem 1rem; */
+} 
+
+.custom-color {
+  color: #FAEBD7;
+}
+
 .nosidebar-navbar {
   margin-left: 0;
   /*height: 5rem; */
