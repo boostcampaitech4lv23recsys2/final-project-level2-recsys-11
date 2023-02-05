@@ -673,21 +673,38 @@ def prepare_analysis(val1, val2):
 def update_graph(store1):
     item["selected"] = "Not Selected"
     item.loc[store1, "selected"] = "Selected"
-    emb = px.scatter(
-        item,
-        x="xs",
-        y="ys",
-        color="selected",  # 갯수에 따라 색깔이 유동적인 것 같다..
-        opacity=0.9,
-        marginal_x="histogram",
-        marginal_y="histogram",
+
+    selected_item = item.loc[item["selected"] == "Selected"]
+    Notselected_item = item.loc[item["selected"] != "Selected"]
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Scatter(
+            x=Notselected_item["xs"],
+            y=Notselected_item["ys"],
+            name="Not selected",
+            marker_color="red",
+        )
     )
-    emb.update_layout(
-        clickmode="event+select",
-        width=700,
-        height=700,
+    fig.add_trace(
+        go.Scatter(
+            x=selected_item["xs"],
+            y=selected_item["ys"],
+            name="selected       ",
+            mode="markers",
+            marker_color="green",
+        )
     )
-    return emb
+    fig.add_trace(go.Scatter(x=[0], y=[0], name=" ", marker_color="white"))
+
+    fig.update_traces(mode="markers", opacity=0.6)
+    fig.update_layout(
+        title="Item embedding plot",
+        yaxis_zeroline=True,
+        xaxis_zeroline=False,
+        margin={},
+    )
+    return fig
 
 
 # 최근에 저장된 store 기준으로 사이드 그래프를 그림
@@ -854,6 +871,38 @@ def prepare_analysis(val1, val2):
 def update_graph(store1):
     user["selected"] = "Not Selected"
     user.loc[store1, "selected"] = "Selected"
+
+    selected_user = user.loc[user["selected"] == "Selected"]
+    Notselected_user = user.loc[user["selected"] != "Selected"]
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Scatter(
+            x=Notselected_user["xs"],
+            y=Notselected_user["ys"],
+            name="Not selected",
+            marker_color="red",
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=selected_user["xs"],
+            y=selected_user["ys"],
+            name="selected       ",
+            mode="markers",
+            marker_color="green",
+        )
+    )
+    fig.add_trace(go.Scatter(x=[0], y=[0], name=" ", marker_color="white"))
+
+    fig.update_traces(mode="markers", opacity=0.6)
+    fig.update_layout(
+        title="user embedding plot",
+        yaxis_zeroline=True,
+        xaxis_zeroline=False,
+        margin={},
+    )
+    return fig
     emb = px.scatter(
         user,
         x="xs",
