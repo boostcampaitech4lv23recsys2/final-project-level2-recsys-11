@@ -70,16 +70,20 @@ problem_intro = html.Div([
 ])
 layout = html.Div([
     dbc.NavbarSimple([
-        dbc.NavItem(dcc.Link(dbc.Button("시작하기!", className=" fs-6 mt-3 mb-4", color="light"),href="/login"),)
-], color="primary", className="navbar ", sticky="top", brand="𝙒𝙚𝙗𝟰𝙍𝙚𝙘",),
+        dbc.NavItem(dcc.Link(dbc.Button("시작하기!", className=" fs-6 mt-3 mb-4 m-0", color="light"),href="/login"),),
+        dbc.NavbarBrand("𝙒𝙚𝙗𝟰𝙍𝙚𝙘", class_name="fs-2text-center position-absolute top-50 start-50 translate-middle")
+        ], color="primary", className=" position-relative ms-n5", sticky="top", brand="𝙒𝙚𝙗𝟰𝙍𝙚𝙘", dark=True),
     html.Div([
         html.Div([
-            html.H1('𝙒𝙚𝙗𝟰𝙍𝙚𝙘', className="pt-4 pb-4 text-center fs-1"),
+            html.Div([
+            html.H1('💡 프로젝트 소개', className="pt-4 text-center fs-1 mx-auto"),
+            # dcc.Link(dbc.Button("시작하기!", className=" fs-6 mt-3 mb-4", color="light"),href="/login"),
+            ], className="hstack"),
             html.Hr(),
             
             problem_intro,
             
-            html.H4(['🔧 𝙒𝙚𝙗𝟰𝙍𝙚𝙘은 이를 해결할 수 있는 ', html.Span('실험 관리 툴', className="text-info"),'입니다.'], className="pt-4 pb-4 text-center fs-1"),
+            html.H4(['🔧 𝙒𝙚𝙗𝟰𝙍𝙚𝙘은 이를 해결할 수 있는 ', html.Span('실험 관리 툴', className="text-info"),'입니다.'], className="mt-5 pt-4 pb-4 text-center fs-1"),
             html.Hr(),
             feature_compare_table,
             feature1,

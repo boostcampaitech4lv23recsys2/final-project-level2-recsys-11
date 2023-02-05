@@ -5,13 +5,13 @@ from fastapi.responses import JSONResponse
 import json
 from starlette import status
 from schemas.user import UserCreate
-from typing import Dict, List
+from typing import Dict, Tuple, List
 
 import pandas as pd
 from functools import reduce
 
-from cruds.database import get_exp, get_df, get_total_info, inter_to_profile
-from cruds.metrics import predicted_per_item, recall_per_user
+from cruds.database import get_exp, get_df, get_total_info, inter_to_profile, get_total_reranked
+from cruds.metrics import predicted_per_item, recall_per_user, get_metric_per_users
 from database.rds import get_db_dep
 from database.s3 import get_from_s3, s3_dict_to_pd, s3_to_pd
 
@@ -19,7 +19,6 @@ router = APIRouter(prefix="/frontend")
 
 #### PAGE 1
 ## Compare Table dataset
-
 
 @router.get("/get_exp_total", status_code=201)
 async def get_exp_total(ID: str, dataset_name: str):
@@ -62,7 +61,7 @@ async def selected_metrics(
     ID: str, dataset_name: str, exp_ids: List[int] = Query(default=None)
 ):
     total_exps = await get_total_info(ID, dataset_name)  # cached
-    total_exps_pd = pd.DataFrame(total_exps).set_index("exp_id")
+    total_exps_pd = pd.DataFrame(total_exps).set_index("exp_id").loc[exp_ids]
 
     model_metrics = total_exps_pd[
         [
@@ -76,28 +75,59 @@ async def selected_metrics(
             "diversity_jac",
             "serendipity_pmi",
             "serendipity_jac",
-            "novelty",
+            "novelty"
         ]
-    ].loc[exp_ids]
-    user_metric_s3 = total_exps_pd.loc[exp_ids]['metric_per_user'].to_dict()
+    ]
 
-    index_id = list(user_metric_s3.keys())
+    user_metrics = await get_metric_per_users(total_exps_pd)
 
-    models = [await s3_to_pd(s3_loc) for s3_loc in user_metric_s3.values()]
-    user_metrics = pd.concat(models, axis=1).T
-    user_metrics.index = index_id
-
-    result = {
+    metrics = {
         "model_metrics": model_metrics.to_dict(orient="tight"),
         "user_metrics": user_metrics.to_dict(orient="tight"),
     }
 
-    return result
+    return metrics
+
+
+#### PAGE 3
+## Reranking
+
+@router.get("/reranked_exp")
+async def reranked_exp(ID: str, dataset_name: str, exp_names: Tuple[str] = Query(default=None)):
+    exps = await get_total_reranked(ID, dataset_name, exp_names)
+    reranked_pd = pd.DataFrame(exps)
+   
+    model_info = reranked_pd[
+       [
+            "experiment_name",
+            "alpha",
+            "objective_fn",
+            "recall",
+            "map",
+            "ndcg",
+            "tail_percentage",
+            "avg_popularity",
+            "coverage",
+            "diversity_cos",
+            "diversity_jac",
+            "serendipity_pmi",
+            "serendipity_jac",
+            "novelty"
+       ]
+   ] 
+
+    user_metrics = await get_metric_per_users(reranked_pd)
+
+    metrics = {
+       "model_info": model_info.to_dict(orient="tight"),
+       "user_metrics": user_metrics.to_dict(orient="tight")
+   }
+
+    return metrics
 
 
 #### PAGE 4
 ##  Deep Analysis: User, Item
-
 
 @router.get("/user_info")
 async def user_info(ID: str, dataset_name: str, exp_id: int):
@@ -132,7 +162,6 @@ async def user_info(ID: str, dataset_name: str, exp_id: int):
     user_merged = reduce(lambda left,right: pd.merge(left,right,on='user_id'), dfs)
 
     return user_merged.to_dict(orient='tight')
-
 
 
 @router.get("/item_info")

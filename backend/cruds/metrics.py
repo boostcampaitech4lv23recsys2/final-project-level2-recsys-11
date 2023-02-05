@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List
 import pandas as pd
 import numpy as np
 
@@ -196,3 +196,15 @@ async def recall_per_user(key_hash: str):
     recall_per_user_pd['user_id'] = recall_per_user_pd['user_id'].astype('object')
 
     return recall_per_user_pd
+
+
+async def get_metric_per_users(total_exps_pd: pd.DataFrame):
+    user_metric_s3 = total_exps_pd['metric_per_user'].to_dict()
+
+    index_id = list(user_metric_s3.keys())
+
+    models = [await s3_to_pd(s3_loc) for s3_loc in user_metric_s3.values()]
+    user_metrics = pd.concat(models, axis=1).T
+    user_metrics.index = index_id
+
+    return user_metrics
