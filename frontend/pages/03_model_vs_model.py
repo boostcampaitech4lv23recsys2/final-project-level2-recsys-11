@@ -28,7 +28,7 @@ sidebar = html.Div([
             dbc.Button('➕', id='add_button', n_clicks=0, 
                     #    style={'position':'absolute', 'right':0, 'margin-right':'2rem'}, 
                     className="mt-1 me-5"),
-            dbc.Popover("Add a new expriement", trigger='hover', target='add_button', body=True),
+            dbc.Popover("실험 추가하기", trigger='hover', target='add_button', body=True),
             dbc.Button('비교하기', id='compare_btn', n_clicks=0, 
                     className="ms-5 mt-1 w-50"
                     )
@@ -69,9 +69,10 @@ def specific_metric():
                         {"label": "정량 지표", "value": 'Quant'},
                     ],
                     value='Qual',
+                    
                 ),
                 html.Br(),
-                dcc.Dropdown(id='metric_list')
+                dcc.Dropdown(id='metric_list', className="specific-metric")
                 ], width=3),
                 html.Br(),
                 html.Div([html.P(id="print_metric"),]),
@@ -101,7 +102,7 @@ layout = html.Div([html.Div(
     html.Div([
     sidebar,
     html.Br(),
-    html.H1(children='Model vs Model', style={'font-weight': 'bold'}, ),
+    html.H1(children='Model vs Model', style={'text-align': 'center','font-weight': 'bold'}),
     html.Hr(),
     total_graph,
     html.Div(id = 'specific_metric_children')
@@ -218,7 +219,11 @@ def save_selected_exp_names(value, data):
 )
 def plot_total_metrics(data, n, state, store): # df:pd.DataFrame
     if state == 0:
-        return html.Div([]), dbc.Alert(["왼쪽에서 모델을 선택하고 '비교하기' 버튼을 눌러 실험들의 지표를 확인해보세요! ",html.Span("(2개 이상부터 가능합니다.)", className="fw-bold")], color="info", style={"width":"80%"})
+        return html.Div([]), dbc.Alert([
+                                        "왼쪽에서 모델을 선택하고 '비교하기' 버튼을 눌러 실험들의 지표를 확인해보세요! ",
+                                        # html.Span("(2개 이상부터 가능합니다.)", className="fw-bold")
+                                        ], 
+                                        color="info", style={"width":"80%"})
     else:
         # 모델간 정량, 정성 지표 plot (Compare Table에 있는 모든 정보들 활용)
         colors = ['#9771D0', '#D47DB2', '#5C1F47', '#304591', '#BAE8C8', '#ECEBC6', '#3D3D3D'] # 사용자 입력으로 받을 수 있어야 함

@@ -121,3 +121,7 @@
 .large-font {
   font-size: 40px;
 }
+
+.specific-metric {
+  width:210px;
+}
