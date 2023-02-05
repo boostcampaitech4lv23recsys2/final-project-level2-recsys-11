@@ -337,8 +337,6 @@ def plot_dist(data, value):
         group_labels = data
         colors = colors[:len(data)]
         hist_data = total_metrics_users[value].values
-        print(len(hist_data))
-        print(len(group_labels))
         fig = ff.create_distplot(hist_data, group_labels, colors=colors,
                                 bin_size=0.025, show_rug=True, curve_type='kde')
 
