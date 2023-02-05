@@ -61,7 +61,7 @@ async def inter_to_profile(key_hash: str, group_by: str, col: str) -> pd.DataFra
     return pd_profile
 
 
-@alru_cache(maxsize=3)
+@alru_cache(maxsize=5)
 async def get_total_info(ID: str, dataset_name: str):
     connection = get_db_inst()
 
@@ -74,6 +74,26 @@ async def get_total_info(ID: str, dataset_name: str):
             await cur.execute(query, (ID, dataset_name, 1))
             result = await cur.fetchall()
 
+    return result
+
+
+@alru_cache(maxsize=5)
+async def get_total_reranked(ID:str, dataset_name:str, exp_names:Tuple[str]):
+    placeholders = ", ".join(["%s"] * len(exp_names))
+
+    connection = get_db_inst()
+    
+    async with connection as conn:
+        async with conn.cursor(cursor=DictCursor) as cur:
+            query = "SELECT exp_id, experiment_name, alpha, objective_fn, hyperparameters, \
+                    recall, map, ndcg, tail_percentage, avg_popularity, coverage, \
+                    diversity_cos, diversity_jac, serendipity_pmi, serendipity_jac, novelty, \
+                    metric_per_user FROM Experiments \
+                    WHERE ID = %s AND dataset_name = %s \
+                    AND alpha != %s AND experiment_name IN ({})".format(placeholders)
+            await cur.execute(query, (ID, dataset_name, 1, *exp_names))
+            result = await cur.fetchall()
+            
     return result
 
 

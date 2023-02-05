@@ -1,25 +1,33 @@
 import dash
-from dash import html, dcc, callback, Input, Output, State,  MATCH, ALL
-import dash_bootstrap_components as dbc
-import requests
-import pandas as pd
-import plotly.express as px
-from dash.exceptions import PreventUpdate
-# import feffery_antd_components as fac
-from . import global_component as gct
 import json
 import copy
+import requests
+import numpy as np
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import plotly.figure_factory as ff
+import dash_bootstrap_components as dbc
 
+from dash import html, dcc, callback, Input, Output, State,  MATCH, ALL
+from dash_bootstrap_templates import load_figure_template
+from dash.exceptions import PreventUpdate
+from . import global_component as gct
+API_url = 'http://127.0.0.1:30004'
 dash.register_page(__name__, path='/reranking')
 
-exp_df = pd.DataFrame(columns = ['model','recall','ndcg','map','popularity','colors'])
+rerank_total_metrics = None
+rerank_total_metrics_users = None
 
-exp_df.loc[1,:] = ['M1',0.1084,0.0847,0.1011,0.0527,'red']
-exp_df.loc[2,:] = ['M2',0.1124,0.0777,0.1217,0.0781,'green']
-exp_df.loc[3,:] = ['M3',0.1515,0.1022,0.1195,0.0999,'blue']
-exp_df.loc[4,:] = ['M4',0.0917,0.0698,0.0987,0.0315,'goldenrod']
+rerank_metric_option = [
+    {'label':'Diversity(jaccard)', 'value':'diversity_jac'},
+    {'label':'Diversity(cosine)', 'value':'diversity_cos'},
+    {'label':'Serendipity(jaccard)', 'value':'serendipity_jac'},
+    {'label':'Serendipity(PMI)', 'value':'serendipity_pmi'},
+    {'label':'Novelty', 'value':'novelty'},
+]
 
-metric_list = [
+rerank_metric_list = [
     'Diversity(jaccard)',
     'Diversity(cosine)',
     'Serendipity(jaccard)',
@@ -27,13 +35,9 @@ metric_list = [
     'Novelty',
 ]
 
-fig_total = px.bar(
-            exp_df,
-            x = 'model',
-            y ='recall',
-            color = 'model',
-            color_discrete_sequence=exp_df['colors'].values
-            )
+
+
+### alpha 선택하는 부분, radio
 alpha_radio = html.Div([
     dbc.RadioItems(
             id="alpha",
@@ -43,28 +47,29 @@ alpha_radio = html.Div([
             labelCheckedClassName="active",
             options=[
                 {"label": "0.5", "value": 0.5},
-                {"label": "1", "value": 1},
+                {"label": "1", "value": 1},  # 사용자가 지정한 alpha로 지정
             ],
-            value=1,
+            value=0.5,
                         ),
-], className="radio-group ",)
+], className="radio-group")
+
 model_form = html.Div([
-    html.H6("Select experiment"),
+    html.H6("Select Experiment"),
     dcc.Dropdown(id="selected_model_by_name"),
             html.Hr(),
             html.H6("Alpha: "),
             # html.P('Alpha:', className="p-0 m-0"),
             alpha_radio,
-               html.H6("Select objective function with distance function"),
+               html.H6("Select objective function(distance function)"),
     dcc.Checklist(
-    metric_list,
-    metric_list,
+        options = rerank_metric_option,
+        value= rerank_metric_list,
     id="obj_funcs",)
 ], className='form-style')
 
 sidebar = html.Div(
     [
-        html.H3("Select options",),
+        html.H3("Select Options",),
         html.Hr(),
         html.Div(id='rerank_form', children=model_form),
         dbc.Button('Rerank!', id="rerank_btn", n_clicks=0, className="mt-3")
@@ -81,39 +86,47 @@ total_graph = html.Div([
     
     html.H3('Total Metric'),
     dbc.Row([
-      dbc.Col([
-          dcc.Graph(figure=fig_total, id='reranked_total_graph')
+        dbc.Col([
+            html.Div([
+                html.Br(),
             ]),
-            ])
-                    ])
+            html.Div(id='rerank_total_metric')
+            ]),
+        ])
+     ])
 
-specific_metric = html.Div([
-    html.H3('Specific Metric'),
-    dbc.Row([
-        dbc.Col([
-            dbc.RadioItems(
-            id="sort_of_metric",
-            className="btn-group",
-            inputClassName="btn-check",
-            labelClassName="btn btn-outline-primary",
-            labelCheckedClassName="active",
-            options=[
-                {"label": "Qualitive", "value": 'Qual'},
-                {"label": "Quantitive", "value": 'Quant'},
-            ],
-            value='Qual',
-                        ),
-            html.Br(),
-            dcc.Dropdown(options=['123', '12342'], id='metric_list')
-            ], width=2),
-        dbc.Col([
-            dcc.Graph(figure=fig_total),
-            dcc.Graph(figure=fig_total),
-        ], width=8)
-    ]),
-    ],
-    className="radio-group", 
-)
+def specific_metric():
+    specific_metric = html.Div([
+        html.H3('Specific Metric'),
+        dbc.Row([
+            dbc.Col([
+                dbc.RadioItems(
+                    id="rerank_sort_of_metric",
+                    className="btn-group",
+                    inputClassName="btn-check",
+                    labelClassName="btn btn-outline-primary",
+                    labelCheckedClassName="active",
+                    options=[
+                        {"label": "Qualitative", "value": 'Qual'},
+                        {"label": "Quantitative", "value": 'Quant'},
+                    ],
+                    value='Qual',
+                ),
+                html.Br(),
+                dcc.Dropdown(id='rerank_metric_list')
+                ], width=3),
+                html.Br(),
+                html.Div([html.P(id="print_metric"),]),
+            dbc.Col([
+                dcc.Graph(id = 'rerank_bar_fig'), #figure=fig_qual
+                html.Div(id = 'rerank_dist_fig'),  # dcc.Graph(id = 'dist_fig')
+            ], width=8)
+        ]),
+
+        ],
+        className="radio-group",
+    )
+    return specific_metric
 
 
 layout = html.Div(children=[
@@ -121,12 +134,19 @@ layout = html.Div(children=[
     html.Div([
     sidebar,
     total_graph,
-    specific_metric,
+    html.Div(id = 'rerank_specific_metric_children')
+    ]),
+    html.Div(id='trash2'),
+    dcc.Store(id='store_selected_exp', storage_type='session'),
     dcc.Store(id='store_exp_names', storage_type="session"),
-    ])
+    dcc.Store(id='store_exp_ids', storage_type='session'),
+    dcc.Store(id='store_selected_exp_names', data=[], storage_type='session')
+
 ], className="content")
 
 
+
+### 어떤 실험이 선택 가능한지 store에서 가져옴 (실험의 이름으로)
 @callback(
     Output("selected_model_by_name", "options"),
     Input("rerank_btn", "n_clicks"),
@@ -139,16 +159,196 @@ def print_selected_exp_name(n, exp_name):
     exp_name = list(set(exp_name))
     return exp_name
 
+### exp_names가 들어오면 실험 정보들 return 하는 callback
 @callback(
-    Output("reranked_graph", "children"),
-    Input("rerank_btn", "n_clicks"),
-    State("selected_model_by_name", "value"),
-    State("alpha", "value"),
-    State("obj_funcs", "value"),
-    prevent_initial_update=False,
+    Output('trash2', 'children'),
+    # Input('rerank_btn', 'n_clicks'),
+    Input('selected_model_by_name', 'value')
 )
-def plot_graph(n, model_name, alpha, obj_funcs):
-    if n == 0:
-        PreventUpdate
-    return html.H3(str(f"{model_name}\n{alpha}\n{obj_funcs}"))
-    pass
+def get_stored_selected_models(exp_names:str) -> pd.DataFrame:
+    if exp_names is None:
+        raise PreventUpdate
+    
+    global rerank_total_metrics
+    global rerank_total_metrics_users
+    params = {'ID':'mkdir', 'dataset_name':'ml-1m', 'exp_names': [exp_names]}
+    response = requests.get(API_url + '/frontend/reranked_exp', params = params)
+    a = response.json()
+
+    rerank_total_metrics = pd.DataFrame().from_dict(a['model_info'], orient='tight')
+    rerank_total_metrics = rerank_total_metrics.set_index('objective_fn')
+    # print(rerank_total_metrics)
+    rerank_total_metrics_users = pd.DataFrame().from_dict(a['user_metrics'], orient='tight')
+    rerank_total_metrics_users.index = rerank_total_metrics.index
+    # print(rerank_total_metrics_users)
+    return html.Div([])
+
+# @callback(
+#     Output("reranked_graph", "children"),
+#     Input("rerank_btn", "n_clicks"),
+#     State("selected_model_by_name", "value"),
+#     State("alpha", "value"),
+#     State("obj_funcs", "value"),
+#     prevent_initial_update=False,
+# )
+# def plot_graph(n, model_name, alpha, obj_funcs):
+#     if n == 0:
+#         raise PreventUpdate
+#     return html.H3(str(f"{model_name}\n{alpha}\n{obj_funcs}"))
+    
+
+### rerank! 버튼을 누르면 plot을 그려주는 callback
+@callback(  # compare 버튼 누름
+        Output('rerank_specific_metric_children', 'children'),
+        Output('rerank_total_metric', 'children'),
+        Input('store_selected_exp_names', 'data'),
+        Input('rerank_btn', 'n_clicks'),
+        State('rerank_btn', 'n_clicks'),
+        State('store_selected_exp','data')
+        # prevent_initial_call=True
+)
+def plot_total_metrics(data, n, state, store): # df:pd.DataFrame
+    if state == 0:
+        return html.Div([]), dbc.Alert("Rerank 버튼을 눌러 리랭킹 된 실험들의 지표를 확인해보세요!", color="info")
+        # html.Div([
+        #     html.P("If you want to metric compare between selected models, Click Compare!"),
+        # ])
+    else:
+        # 모델간 정량, 정성 지표 plot (Compare Table에 있는 모든 정보들 활용)
+        colors = ['#9771D0', '#D47DB2', '#5C1F47', '#304591', '#BAE8C8', '#ECEBC6', '#3D3D3D'] # 사용자 입력으로 받을 수 있어야 함
+        store_df = pd.DataFrame(store).set_index('experiment_name')
+        # print(rerank_total_metrics)
+        tmp_metrics = rerank_total_metrics.drop(['experiment_name', 'alpha', 'diversity_jac','serendipity_jac'], axis=1)
+        metrics = list(tmp_metrics.columns)
+        fig = go.Figure()
+        for i,obj_fn in enumerate(rerank_total_metrics.index):  # data
+            # exp_id = store_df.loc[exp_name, 'exp_id'] # exp_name에 맞는 exp_id 찾아주기
+            fig.add_bar(name=obj_fn, x=metrics, y=list(tmp_metrics.loc[obj_fn,:]), text=list(tmp_metrics.loc[obj_fn,:]), marker={'color' : colors[i]})
+            # .apply(eval)은 np.array나 list를 문자열로 인식할 때만 활용해주면 됨
+            # 아니면 TypeError: eval() arg 1 must be a string, bytes or code object 발생
+        fig.update_layout(
+            barmode='group',
+            bargap=0.15, # gap between bars of adjacent location coordinates.
+            bargroupgap=0.1, # gap between bars of the same location coordinate.)
+            title_text='Metric indicators'
+        )
+        fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
+
+        return specific_metric(), dcc.Graph(figure=fig)  # id = 'total_metric'
+
+
+### metric lists를 보여주는 callback
+@callback(
+    Output('rerank_metric_list', 'options'),
+    Input('rerank_sort_of_metric', 'value'),
+)
+def load_metric_list(sort_of_metric:str) -> list:
+    if sort_of_metric == 'Quant':
+        metric_list = [
+            {'label': 'Recall_k', 'value' : 'recall'},
+            {'label':'NDCG', 'value':'ndcg'},
+            {'label':'AP@K', 'value':'map'},
+            {'label':'AvgPopularity', 'value':'avg_popularity'},
+            {'label':'TailPercentage', 'value':'tail_percentage'}
+            ]
+    elif sort_of_metric == 'Qual':
+        metric_list = [
+            {'label':'Diversity(jaccard)', 'value':'diversity_jac'},
+            {'label':'Diversity(cosine)', 'value':'diversity_cos'},
+            {'label':'Serendipity(jaccard)', 'value':'serendipity_jac'},
+            {'label':'Serendipity(PMI)', 'value':'serendipity_pmi'},
+            {'label':'Novelty', 'value':'novelty'},
+            ]
+    return metric_list
+
+@callback(
+    Output('rerank_bar_fig', 'figure'),
+    State('store_selected_exp_names', 'data'),
+    Input("rerank_sort_of_metric", 'value'),
+    State('store_selected_exp','data')
+)
+def plot_bar(data, sort_of_metric, store):
+    store_df = pd.DataFrame(store).set_index('experiment_name')
+    colors = ['#9771D0', '#D47DB2', '#5C1F47', '#304591', '#BAE8C8', '#ECEBC6', '#3D3D3D']
+    if sort_of_metric == 'Qual':
+        qual_metrics = rerank_total_metrics.iloc[:,8:]
+        metrics = list(qual_metrics.columns)
+
+        fig = go.Figure()
+        for i,obj_fn in enumerate(rerank_total_metrics.index):  # data
+            # exp_id = store_df.loc[exp_name, 'exp_id'] # exp_name에 맞는 exp_id 찾아주기
+            fig.add_bar(name=obj_fn, x=metrics, y=list(qual_metrics.loc[obj_fn,:]), text=list(qual_metrics.loc[obj_fn,:]), marker={'color' : colors[i]})
+
+        fig.update_layout(
+            barmode='group',
+            bargap=0.15, # gap between bars of adjacent location coordinates.
+            bargroupgap=0.1, # gap between bars of the same location coordinate.)
+            title_text='Specific Qualitative Metrics'
+        )
+        fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
+        return fig
+
+    elif sort_of_metric == 'Quant':
+        quant_metrics = rerank_total_metrics.iloc[:,2:8]
+        metrics = list(quant_metrics.columns)
+
+        fig = go.Figure()
+        for i,obj_fn in enumerate(rerank_total_metrics.index):  # data
+            # exp_id = store_df.loc[exp_name, 'exp_id'] # exp_name에 맞는 exp_id 찾아주기
+            fig.add_bar(name=obj_fn, x=metrics, y=list(quant_metrics.loc[obj_fn,:]), text=list(quant_metrics.loc[obj_fn,:]), marker={'color' : colors[i]})
+
+        fig.update_layout(
+            barmode='group',
+            bargap=0.15, # gap between bars of adjacent location coordinates.
+            bargroupgap=0.1, # gap between bars of the same location coordinate.)
+            title_text='Quantitative indicators'
+        )
+        fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
+        return fig
+
+    else:
+        return html.Div([])
+
+# ### 선택한 metric 뭔지 보여주는 test callback
+# @callback(
+#     Output('print_metric', 'children'),
+#     Input("metric_list", 'value'),
+# )
+# def print_metric(value):
+#     return f'user selection : {value}'
+
+### 선택한 metric에 대한 dist plot을 띄워주는 callback
+@callback(
+    Output('rerank_dist_fig', 'children'),
+    State('store_selected_exp_names', 'data'),
+    Input("rerank_metric_list", 'value'),
+)
+def plot_dist(data, value):
+    colors = ['#9771D0', '#D47DB2', '#5C1F47s', '#304591', '#BAE8C8', '#ECEBC6', '#3D3D3D']
+    if value in ['diversity_jac', 'diversity_cos', 'serendipity_pmi', 'serendipity_jac', 'novelty']:
+        group_labels = data
+        colors = colors[:len(data)]
+        hist_data = rerank_total_metrics_users[value].values
+        print(type(hist_data))
+        print(hist_data.reshape(5,-1).shape)
+        print(np.array(hist_data).shape)
+        print(len(hist_data[0]))
+        fig = ff.create_distplot(np.array(hist_data), group_labels, colors=colors,
+                                bin_size=0.025, show_rug=True, curve_type='kde')
+
+
+        fig.update_layout(title_text=f'Distribution of {value}')
+        return dcc.Graph(figure=fig)
+
+    elif value in ['recall', 'ndcg', 'map', 'avg_popularity', 'tail_percentage']:
+        if value == 'map':
+            value = 'avg_precision'
+        group_labels = data
+        colors = colors[:len(data)]
+        hist_data = rerank_total_metrics_users[value].values
+        fig = ff.create_distplot(hist_data, group_labels, colors=colors,
+                                bin_size=0.025, show_rug=True, curve_type='kde')
+        fig.update_layout(title_text=f'Distribution of {value}')
+        return dcc.Graph(figure=fig)
+    else:
+        return html.Div([])
