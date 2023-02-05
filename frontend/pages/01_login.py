@@ -14,44 +14,55 @@ salt_value = gct.get_login_setting()['SALT']
 dash.register_page(__name__, path='/login')
 
 layout =  html.Div([
+        # html.Br(),
+        # html.Br(),
+        # html.Br(),
+        # html.Br(),
+        html.Br(),
+   
         html.H1('Web4Rec', style={
                                 # 'padding': 10,
                                 'text-align': 'center'}),
+        html.Hr(),
         html.Br(),
+        html.H5('로그인', style={'text-align': 'center'}),
+        html.Hr(style={'width': '50%', 'margin-left': '25%'}),
         dcc.Location(id='url_login', refresh=True)
-            , html.H5('''Please sign-in to continue:''', id='h1')
-            , dbc.Input(placeholder='Enter your username',
+            # html.H5('''가입한 아이디로 로그인 해주세요''', id='h1')
+            , html.Br() 
+            , dbc.Input(placeholder='아이디',
                     type='text',
                     id='uname-box',
                     className='login-form'),
             html.Br()
-            , dbc.Input(placeholder='Enter your password',
+            , dbc.Input(placeholder='비밀번호',
                     type='password',
                     id='pwd-box',
                     className='login-form'),
             html.Br(),
             dbc.Row([
                     dbc.Col([
-                dbc.Button(children='Sign-in',
-                    n_clicks=0,
-                    type='submit',
-                    id='login-button',
-                #     style={'margin':10},
-                ),
-             html.Div(children='', id='output-state')]),
-                     dbc.Col(
+                        dbc.Button(children='로그인',
+                                n_clicks=0,
+                                type='submit',
+                                id='login-button',
+                                className='w-100'
+                #   style={'margin':10},
+                                ),
+                        html.Div(children='', id='output-state')]),
+                    dbc.Col(
                         dcc.Link(
-                        children=dbc.Button(children='Sign-up',
+                        children=dbc.Button(children='회원가입', className='w-100', color="secondary"
                                 #      style={'margin':10}
                 ),
-                    href='/signup'
+                    href='/signup',
             )),
             ]),
             html.Div(id='login-value')
 
         ],
         # style={'width':"40%"},
-        className="mx-auto w-25"
+        className="mx-auto w-25 mt-5"
         ) #end div
 
 @callback(
