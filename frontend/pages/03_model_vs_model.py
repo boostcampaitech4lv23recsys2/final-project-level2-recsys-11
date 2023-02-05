@@ -18,9 +18,9 @@ dash.register_page(__name__, path='/model-vs-model')
 
 total_metrics = None
 total_metrics_users = None
-
+SPECIFIC_PLOT_WIDTH = 500
 sidebar = html.Div([
-        html.H3("실험 선택",),
+        html.H3("실험 선택",className="mt-3", style={"margin-bottom":25}),
         html.Hr(),
         html.Div(id='model_form', children=[]),
 
@@ -32,7 +32,7 @@ sidebar = html.Div([
             dbc.Button('비교하기', id='compare_btn', n_clicks=0, 
                     className="ms-5 mt-1 w-50"
                     )
-        ], className="hstack gap-5")
+        ], className="hstack gap-4")
     ],
     className='sidebar'
 )
@@ -60,7 +60,7 @@ def specific_metric():
             dbc.Col([
                 dbc.RadioItems(
                     id="sort_of_metric",
-                    className="btn-group",
+                    className="btn-group mb-2",
                     inputClassName="btn-check",
                     labelClassName="btn btn-outline-primary",
                     labelCheckedClassName="active",
@@ -75,10 +75,19 @@ def specific_metric():
                 ], width=3),
                 html.Br(),
                 html.Div([html.P(id="print_metric"),]),
-            dbc.Col([
-                dcc.Graph(id = 'bar_fig'), #figure=fig_qual
-                html.Div(id = 'dist_fig'),  # dcc.Graph(id = 'dist_fig')
-            ], width=8)
+            html.Div([
+                dcc.Graph(id = 'bar_fig'),
+                dbc.Col(dbc.Spinner(html.Div(id = 'dist_fig'), color="primary")),
+            ], className="hstack")
+            # dbc.Col([
+            #     dbc.Row([
+            #         dbc.Col(dcc.Graph(id = 'bar_fig')), #figure=fig_qual),
+            #         dbc.Col(html.Div(id = 'dist_fig')), #figure=fig_qual),
+                        
+                
+            #      # dcc.Graph(id = 'dist_fig')
+            #     ])
+            # ], width=8,)
         ]),
 
         ],
@@ -96,7 +105,7 @@ layout = html.Div([html.Div(
     html.Hr(),
     total_graph,
     html.Div(id = 'specific_metric_children')
-    ], className="content"),
+    ], className="content w-75"),
     html.Div(id='trash'),
     dcc.Store(id='store_selected_exp', storage_type='session'),
     dcc.Store(id='store_exp_names', storage_type='session'),
@@ -209,8 +218,7 @@ def save_selected_exp_names(value, data):
 )
 def plot_total_metrics(data, n, state, store): # df:pd.DataFrame
     if state == 0:
-        return html.Div([]), dbc.Alert(["왼쪽에서 모델을 선택하고 Compare 버튼을 눌러 실험들의 지표를 확인해보세요! ",html.Span("(2개 이상부터 가능합니다.)", className="fw-bold")], color="info", className="w-75")
-        
+        return html.Div([]), dbc.Alert(["왼쪽에서 모델을 선택하고 '비교하기' 버튼을 눌러 실험들의 지표를 확인해보세요! ",html.Span("(2개 이상부터 가능합니다.)", className="fw-bold")], color="info", style={"width":"80%"})
     else:
         # 모델간 정량, 정성 지표 plot (Compare Table에 있는 모든 정보들 활용)
         colors = ['#9771D0', '#D47DB2', '#5C1F47', '#304591', '#BAE8C8', '#ECEBC6', '#3D3D3D'] # 사용자 입력으로 받을 수 있어야 함
@@ -227,7 +235,7 @@ def plot_total_metrics(data, n, state, store): # df:pd.DataFrame
             barmode='group',
             bargap=0.15, # gap between bars of adjacent location coordinates.
             bargroupgap=0.1, # gap between bars of the same location coordinate.)
-            title_text='Metric indicators'
+            # title_text='Metric indicators'
         )
         fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
 
@@ -242,7 +250,7 @@ def plot_total_metrics(data, n, state, store): # df:pd.DataFrame
 def load_metric_list(sort_of_metric:str) -> list:
     if sort_of_metric == 'Quant':
         metric_list = [
-            {'label': 'Recall_k', 'value' : 'recall'},
+            {'label': 'Recall@k', 'value' : 'recall'},
             {'label':'NDCG', 'value':'ndcg'},
             {'label':'AP@K', 'value':'map'},
             {'label':'AvgPopularity', 'value':'avg_popularity'},
@@ -281,7 +289,8 @@ def plot_bar(data, sort_of_metric, store):
             barmode='group',
             bargap=0.15, # gap between bars of adjacent location coordinates.
             bargroupgap=0.1, # gap between bars of the same location coordinate.)
-            title_text='Specific Qualitative Metrics'
+            title_text='전체 정성 지표',
+            width=SPECIFIC_PLOT_WIDTH
         )
         fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
         return fig
@@ -299,7 +308,8 @@ def plot_bar(data, sort_of_metric, store):
             barmode='group',
             bargap=0.15, # gap between bars of adjacent location coordinates.
             bargroupgap=0.1, # gap between bars of the same location coordinate.)
-            title_text='Quantitative indicators'
+            title_text='전체 정량 지표',
+            width=SPECIFIC_PLOT_WIDTH
         )
         fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
         return fig
@@ -334,7 +344,16 @@ def plot_dist(data, value, store):
         fig = ff.create_distplot(hist_data, group_labels, colors=colors,
                                 bin_size=0.025, show_rug=True, curve_type='kde')
 
-        fig.update_layout(title_text=f'Distribution of {value}')
+        metric_list = {
+            "diversity_jac": "Diversity(jaccard)",
+            "diversity_cos": "Diversity(cosine)",
+            'serendipity_jac':'Serendipity(jaccard)',
+            'serendipity_pmi':'Serendipity(PMI)',
+            'novelty':'Novelty',
+            }
+        fig.update_layout(title_text=f'유저별 {metric_list[value]} 분포',
+                          width=SPECIFIC_PLOT_WIDTH
+                          )
         return dcc.Graph(figure=fig)
 
     elif value in ['recall', 'ndcg', 'map', 'avg_popularity', 'tail_percentage']:
@@ -342,10 +361,22 @@ def plot_dist(data, value, store):
             value = 'avg_precision'
         group_labels = data
         colors = colors[:len(data)]
+        # TODO: check recall, avg_precision
+        
         hist_data = total_metrics_users.loc[selected_id, value].values
         fig = ff.create_distplot(hist_data, group_labels, colors=colors,
                                 bin_size=0.025, show_rug=True, curve_type='kde')
-        fig.update_layout(title_text=f'Distribution of {value}')
+        
+        metric_list = {
+            'recall':'Recall@k',
+            "ndcg": "NDCG",
+            "avg_precision": "AP@K",
+            "avg_popularity":"AvgPopularity",
+            "tail_percentage":"TailPercentage"
+            }
+
+        fig.update_layout(title_text=f'유저별 {metric_list[value]} 분포',
+                          width=SPECIFIC_PLOT_WIDTH)
         return dcc.Graph(figure=fig)
     else:
         return html.Div([])

@@ -15,11 +15,16 @@ from . import global_component as gct
 
 dash.register_page(__name__, path='/FAQ')
 
-layout = dcc.Markdown(
-    
+layout = html.Div([
+    html.Div(
+    [gct.get_navbar(has_sidebar=False),]
+        ),
+    html.Div([
+        html.Br(),
+        html.H1(children='FAQ', style={'font-weight': 'bold'}, ),
+        html.Hr(),
+        dcc.Markdown(
     '''
-    # FAQ
-
     ## 1. 정량지표와 정성지표란?
     - **정량지표**란 _Recall@K_, _NDCG@K_, _MAP@K_ 등 예측한 아이템과 실제 정답으로 계산된 지표로, 쉽게 말해 추천 모델이 얼마나 잘 맞혔는지 의미하는 지표입니다.
     - **정성지표**란 _Diversity_, _Serendipity_, _Novelty_와 같은 지표로, 예측한 아이템 혹은 추천된 아이템 리스트가 얼마나 참신하고 다양한, 새로운 아이템을 갖고 있는지 의미하는 지표입니다.
@@ -69,3 +74,21 @@ layout = dcc.Markdown(
     '''
     ,mathjax=True
 )
+    ], className="container", style={"margin-top": "4rem"}
+    ),
+])
+
+# layout = dcc.Markdown(
+#     '''
+#     # FAQ
+
+#     ## 1. 정량지표와 정성지표란?
+
+#     ## 2. Reranking이란?
+
+#     ## 3. Web4Rec Library란?
+
+#     ## 4. Item vector와 t-sne는 어떻게 이루어지나요?
+
+#     '''
+# )
