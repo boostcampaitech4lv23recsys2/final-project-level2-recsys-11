@@ -87,8 +87,8 @@ def specific_metric():
     return specific_metric
 
 
-layout = html.Div(children=[
-    gct.get_navbar(has_sidebar=False),
+layout = html.Div([html.Div(
+    [gct.get_navbar(has_sidebar=False),]),
     html.Div([
     sidebar,
     html.Br(),
@@ -96,14 +96,14 @@ layout = html.Div(children=[
     html.Hr(),
     total_graph,
     html.Div(id = 'specific_metric_children')
-    ]),
+    ], className="content m-"),
     html.Div(id='trash'),
     dcc.Store(id='store_selected_exp', storage_type='session'),
     dcc.Store(id='store_exp_names', storage_type='session'),
     dcc.Store(id='store_exp_ids', storage_type='session'),
     dcc.Store(id='store_selected_exp_names', data=[], storage_type='session')
 
-], className="content")
+])
 
 
 ### exp_ids가 들어오면 실험 정보들 return 하는 callback
@@ -202,10 +202,8 @@ def save_selected_exp_names(value, data):
 )
 def plot_total_metrics(data, n, state, store): # df:pd.DataFrame
     if state == 0:
-        return html.Div([]), dbc.Alert("왼쪽에서 모델을 선택하고 Compare 버튼을 눌러 실험들의 지표를 확인해보세요!", color="info", sclassName="w-auto")
-        # html.Div([
-        #     html.P("If you want to metric compare between selected models, Click Compare!"),
-        # ])
+        return html.Div([]), dbc.Alert("왼쪽에서 모델을 선택하고 Compare 버튼을 눌러 실험들의 지표를 확인해보세요!", color="info", className="w-75")
+        
     else:
         # 모델간 정량, 정성 지표 plot (Compare Table에 있는 모든 정보들 활용)
         colors = ['#9771D0', '#D47DB2', '#5C1F47', '#304591', '#BAE8C8', '#ECEBC6', '#3D3D3D'] # 사용자 입력으로 받을 수 있어야 함
