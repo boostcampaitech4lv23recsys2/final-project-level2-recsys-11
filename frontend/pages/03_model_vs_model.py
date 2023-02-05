@@ -308,18 +308,22 @@ def plot_bar(data, sort_of_metric, store):
 # def print_metric(value):
 #     return f'user selection : {value}'
 
-### 선택한 metric에 대한 dist plot을 띄워주는 callback
+### 선택한 metric에 대한 dist plot을 띄워주는 callback, 나중에 refactoring 가능
 @callback(
     Output('dist_fig', 'children'),
     State('store_selected_exp_names', 'data'),
     Input("metric_list", 'value'),
+    State('store_selected_exp','data')
 )
-def plot_dist(data, value):
+def plot_dist(data, value, store):
     colors = ['#9771D0', '#D47DB2', '#5C1F47', '#304591', '#BAE8C8', '#ECEBC6', '#3D3D3D']
+    store_df = pd.DataFrame(store).set_index('experiment_name')
+    selected_id = store_df.loc[data,'exp_id'].values  # 선택한 실험만 보여줘야 함
+
     if value in ['diversity_jac', 'diversity_cos', 'serendipity_pmi', 'serendipity_jac', 'novelty']:
         group_labels = data
         colors = colors[:len(data)]
-        hist_data = total_metrics_users[value].values
+        hist_data = total_metrics_users.loc[selected_id, value].values
         fig = ff.create_distplot(hist_data, group_labels, colors=colors,
                                 bin_size=0.025, show_rug=True, curve_type='kde')
 
@@ -331,7 +335,7 @@ def plot_dist(data, value):
             value = 'avg_precision'
         group_labels = data
         colors = colors[:len(data)]
-        hist_data = total_metrics_users[value].values
+        hist_data = total_metrics_users.loc[selected_id, value].values
         fig = ff.create_distplot(hist_data, group_labels, colors=colors,
                                 bin_size=0.025, show_rug=True, curve_type='kde')
         fig.update_layout(title_text=f'Distribution of {value}')
