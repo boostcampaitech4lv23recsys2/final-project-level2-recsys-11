@@ -71,8 +71,8 @@ problem_intro = html.Div([
 layout = html.Div([
     dbc.NavbarSimple([
         dbc.NavItem(dcc.Link(dbc.Button("시작하기!", className=" fs-6 mt-3 mb-4 m-0", color="light"),href="/login"),),
-        dbc.NavbarBrand("𝙒𝙚𝙗𝟰𝙍𝙚𝙘", class_name="fs-2text-center position-absolute top-50 start-50 translate-middle")
-        ], color="primary", className="navbar position-relative", sticky="top", brand="𝙒𝙚𝙗𝟰𝙍𝙚𝙘"),
+        dbc.NavbarBrand("𝙒𝙚𝙗𝟰𝙍𝙚𝙘", class_name="fs-2text-center position-absolute top-50 start-50 translate-middle large-font")
+        ], color="primary", className="navbar position-relative", sticky="top", brand="Web4Rec"),
     html.Div([
         html.Div([
             html.Div([

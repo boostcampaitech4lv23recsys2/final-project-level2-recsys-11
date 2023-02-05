@@ -19,7 +19,7 @@
   width: 20%
 } */
 
-
+ 
 .content {
     margin-left: var(--sidebar-width);
     /* margin-right: 2rem; */
@@ -90,3 +90,14 @@
   margin-top: 5rem;
 }
 
+.logo-font {
+  font-family: "Brush Script MT", Cursive;
+}
+
+.no-transform {
+  text-transform: none;
+}
+
+.large-font {
+  font-size: 40px;
+}
