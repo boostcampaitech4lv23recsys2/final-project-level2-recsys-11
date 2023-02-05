@@ -47,7 +47,11 @@ def get_navbar(has_sidebar=True):
         brand_href="/",
         color="primary",
         dark=True,
-        className=classname + " p-0 "
+        sticky="top",
+        className=classname + " p-0 ",
+        style={"position": "fixed",
+               "top": 0,
+               "width": "100%",}
     )
     return navbar
 
