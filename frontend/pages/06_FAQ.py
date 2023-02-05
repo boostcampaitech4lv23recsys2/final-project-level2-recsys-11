@@ -16,10 +16,27 @@ from . import global_component as gct
 dash.register_page(__name__, path='/FAQ')
 
 layout = html.Div([
-    dbc.NavbarSimple(
-        brand=gct.BRAND_LOGO, brand_style={'color':'#FFFAF0'},
-        color="primary", class_name="home-navbar",  sticky="top", fluid=True
-    )
+    html.Div(
+    [gct.get_navbar(has_sidebar=False),]
+        ),
+    html.Div([
+        html.Br(),
+        html.H1(children='FAQ', style={'font-weight': 'bold'}, ),
+        html.Hr(),
+        dcc.Markdown(
+    '''
+    ## 1. 정량지표와 정성지표란?
+
+    ## 2. Reranking이란?
+
+    ## 3. Web4Rec Library란?
+
+    ## 4. Item vector와 t-SNE는 어떻게 이루어지나요?
+
+    '''
+)
+    ], className="container", style={"margin-top": "4rem"}
+    ),
 ])
 
 # layout = dcc.Markdown(
