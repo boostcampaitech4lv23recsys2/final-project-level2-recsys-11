@@ -90,7 +90,8 @@ layout = html.Div([
         # selected_table,
         html.H3(id='output_test')
     ],
-    className="container my-5",
+    className="container",
+    style={"margin-top":"4rem"}
 ),
 
     dcc.Store(id='store_selected_exp', storage_type='session'),
