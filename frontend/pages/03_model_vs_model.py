@@ -20,7 +20,7 @@ total_metrics = None
 total_metrics_users = None
 SPECIFIC_PLOT_WIDTH = 500
 sidebar = html.Div([
-        html.H3("실험 선택",),
+        html.H3("실험 선택",className="mt-3", style={"margin-bottom":25}),
         html.Hr(),
         html.Div(id='model_form', children=[]),
 
@@ -32,7 +32,7 @@ sidebar = html.Div([
             dbc.Button('비교하기', id='compare_btn', n_clicks=0, 
                     className="ms-5 mt-1 w-50"
                     )
-        ], className="hstack gap-5")
+        ], className="hstack gap-4")
     ],
     className='sidebar'
 )
