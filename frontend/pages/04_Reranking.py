@@ -20,11 +20,11 @@ rerank_total_metrics = None
 rerank_total_metrics_users = None
 
 rerank_metric_option = [
-    {'label':'Diversity(jaccard)', 'value':'diversity(jac)'},
-    {'label':'Diversity(cosine)', 'value':'diversity(cos)'},
-    {'label':'Serendipity(jaccard)', 'value':'serendipity(jac)'},
-    {'label':'Serendipity(PMI)', 'value':'serendipity(pmi)'},
-    {'label':'Novelty', 'value':'novelty'},
+    {'label':' Diversity(jaccard)', 'value':'diversity(jac)'},
+    {'label':' Diversity(cosine)', 'value':'diversity(cos)'},
+    {'label':' Serendipity(jaccard)', 'value':'serendipity(jac)'},
+    {'label':' Serendipity(PMI)', 'value':'serendipity(pmi)'},
+    {'label':' Novelty', 'value':'novelty'},
 ]
 
 rerank_metric_list = [
@@ -52,24 +52,30 @@ alpha_radio = html.Div([
             labelCheckedClassName="active",
             options=[
                 {"label": "0.5", "value": 0.5},
-                {"label": "1", "value": 1},  # 사용자가 지정한 alpha로 지정
+                # {"label": "1", "value": 1, "disabled":True},  # 사용자가 지정한 alpha로 지정
             ],
             value=0.5,
                         ),
-], className="radio-group")
+], className="radio-group mb-2 mt-0")
 
 model_form = html.Div([
-    html.H6("Select Experiment"),
-    dcc.Dropdown(id="selected_model_by_name"),
+    html.H6(["실험 선택"], id="test431", className="mb-2"),
+    dcc.Dropdown(id="selected_model_by_name", placeholder=""),
             html.Hr(),
-            html.H6("Alpha: "),
-            # html.P('Alpha:', className="p-0 m-0"),
+            html.H6(["α 값 선택 ", html.Span("�", id="alpha-tooltip")], className="mb-0"),
+            dbc.Tooltip(["목적함수의 가중치입니다. 높을수록 실험한 모델의 추천이 반영됩니다.",
+                         html.Span("FAQ를 참조하세요!", id="alpha_faq_link")],
+                     target="alpha-tooltip",
+                    #  className="w-auto"
+                     ),
             alpha_radio,
-               html.H6("Select objective function(distance function)"),
+            html.Hr(),
+            html.H6("목적 함수 선택"),
     dcc.Checklist(
-        options = rerank_metric_option,
-        value= rerank_metric_list,
-    id="obj_funcs",)
+        rerank_metric_option,
+        rerank_metric_list,
+        labelStyle={"display":"block"},
+        id="obj_funcs",)
 ], className='form-style')
 
 sidebar = html.Div(
