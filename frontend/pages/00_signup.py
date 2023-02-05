@@ -17,7 +17,16 @@ dash.register_page(__name__, path='/signup')
 
 
 layout = html.Div([
-    html.H1('회원가입')
+
+    html.Br(),
+    html.H1('Web4Rec', style={
+                                # 'padding': 10,
+                                'text-align': 'center'}),
+    html.Hr(),
+    html.Br(),
+    html.H5('회원가입', style={'text-align': 'center'}),
+    html.Hr(style={'width': '50%', 'margin-left': '25%'}),
+    html.Br()
         , dcc.Location(id='create_user', refresh=True)
         , dbc.Input(id="username"
             , type="text"
@@ -34,17 +43,23 @@ layout = html.Div([
             , type="password"
             , placeholder="비밀번호 확인",
             ),
-            html.Br(),
-          
+        html.Br(),
+        dbc.Row([
             html.Div(
             id='container-button-basic'
             ),
-            html.Br(),
-            dbc.Button('회원가입', id='submit-val', n_clicks=0, ),
+            dbc.Col(
+                dbc.Button('회원가입', id='submit-val', n_clicks=0, className='w-100'
+                       #style={'margin':30}
+                       )),
+            dbc.Col(
             dcc.Link(
-                dbc.Button('뒤로가기', n_clicks=0, style={'margin': 20}),
-                href='/'),
-                  ], className="mx-auto w-25")
+                dbc.Button('뒤로가기', n_clicks=0, className='w-100', color="dark"
+                           # style={'margin': 30}
+                           ),
+                href='/login'))
+                ])
+        ], className="mx-auto w-25 mt-5")  
 
 @callback(
     Output(component_id='container-button-basic', component_property='children'),
