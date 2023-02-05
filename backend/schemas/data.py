@@ -9,7 +9,7 @@ import numpy.typing as npt
 class Dataset(BaseModel):
     ID: str
     dataset_name: str
-    upload_time: datetime = Field(default_factory=datetime.now)
+    upload_time: Union[str, None]
 
     train_interaction: Dict
     ground_truth: Dict
