@@ -298,11 +298,11 @@ layout = html.Div(
                 header_exp,
                 dbc.Spinner(header_user_or_item),
                 # 스피너로 묶었는데 생각대로 안 나옴
-                dbc.Spinner(
-                    html.Div(
-                        id="deep_analysis_page",
-                    ),
+                # dbc.Spinner(
+                html.Div(
+                    id="deep_analysis_page",
                 ),
+                # ),
             ],
             className="container",
         ),
@@ -355,6 +355,7 @@ def choose_experiment(
 
     params = {"ID": vip["username"], "dataset_name": dataset_name, "exp_id": exp}
     # params = {"ID": 'mkdir', "dataset_name": 'ml-1m', "exp_id": 1}
+    # print(params)
     user = requests.get(gct.API_URL + "/frontend/user_info", params=params).json()
     # print(user)
     user = pd.DataFrame.from_dict(data=user, orient="tight")
@@ -372,9 +373,6 @@ def choose_experiment(
     ]
 
     user = user.set_index("user_id")
-    # print(user)
-    # print(user.loc[1]['recall'])
-    # print(type(user.loc[1]['recall']))
     item = requests.get(gct.API_URL + "/frontend/item_info", params=params).json()
     item = pd.DataFrame.from_dict(data=item, orient="tight")
     item.columns = [
@@ -388,6 +386,9 @@ def choose_experiment(
         "xs",
         "ys",
     ]
+    item["recommended_users"] = item["recommended_users"].apply(
+        lambda d: d if isinstance(d, list) else []
+    )
     item["release_year"] = item["release_year"].astype(np.int16)
     item = item.set_index("item_id")
     item["selected"] = 0
