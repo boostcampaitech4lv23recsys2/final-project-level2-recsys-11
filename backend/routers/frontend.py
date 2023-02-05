@@ -8,12 +8,17 @@ from schemas.user import UserCreate
 from typing import Dict, Tuple, List
 
 import pandas as pd
+import numpy as np
 from functools import reduce
 
 from cruds.database import get_exp, get_df, get_total_info, inter_to_profile, get_total_reranked
 from cruds.metrics import predicted_per_item, recall_per_user, get_metric_per_users
 from database.rds import get_db_dep
 from database.s3 import get_from_s3, s3_dict_to_pd, s3_to_pd
+
+from engine.distance import get_distance_mat, get_jaccard_mat
+from engine.metric import get_total_information
+from engine.rerank import get_total_reranks
 
 router = APIRouter(prefix="/frontend")
 
@@ -197,3 +202,186 @@ async def item_info(ID: str, dataset_name: str, exp_id: int):
 
     return item_merged.to_dict(orient="tight")
 
+
+@router.get("/rerank_users")
+async def rerank_users(
+    ID: str, 
+    dataset_name: str,
+    exp_id: int, 
+    n_candidates: int, 
+    objective_fn: str, 
+    alpha: float,
+    user_ids: List[str] = Query(default=['1', '2','3','5']), 
+):
+
+    df_row = await get_df(ID, dataset_name)
+    if df_row == None:
+        return {"msg": "Dataset Not Found"}
+
+
+    exp_row = await get_exp(exp_id)
+    if exp_row == None:
+        return {"msg": "Model Not Found"}
+
+    
+    base_pred_items = await s3_to_pd(key_hash=exp_row['pred_items'])
+    base_pred_scores = await s3_to_pd(key_hash=exp_row['pred_scores'])
+
+    need_items = list(set(np.array(base_pred_items['pred_items'].values.tolist()).flatten().tolist()))
+    need_users = user_ids
+
+    
+    train_interaction = await s3_to_pd(key_hash=df_row['train_interaction'])
+
+    prediction_matrix = pd.DataFrame(
+        data=0.0, 
+        index=train_interaction['user_id'].unique(), 
+        columns=train_interaction['item_id'].unique()
+    )
+
+    prediction_matrix_before = pd.merge(base_pred_items, base_pred_scores, on='user_id')
+
+    for _, row in prediction_matrix_before.iterrows():
+        if row['user_id'] in need_users:
+            prediction_matrix.loc[row['user_id'], row['pred_items']] = row['pred_scores']
+    
+    
+    train_interaction = await s3_to_pd(key_hash=df_row['train_interaction'])
+    # encoding
+    pred_users = prediction_matrix.index.tolist()
+    pred_items = prediction_matrix.columns.tolist() # 현재 사실 모든 아이템
+    pred_mat = prediction_matrix.values
+
+    uid2idx = {v: k for k, v in enumerate(pred_users)}
+    iid2idx = {v: k for k, v in enumerate(pred_items)}
+
+    idx2uid = {k: v for k, v in enumerate(pred_users)}
+    idx2iid = {k: v for k, v in enumerate(pred_items)}
+
+    train_interaction = train_interaction[train_interaction['user_id'].isin(pred_users)] # 이게 문제
+    train_interaction = train_interaction[train_interaction['item_id'].isin(pred_items)]
+    train_interaction['user_idx'] = train_interaction['user_id'].map(uid2idx)
+    train_interaction['item_idx'] = train_interaction['item_id'].map(iid2idx)
+    
+    # train_interaction2 = train_interaction[train_interaction['item_id'].isin(need_items)]
+
+    # distance matrix ready
+    item_side = await s3_to_pd(key_hash=df_row["item_side"])
+    cos_dist, pmi_dist = await get_distance_mat(train_interaction)
+    jac_dist = None
+    if 'item_vector' in item_side.columns:
+        item_vector = item_side[['item_id', 'item_vector']].set_index('item_id').squeeze()
+        item_vector.index = item_vector.index.map(iid2idx)
+        jac_dist = await get_jaccard_mat(item_vector)
+
+
+    # quant prepare ready
+    user_profile = train_interaction.groupby('user_idx')['item_idx'].apply(list)
+    item_popularity = \
+        train_interaction.groupby('item_idx')['user_idx'].count() / train_interaction['user_idx'].nunique()
+    tail_items = item_popularity.index[-int(len(item_popularity) * 0.8):].tolist()
+    total_items = train_interaction['item_idx'].unique()
+
+    ground_truth = await s3_to_pd(key_hash=df_row['ground_truth'])
+    ground_truth = ground_truth[ground_truth['user_id'].isin(pred_users)]
+    ground_truth = ground_truth[ground_truth['item_id'].isin(pred_items)]
+
+    ground_truth['user_idx'] = ground_truth['user_id'].map(uid2idx)
+    ground_truth['item_idx'] = ground_truth['item_id'].map(iid2idx)
+
+    actuals = ground_truth.groupby('user_idx')['item_idx'].apply(list)
+
+    actuals = [items for user, items in actuals.iteritems() if user in [uid2idx[nu] for nu in need_users]]
+
+    #candidates = np.argsort(-pred_mat, axis=1)[[uid2idx[nu] for nu in need_users]][ :n_candidates]
+    #print(actuals)
+
+    
+    candidates = np.array([[iid2idx[item] for item in items] for i, (user_id, items) in base_pred_items.iterrows() if user_id in need_users])
+ 
+    candidates = candidates[:, :n_candidates]
+
+    # basic
+    metrices, _ = await get_total_information(
+        predicts=candidates,
+        actuals=actuals,
+        cos_dist=cos_dist,
+        pmi_dist=pmi_dist,
+        user_profile=user_profile,
+        item_popularity=item_popularity,
+        tail_items=tail_items,
+        total_items=total_items,
+        jac_dist=jac_dist,
+        k=10
+    )
+
+    if 'cos' in objective_fn:
+        dist_mat = cos_dist
+    elif 'pmi' in objective_fn:
+        dist_mat = pmi_dist
+    else:
+        dist_mat = jac_dist
+        
+    rerank_predicts = await get_total_reranks(
+        mode=objective_fn[:-5],
+        candidates=candidates,
+        prediction_mat=pred_mat,
+        distance_mat=dist_mat,
+        user_profile=user_profile,
+        item_popularity=item_popularity,
+        alpha=alpha,
+        k=10,
+    )
+
+    rerank_metrices, _ = await get_total_information(
+        predicts=rerank_predicts,
+        actuals=actuals,
+        cos_dist=cos_dist,
+        pmi_dist=pmi_dist,
+        user_profile=user_profile,
+        item_popularity=item_popularity,
+        tail_items=tail_items,
+        total_items=total_items,
+        jac_dist=jac_dist,
+        k=10
+    )
+
+    print(metrices)
+    print(rerank_metrices)
+
+    # rerank predicts decode
+    decode_re_predicts = np.vectorize(lambda x: idx2iid[x])(rerank_predicts)
+    decode_re_pred_items = pd.Series({i: v.tolist() for i, v in enumerate(decode_re_predicts)})
+    decode_re_pred_items.index = need_users
+    decode_re_pred_items_df = pd.DataFrame(decode_re_pred_items, columns=['pred_items'])
+
+    decode_re_pred_items_df = decode_re_pred_items_df.reset_index()
+    decode_re_pred_items_df = decode_re_pred_items_df.rename(columns = {'index': 'user_id'})
+
+    met = pd.concat([metrices, rerank_metrices], axis=1).T
+    met.index = ['origin', 'rerank']
+
+    return {
+        'metric_diff': met.to_dict(orient='tight'),
+        'rerank': decode_re_pred_items_df.to_dict(orient='tight')
+    }
+    # 필요한 아이템들로만 distance mat 구성
+
+
+    # uid2idx = {v: k for k, v in enumerate(pred_users)}
+    # iid2idx = {v: k for k, v in enumerate(pred_items)}
+
+    # idx2uid = {k: v for k, v in enumerate(pred_users)}
+    # idx2iid = {k: v for k, v in enumerate(pred_items)}
+
+
+    # train_interaction = train_interaction[train_interaction['user_id'].isin(pred_users)]
+    # train_interaction = train_interaction[train_interaction['item_id'].isin(pred_items)]
+    # train_interaction['user_idx'] = train_interaction['user_id'].map(uid2idx)
+    # train_interaction['item_idx'] = train_interaction['item_id'].map(iid2idx)
+
+
+
+    # if 'jac' in objective_fn:
+    #     item_side = await s3_to_pd(key_hash=df_row['item_side'])
+    #     item_vector = item_side[['user_id', 'item_vector']]
