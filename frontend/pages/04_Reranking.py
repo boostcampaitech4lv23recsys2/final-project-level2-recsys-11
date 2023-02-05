@@ -20,19 +20,24 @@ rerank_total_metrics = None
 rerank_total_metrics_users = None
 
 rerank_metric_option = [
-    {'label':'Diversity(jaccard)', 'value':'diversity_jac'},
-    {'label':'Diversity(cosine)', 'value':'diversity_cos'},
-    {'label':'Serendipity(jaccard)', 'value':'serendipity_jac'},
-    {'label':'Serendipity(PMI)', 'value':'serendipity_pmi'},
+    {'label':'Diversity(jaccard)', 'value':'diversity(jac)'},
+    {'label':'Diversity(cosine)', 'value':'diversity(cos)'},
+    {'label':'Serendipity(jaccard)', 'value':'serendipity(jac)'},
+    {'label':'Serendipity(PMI)', 'value':'serendipity(pmi)'},
     {'label':'Novelty', 'value':'novelty'},
 ]
 
 rerank_metric_list = [
-    'Diversity(jaccard)',
-    'Diversity(cosine)',
-    'Serendipity(jaccard)',
-    'Serendipity(PMI)',
-    'Novelty',
+    'diversity(jac)',
+    'diversity(cos)',
+    'serendipity(jac)',
+    'serendipity(pmi)',
+    'novelty'
+    # 'Diversity(jaccard)',
+    # 'Diversity(cosine)',
+    # 'Serendipity(jaccard)',
+    # 'Serendipity(PMI)',
+    # 'Novelty',
 ]
 
 
@@ -161,16 +166,30 @@ def print_selected_exp_name(n, exp_name):
     exp_name = list(set(exp_name))
     return exp_name
 
-### exp_names가 들어오면 실험 정보들 return 하는 callback
+### exp_names가 들어오면 original + rerank 실험 정보들 return 하는 callback
 @callback(
     Output('trash2', 'children'),
     # Input('rerank_btn', 'n_clicks'),
-    Input('selected_model_by_name', 'value')
+    Input('selected_model_by_name', 'value'),
+    State('store_selected_exp','data')
 )
-def get_stored_selected_models(exp_names:str) -> pd.DataFrame:
+def get_stored_selected_models(exp_names:str, store) -> pd.DataFrame:
     if exp_names is None:
         raise PreventUpdate
-    
+    ### original 실험 정보 가져오기
+    store_df = pd.DataFrame(store).set_index('experiment_name')
+    exp_id = store_df.loc[exp_names, 'exp_id']
+    params = {'ID':'mkdir', 'dataset_name':'ml-1m', 'exp_ids': [exp_id]}
+    response = requests.get(API_url + '/frontend/selected_metrics', params = params)
+    a = response.json()
+    exp_metrics = pd.DataFrame().from_dict(a['model_metrics'], orient='tight')
+    exp_metrics.index = ['original']
+    exp_metrics = exp_metrics.rename_axis('objective_fn')
+    exp_metrics_users = pd.DataFrame().from_dict(a['user_metrics'], orient='tight')
+    exp_metrics_users.index = ['original']
+    exp_metrics_users = exp_metrics_users.rename_axis('objective_fn')
+
+    ### rerank 실험 정보 가져오기
     global rerank_total_metrics
     global rerank_total_metrics_users
     params = {'ID':'mkdir', 'dataset_name':'ml-1m', 'exp_names': [exp_names]}
@@ -179,37 +198,29 @@ def get_stored_selected_models(exp_names:str) -> pd.DataFrame:
 
     rerank_total_metrics = pd.DataFrame().from_dict(a['model_info'], orient='tight')
     rerank_total_metrics = rerank_total_metrics.set_index('objective_fn')
-    # print(rerank_total_metrics)
+    rerank_total_metrics = rerank_total_metrics.drop(['experiment_name', 'alpha'], axis=1)
+    rerank_total_metrics = pd.concat([exp_metrics, rerank_total_metrics], axis=0)
+
     rerank_total_metrics_users = pd.DataFrame().from_dict(a['user_metrics'], orient='tight')
-    rerank_total_metrics_users.index = rerank_total_metrics.index
-    # print(rerank_total_metrics_users)
+    rerank_total_metrics_users.index = rerank_total_metrics.index[1:]
+    rerank_total_metrics_users = pd.concat([exp_metrics_users, rerank_total_metrics_users], axis=0)
+
     return html.Div([])
 
-# @callback(
-#     Output("reranked_graph", "children"),
-#     Input("rerank_btn", "n_clicks"),
-#     State("selected_model_by_name", "value"),
-#     State("alpha", "value"),
-#     State("obj_funcs", "value"),
-#     prevent_initial_update=False,
-# )
-# def plot_graph(n, model_name, alpha, obj_funcs):
-#     if n == 0:
-#         raise PreventUpdate
-#     return html.H3(str(f"{model_name}\n{alpha}\n{obj_funcs}"))
-    
+
 
 ### rerank! 버튼을 누르면 plot을 그려주는 callback
-@callback(  # compare 버튼 누름
+@callback(  # rerank 버튼 누름
         Output('rerank_specific_metric_children', 'children'),
         Output('rerank_total_metric', 'children'),
         Input('store_selected_exp_names', 'data'),
         Input('rerank_btn', 'n_clicks'),
+        State('obj_funcs','value'),
         State('rerank_btn', 'n_clicks'),
         State('store_selected_exp','data')
         # prevent_initial_call=True
 )
-def plot_total_metrics(data, n, state, store): # df:pd.DataFrame
+def plot_total_metrics(data, n, obj_funcs, state, store): # df:pd.DataFrame
     if state == 0:
         return html.Div([]), dbc.Alert("Rerank 버튼을 눌러 리랭킹 된 실험들의 지표를 확인해보세요!", color="info")
         # html.Div([
@@ -219,11 +230,12 @@ def plot_total_metrics(data, n, state, store): # df:pd.DataFrame
         # 모델간 정량, 정성 지표 plot (Compare Table에 있는 모든 정보들 활용)
         colors = ['#9771D0', '#D47DB2', '#5C1F47', '#304591', '#BAE8C8', '#ECEBC6', '#3D3D3D'] # 사용자 입력으로 받을 수 있어야 함
         store_df = pd.DataFrame(store).set_index('experiment_name')
-        # print(rerank_total_metrics)
-        tmp_metrics = rerank_total_metrics.drop(['experiment_name', 'alpha', 'diversity_jac','serendipity_jac'], axis=1)
+        tmp_metrics = rerank_total_metrics.drop(['diversity_jac','serendipity_jac'], axis=1)
+        obj_funcs = ['original'] + obj_funcs
+        tmp_metrics = tmp_metrics.loc[obj_funcs]
         metrics = list(tmp_metrics.columns)
         fig = go.Figure()
-        for i,obj_fn in enumerate(rerank_total_metrics.index):  # data
+        for i,obj_fn in enumerate(tmp_metrics.index):  # data
             # exp_id = store_df.loc[exp_name, 'exp_id'] # exp_name에 맞는 exp_id 찾아주기
             fig.add_bar(name=obj_fn, x=metrics, y=list(tmp_metrics.loc[obj_fn,:]), text=list(tmp_metrics.loc[obj_fn,:]), marker={'color' : colors[i]})
             # .apply(eval)은 np.array나 list를 문자열로 인식할 때만 활용해주면 됨
@@ -266,18 +278,21 @@ def load_metric_list(sort_of_metric:str) -> list:
 @callback(
     Output('rerank_bar_fig', 'figure'),
     State('store_selected_exp_names', 'data'),
+    State('obj_funcs','value'),
     Input("rerank_sort_of_metric", 'value'),
     State('store_selected_exp','data')
 )
-def plot_bar(data, sort_of_metric, store):
+def plot_bar(data, obj_funcs, sort_of_metric, store):
     store_df = pd.DataFrame(store).set_index('experiment_name')
     colors = ['#9771D0', '#D47DB2', '#5C1F47', '#304591', '#BAE8C8', '#ECEBC6', '#3D3D3D']
+    obj_funcs = ['original'] + obj_funcs
     if sort_of_metric == 'Qual':
-        qual_metrics = rerank_total_metrics.iloc[:,8:]
+        qual_metrics = rerank_total_metrics.iloc[:,6:]
+        qual_metrics = qual_metrics.loc[obj_funcs]
         metrics = list(qual_metrics.columns)
 
         fig = go.Figure()
-        for i,obj_fn in enumerate(rerank_total_metrics.index):  # data
+        for i,obj_fn in enumerate(qual_metrics.index):  # data
             # exp_id = store_df.loc[exp_name, 'exp_id'] # exp_name에 맞는 exp_id 찾아주기
             fig.add_bar(name=obj_fn, x=metrics, y=list(qual_metrics.loc[obj_fn,:]), text=list(qual_metrics.loc[obj_fn,:]), marker={'color' : colors[i]})
 
@@ -291,11 +306,12 @@ def plot_bar(data, sort_of_metric, store):
         return fig
 
     elif sort_of_metric == 'Quant':
-        quant_metrics = rerank_total_metrics.iloc[:,2:8]
+        quant_metrics = rerank_total_metrics.iloc[:,:6]
+        quant_metrics = quant_metrics.loc[obj_funcs]
         metrics = list(quant_metrics.columns)
 
         fig = go.Figure()
-        for i,obj_fn in enumerate(rerank_total_metrics.index):  # data
+        for i,obj_fn in enumerate(quant_metrics.index):  # data
             # exp_id = store_df.loc[exp_name, 'exp_id'] # exp_name에 맞는 exp_id 찾아주기
             fig.add_bar(name=obj_fn, x=metrics, y=list(quant_metrics.loc[obj_fn,:]), text=list(quant_metrics.loc[obj_fn,:]), marker={'color' : colors[i]})
 
@@ -322,19 +338,17 @@ def plot_bar(data, sort_of_metric, store):
 ### 선택한 metric에 대한 dist plot을 띄워주는 callback
 @callback(
     Output('rerank_dist_fig', 'children'),
-    State('store_selected_exp_names', 'data'),
+    State('obj_funcs','value'),
     Input("rerank_metric_list", 'value'),
 )
-def plot_dist(data, value):
-    colors = ['#9771D0', '#D47DB2', '#5C1F47s', '#304591', '#BAE8C8', '#ECEBC6', '#3D3D3D']
+def plot_dist(obj_funcs, value):
+    colors = ['#9771D0', '#D47DB2', '#5C1F47', '#304591', '#BAE8C8', '#ECEBC6', '#3D3D3D']
+    obj_funcs = ['original'] + obj_funcs
     if value in ['diversity_jac', 'diversity_cos', 'serendipity_pmi', 'serendipity_jac', 'novelty']:
-        group_labels = data
-        colors = colors[:len(data)]
-        hist_data = rerank_total_metrics_users[value].values
-        print(type(hist_data))
-        print(hist_data.reshape(5,-1).shape)
-        print(np.array(hist_data).shape)
-        print(len(hist_data[0]))
+        group_labels = obj_funcs
+        colors = colors[:len(obj_funcs)]
+        hist_data = rerank_total_metrics_users.loc[obj_funcs, value].values
+
         fig = ff.create_distplot(np.array(hist_data), group_labels, colors=colors,
                                 bin_size=0.025, show_rug=True, curve_type='kde')
 
@@ -345,9 +359,9 @@ def plot_dist(data, value):
     elif value in ['recall', 'ndcg', 'map', 'avg_popularity', 'tail_percentage']:
         if value == 'map':
             value = 'avg_precision'
-        group_labels = data
-        colors = colors[:len(data)]
-        hist_data = rerank_total_metrics_users[value].values
+        group_labels = obj_funcs
+        colors = colors[:len(obj_funcs)]
+        hist_data = rerank_total_metrics_users.loc[obj_funcs, value].values
         fig = ff.create_distplot(hist_data, group_labels, colors=colors,
                                 bin_size=0.025, show_rug=True, curve_type='kde')
         fig.update_layout(title_text=f'Distribution of {value}')

@@ -55,7 +55,7 @@ total_graph = html.Div([
 #### 정량, 정성 지표 그래프 그릴 부분
 def specific_metric():
     specific_metric = html.Div([
-        html.H3('Specific Metric'),
+        html.H3('세부 지표 분석'),
         dbc.Row([
             dbc.Col([
                 dbc.RadioItems(
@@ -65,8 +65,8 @@ def specific_metric():
                     labelClassName="btn btn-outline-primary",
                     labelCheckedClassName="active",
                     options=[
-                        {"label": "Qualitative", "value": 'Qual'},
-                        {"label": "Quantitative", "value": 'Quant'},
+                        {"label": "정성 지표", "value": 'Qual'},
+                        {"label": "정량 지표", "value": 'Quant'},
                     ],
                     value='Qual',
                 ),
@@ -92,11 +92,11 @@ layout = html.Div([html.Div(
     html.Div([
     sidebar,
     html.Br(),
-    html.H1(children='Model vs Model', style={'text-align': 'center','font-weight': 'bold'}),
+    html.H1(children='Model vs Model', style={'font-weight': 'bold'}, ),
     html.Hr(),
     total_graph,
     html.Div(id = 'specific_metric_children')
-    ], className="content m-"),
+    ], className="content"),
     html.Div(id='trash'),
     dcc.Store(id='store_selected_exp', storage_type='session'),
     dcc.Store(id='store_exp_names', storage_type='session'),
@@ -122,6 +122,11 @@ def get_stored_selected_models(n, exp_ids:list[int]) -> pd.DataFrame:
     total_metrics_users = pd.DataFrame().from_dict(a['user_metrics'], orient='tight')
     return html.Div([])
 
+# @callback(
+#         Output(),
+#         Input("store_exp_names", "data")
+# )
+
 ### 어떤 실험을 고를지 select하는 dropdown을 보여주는 callback
 @callback(
     Output("model_form", "children"),
@@ -133,6 +138,8 @@ def get_stored_selected_models(n, exp_ids:list[int]) -> pd.DataFrame:
     [State("model_form", "children")],
 )
 def display_dropdowns(n_clicks, _, store_exp_names, children):
+    if store_exp_names == None:
+        raise PreventUpdate
     input_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
     if "index" in input_id:
         delete_chart = json.loads(input_id)["index"]
@@ -147,7 +154,7 @@ def display_dropdowns(n_clicks, _, store_exp_names, children):
                 # dbc.Popover("Delete this experiment", trigger='hover', target={'type':'delete_btn', 'index':ALL}, body=True), # 동적 컴포넌트에는 어떻게 적용해야 할지 모르겠음
                 dcc.Dropdown(
                     store_exp_names, id={'type':'selected_exp', 'index':n_clicks},
-                    placeholder="Select or Search experiment", optionHeight=50, # options=[{'label':'exp_name', 'value':'exp_id'}, ... ], # label은 보여지는거, value는 실제 어떤 데이터인지
+                    placeholder="실험을 선택하세요.", optionHeight=50, # options=[{'label':'exp_name', 'value':'exp_id'}, ... ], # label은 보여지는거, value는 실제 어떤 데이터인지
                 ),
                 html.Hr(),
                 dcc.Markdown(id={'type':"exp's_hype", 'index':n_clicks}, dangerously_allow_html=True),
@@ -202,7 +209,7 @@ def save_selected_exp_names(value, data):
 )
 def plot_total_metrics(data, n, state, store): # df:pd.DataFrame
     if state == 0:
-        return html.Div([]), dbc.Alert("왼쪽에서 모델을 선택하고 Compare 버튼을 눌러 실험들의 지표를 확인해보세요!", color="info", className="w-75")
+        return html.Div([]), dbc.Alert(["왼쪽에서 모델을 선택하고 Compare 버튼을 눌러 실험들의 지표를 확인해보세요! ",html.Span("(2개 이상부터 가능합니다.)", className="fw-bold")], color="info", className="w-75")
         
     else:
         # 모델간 정량, 정성 지표 plot (Compare Table에 있는 모든 정보들 활용)
@@ -308,18 +315,22 @@ def plot_bar(data, sort_of_metric, store):
 # def print_metric(value):
 #     return f'user selection : {value}'
 
-### 선택한 metric에 대한 dist plot을 띄워주는 callback
+### 선택한 metric에 대한 dist plot을 띄워주는 callback, 나중에 refactoring 가능
 @callback(
     Output('dist_fig', 'children'),
     State('store_selected_exp_names', 'data'),
     Input("metric_list", 'value'),
+    State('store_selected_exp','data')
 )
-def plot_dist(data, value):
+def plot_dist(data, value, store):
     colors = ['#9771D0', '#D47DB2', '#5C1F47', '#304591', '#BAE8C8', '#ECEBC6', '#3D3D3D']
+    store_df = pd.DataFrame(store).set_index('experiment_name')
+    selected_id = store_df.loc[data,'exp_id'].values  # 선택한 실험만 보여줘야 함
+
     if value in ['diversity_jac', 'diversity_cos', 'serendipity_pmi', 'serendipity_jac', 'novelty']:
         group_labels = data
         colors = colors[:len(data)]
-        hist_data = total_metrics_users[value].values
+        hist_data = total_metrics_users.loc[selected_id, value].values
         fig = ff.create_distplot(hist_data, group_labels, colors=colors,
                                 bin_size=0.025, show_rug=True, curve_type='kde')
 
@@ -331,7 +342,7 @@ def plot_dist(data, value):
             value = 'avg_precision'
         group_labels = data
         colors = colors[:len(data)]
-        hist_data = total_metrics_users[value].values
+        hist_data = total_metrics_users.loc[selected_id, value].values
         fig = ff.create_distplot(hist_data, group_labels, colors=colors,
                                 bin_size=0.025, show_rug=True, curve_type='kde')
         fig.update_layout(title_text=f'Distribution of {value}')
