@@ -134,20 +134,22 @@ def specific_metric():
     return specific_metric
 
 
-layout = html.Div(children=[
+layout = html.Div(
+    
+    [
     gct.get_navbar(has_sidebar=False),
     html.Div([
     sidebar,
     total_graph,
     html.Div(id = 'rerank_specific_metric_children')
-    ]),
+    ], className="content"),
     html.Div(id='trash2'),
     dcc.Store(id='store_selected_exp', storage_type='session'),
     dcc.Store(id='store_exp_names', storage_type="session"),
     dcc.Store(id='store_exp_ids', storage_type='session'),
     dcc.Store(id='store_selected_exp_names', data=[], storage_type='session')
 
-], className="content")
+],)
 
 
 

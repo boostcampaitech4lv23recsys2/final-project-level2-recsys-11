@@ -12,7 +12,7 @@ create table Datasets (
     item_side VARCHAR(255) NOT NULL,
 
     PRIMARY KEY(ID, dataset_name),
-    FOREIGN KEY(ID) REFERENCES Users(ID)
+    FOREIGN KEY(ID) REFERENCES Users(ID) ON DELETE CASCADE
 );
 
 
