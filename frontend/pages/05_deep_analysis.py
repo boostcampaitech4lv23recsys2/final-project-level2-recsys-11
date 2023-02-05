@@ -305,7 +305,7 @@ layout = html.Div(
                 # ),
             ],
             className="container",
-            style={"margin-top": "4rem"} # navbar에 가려지는것 방지
+            style={"margin-top": "4rem"},  # navbar에 가려지는것 방지
         ),
         dcc.Store(id="trash"),  # 아무런 기능도 하지 않고, 그냥 콜백의 아웃풋 위치만 잡아주는 녀석
         dcc.Store(id="store_selected_exp"),
@@ -904,21 +904,6 @@ def update_graph(store1):
         margin={},
     )
     return fig
-    emb = px.scatter(
-        user,
-        x="xs",
-        y="ys",
-        color="selected",  # 갯수에 따라 색깔이 유동적인 것 같다..
-        opacity=0.9,
-        marginal_x="histogram",
-        marginal_y="histogram",
-    )
-    emb.update_layout(
-        clickmode="event+select",
-        width=700,
-        height=700,
-    )
-    return emb
 
 
 # #최근에 저장된 store 기준으로 사이드 그래프를 그림
@@ -1057,11 +1042,11 @@ def prepare_rerank(value):
                     labelClassName="btn btn-outline-primary",
                     labelCheckedClassName="active",
                     options=[
-                        {"label": "Diversity(Cosine)", "value": 1},
-                        {"label": "Diversity(Jaccard)", "value": 2},
-                        {"label": "Serendipity(PMI)", "value": 3},
-                        {"label": "Serendipity(Jaccard)", "value": 4},
-                        {"label": "Novelty", "value": 5},
+                        {"label": "Diversity(Cosine)", "value": "diversity(cos)"},
+                        {"label": "Diversity(Jaccard)", "value": "diversity(jac)"},
+                        {"label": "Serendipity(PMI)", "value": "serendipity(pmi)"},
+                        {"label": "Serendipity(Jaccard)", "value": "serendipity(jac)"},
+                        {"label": "Novelty", "value": "novelty"},
                     ],
                 ),
             ),
@@ -1119,16 +1104,32 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
         tmp = user.loc[user_lst]
         # TODO: user_lst, obj, alpha를 통해 백엔드에 리랭킹 요청
         params = {
-            "user_lst": user_lst,
-            "obj": obj,
-            "alpha": alpha,
-            "ID": id,
-            "dataset": dataset,
+            "ID": id["username"],
+            "dataset_name": dataset,
             "exp_id": exp_id,
+            "n_candidates": 50,
+            "objective_fn": obj,
+            "alpha": alpha,
+            "user_ids": user_lst,
         }
-        diff_metric, reranked_lst = requests.get(
-            gct.API_URL + "/rerank_selected_users", params
-        )
+        print(params)
+        # params = {
+        #     "ID": "mkdir",
+        #     "dataset_name": "ml-1m",
+        #     "exp_id": exp_id,
+        #     "n_candidates": 50,
+        #     "objective_fn": "diversity(cos)",
+        #     "alpha": 0.5,
+        #     "user_ids": user_lst,
+        # }
+        # params = None
+        # print(params)
+        get_dict = requests.get(gct.API_URL + "/frontend/rerank_users", params).json()
+        diff_metric = get_dict["metric_diff"]
+        diff_metric = pd.DataFrame.from_dict(data=diff_metric, orient="tight")
+        reranked_lst = get_dict["rerank"]
+        reranked_lst = pd.DataFrame.from_dict(data=reranked_lst, orient="tight")
+        reranked_lst = reranked_lst.set_index("user_id")
         # diff는 데이터프레임화 가능
         # reranked는 시리즈화 가능
         tmp["reranked_item"] = reranked_lst
@@ -1142,9 +1143,9 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
         rerank_item = set()
         profile_item = set()
         for i in user_lst:
-            origin_item |= set(i["pred_item"])
-            rerank_item |= set(i["reranked_item"])
-            profile_item |= set(i["user_profile"])
+            origin_item |= set(tmp.loc[i, "pred_item"])
+            rerank_item |= set(tmp.loc[i, "reranked_item"])
+            profile_item |= set(tmp.loc[i, "user_profile"])
         new_item = rerank_item - origin_item
         pop = (
             item.loc[list(origin_item)]
@@ -1292,11 +1293,15 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
         indicator = dbc.Row(
             children=[
                 html.P("지표 비교. 리랭킹했더니 지표가 어떻게 변화했는지 +-로"),
-                # TODO: 기존 지표와 리랭킹 지표 차이를 각각 표시.
-                [
-                    dbc.Badge(children=i, color="primary" if i < 0 else "danger")
-                    for metric, i in zip(sub.index, sub)
-                ],
+                html.Div(
+                    children=[
+                        dbc.Badge(
+                            children=[html.P(metric), html.P(i)],
+                            color="primary" if i < 0 else "danger",
+                        )
+                        for metric, i in zip(sub.index, sub)
+                    ],
+                ),
             ],
         )
         item_poster = html.Div(
