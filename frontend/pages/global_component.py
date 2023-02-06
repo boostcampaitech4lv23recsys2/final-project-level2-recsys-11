@@ -29,11 +29,11 @@ def get_navbar(has_sidebar=True):
         classname = "nosidebar-navbar"
     navbar = dbc.NavbarSimple(
         children=[
-            dbc.NavItem(dbc.NavLink("Compare Table", href="/compare-table")),
-            dbc.NavItem(dbc.NavLink('Model vs Model', href="/model-vs-model")),
-            dbc.NavItem(dbc.NavLink('Reranking', href="/reranking")),
-            dbc.NavItem(dbc.NavLink('Deep Analysis', href="/deep_analysis")),
-            dbc.NavItem(dbc.NavLink('FAQ', href="/FAQ")),
+            dbc.NavItem(dbc.NavLink("Compare Table", href="/compare-table", class_name="nav-menu-color")),
+            dbc.NavItem(dbc.NavLink('Model vs Model', href="/model-vs-model", class_name="nav-menu-color")),
+            dbc.NavItem(dbc.NavLink('Reranking', href="/reranking", class_name="nav-menu-color")),
+            dbc.NavItem(dbc.NavLink('Deep Analysis', href="/deep_analysis", class_name="nav-menu-color")),
+            dbc.NavItem(dbc.NavLink('FAQ', href="/FAQ", class_name="nav-menu-color")),
             dbc.DropdownMenu(
                 children=[
                     dbc.DropdownMenuItem("Get API Key", href="#"),
@@ -44,13 +44,16 @@ def get_navbar(has_sidebar=True):
                 nav=True,
                 in_navbar=True,
                 label="Settings",
+                toggle_style={
+                                "color":'#f5f5f5'
+                             }
             ),
         ],
         brand=BRAND_LOGO,
         brand_href="/",
-        brand_style={'color':'#FFFAF0'},
+        brand_style={'color':'#FFFAF0', 'font-size':"1.5rem", "padding-bottom":"1%"},
         color="primary",
-        dark=True,
+        # dark=True,
         sticky="top",
         className=classname + " p-0 sticky",
     #     style={"position": "fixed",

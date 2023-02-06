@@ -27,10 +27,12 @@ uniq_genre = None
 # 포스터를 띄우는 함수
 def make_card(element):
     tmp = item.loc[element]
+    img = 'https://s3.us-west-2.amazonaws.com/secure.notion-static.com/3e0c51b2-0058-4c7e-a081-63c36afbb9ab/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45EIPT3X45%2F20230206%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20230206T092314Z&X-Amz-Expires=86400&X-Amz-Signature=459ae00b0cb7fe0924f62f17992549f0cb0de1fd2db35bd510675575b2c2ba8e&X-Amz-SignedHeaders=host&response-content-disposition=filename%3D%22Untitled.png%22&x-id=GetObject' if tmp['item_url'] == '' else tmp['item_url']
+
     card = dbc.Col(
         children=dbc.Card(
             [
-                dbc.CardImg(top=True),  # 여기에 이미지를 넣으면 된다.
+                dbc.CardImg(src=img, top=True),
                 dbc.CardBody(
                     [
                         html.H6(tmp["movie_title"]),
@@ -380,17 +382,30 @@ def choose_experiment(
     user = user.set_index("user_id")
     item = requests.get(gct.API_URL + "/frontend/item_info", params=params).json()
     item = pd.DataFrame.from_dict(data=item, orient="tight")
+    print(item.columns)
+    #'item_id', 'item_name', 'genres:multi', 'year', 'item_popularity',
+       #'item_url', 'item_profile', 'rec_user', 'xs', 'ys'
     item.columns = [
-        "item_id",
-        "movie_title",
-        "genre",
-        "release_year",
-        "item_pop",
-        "item_profile_user",
-        "recommended_users",
-        "xs",
-        "ys",
+       'item_id', 'movie_title', 'genre', 'release_year', 'item_pop',
+       'item_url', 'item_profile_user', 'recommended_users', 'xs', 'ys'
     ]
+    # item.columns = [
+    #     "item_id",
+    #     "movie_title",
+    #     "genre",
+    #     "release_year",
+    #     "item_pop",
+    #     "item_profile_user",
+    #     "recommended_users",
+    #     "xs",
+    #     "ys",
+    # ]
+    # print(item[item['release_year'] == '']['release_year'])
+    # TODO: s3에 이슈가 있다. 때문에 결측되는 값들을 일단 드롭한다.
+    # 현재 리랭크 안됨
+    # item = item[item['release_year'] != '']
+    # print()
+    # print(item[item['release_year'] == '']['release_year'])
     item["recommended_users"] = item["recommended_users"].apply(
         lambda d: d if isinstance(d, list) else []
     )
