@@ -71,7 +71,7 @@ header_exp = html.Div(
 header_user_or_item = html.Div(
     children=[
         dbc.Row(
-            [   
+            [
                 # html.Div(dbc.Progress(id="first_progress_bar")),
                 html.Div("해당 실험의 아이템, 유저 페이지"),
                 dbc.Tabs([
@@ -155,7 +155,7 @@ def show_exp_choice(exp_name, exp_id):
     Output("show_user_or_item", "options"),
     Output("show_user_or_item", "value"),
     # Output(progress_bar_DA, "value", ),
-    
+
     # Input(first_interval, "n_intervals"),
     Input("exp_id_for_deep_analysis", "value"),
     State("store_user_state", "data"),
@@ -532,17 +532,19 @@ def update_graph(store1):
 def update_graph(store1, store2):
     if ctx.triggered_id == "items_selected_by_option":
         tmp = item.loc[store1]
-        year = px.histogram(tmp, x="release_year")
-        genre = px.histogram(tmp, x="genre")
-        return (dcc.Graph(figure=year), dcc.Graph(figure=genre))
     else:
         if not store2:
             raise PreventUpdate
         tmp = item.loc[store2]
-        tmp = tmp[tmp["selected"] == "Selected"]
-        year = px.histogram(tmp, x="release_year")
-        genre = px.histogram(tmp, x="genre")
-        return (dcc.Graph(figure=year), dcc.Graph(figure=genre))
+
+    year = px.histogram(tmp, x="release_year")
+    genre_counter = Counter()
+    for i in tmp['genre']:
+        genre_counter += Counter(i.split())
+    genre_fig = daf.plot_info_counter(genre_counter, 'genre')
+    # genre = px.histogram(tmp, x="genre")
+    return (dcc.Graph(figure=year), dcc.Graph(figure=genre_fig))
+
 
 
 # 초기화 버튼 누를 때 선택 초기화
@@ -742,7 +744,7 @@ def update_graph(store1, store2):
         if not store2:
             raise PreventUpdate
         tmp = user.loc[store2]
-        tmp = tmp[tmp["selected"] == "Selected"]
+        # tmp = tmp[tmp["selected"] == "Selected"]
         age = daf.plot_info_counter(Counter(tmp["age"]), "Age")
         gender = daf.plot_info_counter(Counter(tmp["gender"]), "Gender")
         occupation = daf.plot_info_counter(Counter(tmp["occupation"]), "Occupation")
@@ -952,10 +954,10 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
         item_side = dbc.Row(
             children=[
                 html.H3("리랭킹 관련한 장르 분포"),
-                dcc.Graph(figure=daf.plot_usergroup_genre(item, 
-                                                          origin_item, 
-                                                          rerank_item, 
-                                                          profile_item, 
+                dcc.Graph(figure=daf.plot_usergroup_genre(item,
+                                                          origin_item,
+                                                          rerank_item,
+                                                          profile_item,
                                                           tmp
                                                           )),
             ],

@@ -351,15 +351,16 @@ def plot_usergroup_genre(item, origin_item, rerank_item, profile_item, tmp):
             return fig
 
 
-def plot_info_counter(Counter_profile: Counter, info_name:str):
+def plot_info_counter(Counter_profile: Counter, info_name:str, k:int=10):
         """
         임베딩 그래프 옆에 사이드 정보 그려주는 함수
-        
-        Counter_profile: 
+
+        Counter_profile:
         info_name: 그래프에 출력될 문자열
+        k: 파이 차트로 보여줄 원소 갯수. 너무 많으면 보기 안 좋기에 적당히 설정
         """
-        Counter_profile_labels = list(Counter_profile.keys())
-        Counter_profile_values = list(Counter_profile.values())
+        Counter_profile_labels = list(Counter_profile.keys())[:k]
+        Counter_profile_values = list(Counter_profile.values())[:k]
         fig = make_subplots(
             rows=1,
             cols=1,
