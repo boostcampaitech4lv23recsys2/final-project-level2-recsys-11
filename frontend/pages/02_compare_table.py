@@ -5,7 +5,7 @@ import dash_bootstrap_components as dbc
 import requests
 import pandas as pd
 from dash.exceptions import PreventUpdate
-from utils import global_component as gct
+from .utils import global_component as gct
 import json
 # AgGrid docs:
 # https://www.ag-grid.com/javascript-data-grid/column-pinning/

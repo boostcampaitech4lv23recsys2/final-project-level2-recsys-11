@@ -2,7 +2,7 @@ import dash
 from dash import Dash, dcc, html, Input, Output
 import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
-from . import global_component as gct
+from .utils import global_component as gct
 
 dash.register_page(__name__, path='/')
 

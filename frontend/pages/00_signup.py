@@ -7,7 +7,7 @@ import plotly.express as px
 from dash.exceptions import PreventUpdate
 import json
 from passlib.context import CryptContext
-from utils import global_component as gct
+from .utils import global_component as gct
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 salt_value = gct.get_login_setting()['SALT']
