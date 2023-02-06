@@ -37,7 +37,8 @@ def get_feature_component(img_url:str, emoji:str,
     else:
         ValueError("img_url must be left or right")
 
-img_url = "https://user-images.githubusercontent.com/76675506/216320888-7b790e97-61af-442c-93b3-c574ed0c119e.png"
+img_url = "https://s3.us-west-2.amazonaws.com/secure.notion-static.com/a9401680-b68f-4c66-898b-bf51d3e93c6b/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45EIPT3X45%2F20230206%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20230206T074253Z&X-Amz-Expires=86400&X-Amz-Signature=7f5bb4bffb9f39294c4e24f601d52a569c98ba0e14aa4cf3066c4e1a8323a872&X-Amz-SignedHeaders=host&response-content-disposition=filename%3D%22Untitled.png%22&x-id=GetObject"
+
 feature_compare_table = get_feature_component(
     img_url=img_url,
     emoji="📋",
@@ -46,19 +47,22 @@ feature_compare_table = get_feature_component(
     img_position="left"
 )
 
+img_url = "https://user-images.githubusercontent.com/76675506/216320888-7b790e97-61af-442c-93b3-c574ed0c119e.png"
 feature1 = get_feature_component(
     img_url=img_url,
     emoji="🔍",
     title="모델의 임베딩을 다양한 관점에서 살펴볼 수 있습니다.",
     description="사용자가 선택한 옵션에 따라, 임베딩 그래프를 인터랙티브하게 변화시킬 수 있습니다.",
-    img_position="left"
+    img_position="right"
 )
+
+img_url = "https://s3.us-west-2.amazonaws.com/secure.notion-static.com/61a511fc-932a-4cf9-b369-2fe9e1d940ab/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45EIPT3X45%2F20230206%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20230206T074706Z&X-Amz-Expires=86400&X-Amz-Signature=a105df63067c112eda7ef4a86430965043611e59a9a87d5b6710d01f1bf6ca3e&X-Amz-SignedHeaders=host&response-content-disposition=filename%3D%22Untitled.png%22&x-id=GetObject"
 feature2 = get_feature_component(
     img_url=img_url,
     emoji="😊",
-    title="기능 소제목",
-    description="기능 설명",
-    img_position="right"
+    title="실험별 지표 비교와 리랭킹 기능을 사용할 수 있습니다.",
+    description="다양한 실험의 지표를 한 눈에 그래프로 비교할 수 있으며, 리랭킹을 통해 다양한 정성지표 값을 상승 시킬 수 있습니다.",
+    img_position="left"
 )
 
 problem_intro = html.Div([
