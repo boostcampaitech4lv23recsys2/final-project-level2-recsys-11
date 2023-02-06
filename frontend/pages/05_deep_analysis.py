@@ -752,80 +752,11 @@ def update_graph(store1):
     Input("users_selected_by_embed", "data"),
 )
 def update_graph(store1, store2):
-    def plot_age_counter(age_Counter_profile: Counter):
-        age_Counter_profile_labels = list(age_Counter_profile.keys())
-        age_Counter_profile_values = list(age_Counter_profile.values())
-        fig = make_subplots(
-            rows=1,
-            cols=1,
-            specs=[[{"type": "domain"}]],
-            subplot_titles=("Age(profile)"),
-        )
-        fig.add_trace(
-            go.Pie(
-                labels=age_Counter_profile_labels,
-                values=age_Counter_profile_values,
-                name="Age(profile)",
-                pull=[0.07] + [0] * (len(age_Counter_profile_values) - 1),
-            ),  # textinfo='label+percent', pull=[0.2]+[0]*(len(total_item_genre_values)-1)
-            1,
-            1,
-        )
-
-        fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
-        return fig
-
-    def plot_gender_counter(gender_Counter_profile: Counter):
-        gender_Counter_profile_labels = list(gender_Counter_profile.keys())
-        gender_Counter_profile_values = list(gender_Counter_profile.values())
-
-        fig = make_subplots(
-            rows=1,
-            cols=1,
-            specs=[[{"type": "domain"}]],
-            subplot_titles=("Gender ratio(profile)"),
-        )
-        fig.add_trace(
-            go.Pie(
-                labels=gender_Counter_profile_labels,
-                values=gender_Counter_profile_values,
-                name="user Rec list genre",
-                pull=[0.07] + [0] * (len(gender_Counter_profile_values) - 1),
-            ),  # textinfo='label+percent', pull=[0.2]+[0]*(len(user_rec_values)-1)
-            1,
-            1,
-        )
-        fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
-
-        return fig
-
-    def plot_occupation_counter(occupation_Counter_profile: Counter):
-        occupation_Counter_profile_labels = list(occupation_Counter_profile.keys())
-        occupation_Counter_profile_values = list(occupation_Counter_profile.values())
-        fig = make_subplots(
-            rows=1,
-            cols=1,
-            specs=[[{"type": "domain"}]],
-            subplot_titles=("Occupation ratio(profile)"),
-        )
-        fig.add_trace(
-            go.Pie(
-                labels=occupation_Counter_profile_labels,
-                values=occupation_Counter_profile_values,
-                name="user Rec list genre",
-                pull=[0.07] + [0] * (len(occupation_Counter_profile_values) - 1),
-            ),  # textinfo='label+percent', pull=[0.2]+[0]*(len(user_rec_values)-1)
-            1,
-            1,
-        )
-        fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
-        return fig
-
     if ctx.triggered_id == "users_selected_by_option":
         tmp = user.loc[store1]
-        age = plot_age_counter(Counter(tmp["age"]))
-        gender = plot_gender_counter(Counter(tmp["gender"]))
-        occupation = plot_occupation_counter(Counter(tmp["occupation"]))
+        age = daf.plot_info_counter(Counter(tmp["age"]), "Age")
+        gender = daf.plot_info_counter(Counter(tmp["gender"]), "Gender")
+        occupation = daf.plot_info_counter(Counter(tmp["occupation"]), "Occupation")
         return (
             dcc.Graph(figure=age),
             dcc.Graph(figure=gender),
@@ -836,9 +767,9 @@ def update_graph(store1, store2):
             raise PreventUpdate
         tmp = user.loc[store2]
         tmp = tmp[tmp["selected"] == "Selected"]
-        age = plot_age_counter(Counter(tmp["age"]))
-        gender = plot_gender_counter(Counter(tmp["gender"]))
-        occupation = plot_occupation_counter(Counter(tmp["occupation"]))
+        age = daf.plot_info_counter(Counter(tmp["age"]), "Age")
+        gender = daf.plot_info_counter(Counter(tmp["gender"]), "Gender")
+        occupation = daf.plot_info_counter(Counter(tmp["occupation"]), "Occupation")
         return (
             dcc.Graph(figure=age),
             dcc.Graph(figure=gender),
@@ -1016,6 +947,7 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
             .index
         )
         new_lst = [make_card(item) for item in new]
+
 
         indicator = dbc.Row(
             children=[

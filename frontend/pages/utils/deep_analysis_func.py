@@ -350,20 +350,27 @@ def plot_usergroup_genre(item, origin_item, rerank_item, profile_item, tmp):
 
             return fig
 
-def plot_info_counter(Counter_profile: Counter, ):
+
+def plot_info_counter(Counter_profile: Counter, info_name:str):
+        """
+        임베딩 그래프 옆에 사이드 정보 그려주는 함수
+        
+        Counter_profile: 
+        info_name: 그래프에 출력될 문자열
+        """
         Counter_profile_labels = list(Counter_profile.keys())
         Counter_profile_values = list(Counter_profile.values())
         fig = make_subplots(
             rows=1,
             cols=1,
             specs=[[{"type": "domain"}]],
-            subplot_titles=("Occupation ratio(profile)"),
+            subplot_titles=(f"{info_name} ratio(profile)"),
         )
         fig.add_trace(
             go.Pie(
                 labels=Counter_profile_labels,
                 values=Counter_profile_values,
-                name="user Rec list genre",
+                name=f"{info_name}(profile)",
                 pull=[0.07] + [0] * (len(Counter_profile_values) - 1),
             ),  # textinfo='label+percent', pull=[0.2]+[0]*(len(user_rec_values)-1)
             1,
