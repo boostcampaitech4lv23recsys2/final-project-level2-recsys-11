@@ -4,7 +4,7 @@ import dash_bootstrap_components as dbc
 import requests
 from dash.exceptions import PreventUpdate
 from passlib.context import CryptContext
-from . import global_component as gct
+from utils import global_component as gct
 from pydantic import BaseSettings
 
 

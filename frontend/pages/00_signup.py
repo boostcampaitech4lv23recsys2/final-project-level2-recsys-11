@@ -7,11 +7,10 @@ import plotly.express as px
 from dash.exceptions import PreventUpdate
 import json
 from passlib.context import CryptContext
-from . import global_component as gct
+from utils import global_component as gct
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 salt_value = gct.get_login_setting()['SALT']
-API_url = 'http://127.0.0.1:30004'
 
 dash.register_page(__name__, path='/signup')
 
@@ -77,7 +76,7 @@ def create_user(n_click, username, password1, password2):
     password2=pwd_context.hash(password2, salt=salt_value)
     
     data={'ID':username, 'password1':password1, 'password2': password2,}
-    response = requests.post(f'{API_url}/user/create_user', json=data)
+    response = requests.post(f'{gct.API_URL}/user/create_user', json=data)
     
     if response.status_code == 422:
         return dbc.Alert("Password doesn't match. Please check agian.", color="primary"),

@@ -9,7 +9,7 @@ from dash_bootstrap_templates import load_figure_template
 from dash.exceptions import PreventUpdate
 
 # import feffery_antd_components as fac
-from . import global_component as gct
+from utils import global_component as gct
 from collections import Counter
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
@@ -250,10 +250,11 @@ header_exp = html.Div(
     children=[
         dbc.Row(
             [
-                html.Div("선택하신 아이템들입니다!"),
+                html.H3("실험 선택", className="mt-3"),
                 dcc.Dropdown(
                     id="exp_id_for_deep_analysis",
                     options=["exp1"],
+                    className="w-25 my-3"
                 ),
             ]
         )
@@ -263,8 +264,13 @@ header_exp = html.Div(
 header_user_or_item = html.Div(
     children=[
         dbc.Row(
-            [
+            [   
+                # html.Div(dbc.Progress(id="first_progress_bar")),
                 html.Div("해당 실험의 아이템, 유저 페이지"),
+                dbc.Tabs([
+                    dbc.Tab(label="유저"),
+                    dbc.Tab(label="아이템")
+                ]),
                 dbc.RadioItems(
                     id="show_user_or_item",
                     className="btn-group",
@@ -274,6 +280,7 @@ header_user_or_item = html.Div(
                 ),
             ]
         ),
+        # first_interval:=dcc.Interval(interval=15*1000, n_intervals=0)
     ]
 )
 
@@ -302,7 +309,9 @@ layout = html.Div(
         html.Div(
             children=[
                 header_exp,
-                dbc.Spinner(header_user_or_item),
+                dbc.Spinner(
+                header_user_or_item,
+                ),
                 # 스피너로 묶었는데 생각대로 안 나옴
                 # dbc.Spinner(
                 html.Div(
@@ -344,12 +353,16 @@ def show_exp_choice(exp_name, exp_id):
 @callback(
     Output("show_user_or_item", "options"),
     Output("show_user_or_item", "value"),
+    # Output(progress_bar_DA, "value", ),
+    
+    # Input(first_interval, "n_intervals"),
     Input("exp_id_for_deep_analysis", "value"),
     State("store_user_state", "data"),
     State("store_user_dataset", "data"),
     prevent_initial_call=True,
 )
 def choose_experiment(
+    # n_interval,
     exp,
     vip,
     dataset_name,
@@ -382,7 +395,7 @@ def choose_experiment(
     user = user.set_index("user_id")
     item = requests.get(gct.API_URL + "/frontend/item_info", params=params).json()
     item = pd.DataFrame.from_dict(data=item, orient="tight")
-    print(item.columns)
+    # print(item.columns)
     #'item_id', 'item_name', 'genres:multi', 'year', 'item_popularity',
        #'item_url', 'item_profile', 'rec_user', 'xs', 'ys'
     item.columns = [
@@ -423,7 +436,7 @@ def choose_experiment(
         {"label": "user", "value": 2},
     ]
     # print(item.describe())
-    return option, None
+    return option, None,
 
 
 # 유저 페이지를 띄울지, 아이템 페이지를 띄울지

@@ -12,7 +12,7 @@ import dash_bootstrap_components as dbc
 from dash import html, dcc, callback, Input, Output, State,  MATCH, ALL
 from dash_bootstrap_templates import load_figure_template
 from dash.exceptions import PreventUpdate
-from . import global_component as gct
+from utils import global_component as gct
 API_url = 'http://127.0.0.1:30004'
 dash.register_page(__name__, path='/reranking')
 
