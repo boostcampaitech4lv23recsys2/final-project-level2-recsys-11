@@ -10,8 +10,6 @@ import json
 # AgGrid docs:
 # https://www.ag-grid.com/javascript-data-grid/column-pinning/
 
-# user_df = pd.read_csv('/opt/ml/user.csv', index_col='user_id')[:100]
-
 dash.register_page(__name__, path='/compare-table')
 
 
@@ -23,26 +21,43 @@ pinned_column_setting = dict(
 
 
 select_dataset = html.Div([
-    html.H3('데이터 선택'),
-    dcc.Dropdown(
-                 id='dataset-list',
-                 className="mt-3 w-25"
-                 ),
-    html.Hr()
-], className="my-5")
+    html.Div(children=[
+        html.H3('데이터 선택', style={"margin-top": '5rem', "margin-bottom": '1rem'}),
+        html.Div([
+        dbc.Row([
+            dbc.Col( dcc.Dropdown(
+                    id='dataset-list',
+                    className="pe-5 w-50"
+                    ),),
+            dbc.Col(html.Div(id='message',
+                # style={'height': '25px'},
+                className='ms-auto'),)
+        ],
+        # className='hstack'
+        ),
+        html.Hr(),
+
+        ], )
+], className="my-5")])
+
 
 def get_table(df):
     compare_table = html.Div([
         html.Div([
-        html.H3(['전체 실험 목록', html.Span(" �", id="compare-table-tooltip")], className="mb-3s"),
-        dbc.Button('선택 완료', id='select_done', n_clicks=0, color="success"),
-        html.Div(id="guide-to-model-vs"),
-        ], className="hstack gap-5 mb-3"),
+        html.H3(['전체 실험 목록 ', html.Span(" �", id="compare-table-tooltip", style={'font-size': "25px"})], className="mb-3s"),
+        dbc.Button('선택 완료', id='select_done', n_clicks=0, color="success", className="ms-auto mb-2"),
+        # html.Div(id="guide-to-model-vs"),
+        ], className="hstack gap-5 mb-3 mt-1"),
+        dbc.Tooltip("각 column을 누르면 정렬이 가능합니다. 특정 값을 찾으려면 Column 내부의 검색창을 이용해주세요.",
+                     target="compare-table-tooltip",
+                     style={'width':250}
+                     ),
         dbc.Tooltip("비교할 실험을 선택하고 "
                     "'선택 완료' 버튼을 "
                     "눌러보세요!",
-                     target="compare-table-tooltip",
-                     className="w-auto"),
+                     target="select_done",
+                     style={'width':225}
+                     ),
         dbc.Row([
             dbc.Col([
                 dag.AgGrid(
@@ -67,20 +82,19 @@ def get_table(df):
                 ),
                 ]),
 
-                html.Div(id="selected_table_container", className="mt-0 hstack gap-3")
+                html.Div(id="selected_table_container", className="pb-3 hstack gap-2")
 
         ]),
         html.Br(),
         # dbc.Button('Select done!', id='select_done', n_clicks=0),
         # html.Hr(),
 
-    ], )
+    ], className="mt-1")
     return compare_table
 
 layout = html.Div([
     gct.get_navbar(has_sidebar=False),
     html.P(id='test_data'),
-    html.Div(id="test2"),
     html.Div([
         select_dataset,
         html.Div(id="exp_table_container"),
@@ -114,6 +128,7 @@ def test_request(n, user_state):
         return response.json()
 
 @callback(
+        Output('message', 'children'),
         Output('exp_table_container', 'children'),
         Output('store_exp_column','data'),
         Output('store_user_dataset', 'data'),
@@ -123,7 +138,7 @@ def test_request(n, user_state):
 )
 def get_exp_data(user_state:dict, dataset_name:str,):
     if dataset_name == None:
-        return dbc.Alert("데이터셋을 먼저 선택해주세요.", color="info", className="w-50"), None, None
+        return None, dbc.Alert("데이터셋을 선택해주세요.", color="info", className="w-50"), None, None
     params = {
         "ID": user_state["username"],
         "dataset_name": dataset_name
@@ -134,7 +149,16 @@ def get_exp_data(user_state:dict, dataset_name:str,):
     temp_col1 = df.columns[4:].to_list()
     temp_col2 = df.columns[:4].to_list()
     df = df[temp_col1+temp_col2]
-    return get_table(df), df.columns, dataset_name
+    msg = dbc.Alert("선택된 실험이 추후 분석 페이지에 쓰입니다.", id='guide_msg_ct', color="info", className="pb-0", 
+                    style={
+                            "width": "500px",
+                            "height": "35px",
+                            "margin-right":"0",
+                            "margin-left": "140px",
+                            "margin-bottom": "0",
+                            "padding": "1% 2% 3%"
+                            })
+    return msg, get_table(df), df.columns, dataset_name
 
 ## 선택한 실험의 정보를 table로 만들어주고, 그 실험 정보 자체를 return
 @callback(
@@ -166,7 +190,7 @@ def plot_selected_table(n, seleceted_rows, exp_column):
     #     rowDragManaged=True,
     #     animateRows=True,
     # )
-    selects = [html.H6("선택한 실험 목록: ", className="mt-3 ")]
+    selects = [html.H6("선택한 실험 목록: ", className="mt-4")]
     if seleceted_rows == None:
         PreventUpdate
     else:
@@ -176,7 +200,7 @@ def plot_selected_table(n, seleceted_rows, exp_column):
                 )
     return selects, seleceted_rows
 
-## 선택한 실험에서 실험의 이름을 가져와서 model vs model page로 넘겨주기 (지금은 age로 임시방편)
+## 선택한 실험에서 실험의 이름을 가져와서 model vs model page로 넘겨주기 
 @callback(
     Output('store_exp_names', 'data'),
     Input('store_selected_exp', 'data')
@@ -202,12 +226,33 @@ def store_selected_exp_ids(data):
         exp_ids.append(each['exp_id'])
     return exp_ids
 
+
 @callback(
-    Output("guide-to-model-vs", "children"),
-    Input('select_done', 'n_clicks'),
-    prevent_initial_update=True
+    Output('guide_msg_ct', 'children'),
+    Output('guide_msg_ct', 'color'),
+    State('store_exp_ids', 'data'),
+    Input('store_exp_ids', 'data'),
+    Input('select_done', 'n_clicks')
 )
-def guide_to_model_vs(n):
+def msg_change(select_names, _, n):
     if n == 0:
-        return None
-    return dbc.Alert("Model vs Model 페이지로 이동해보세요!", color="info", className="mb-0 mt-0"),
+        raise PreventUpdate
+
+    elif select_names and n >= 1:
+        return "Model vs Model 페이지로 이동해보세요!", "success"
+
+    if select_names == [] or n >= 1:
+        return "실험을 하나 이상 선택해주세요.", 'danger'
+    
+    else:
+        raise PreventUpdate
+    
+# @callback(
+#     Output("guide-to-model-vs", "children"),
+#     Input('select_done', 'n_clicks'),
+#     prevent_initial_update=True
+# )
+# def guide_to_model_vs(n):
+#     if n == 0:
+#         return None
+#     return dbc.Alert("Model vs Model 페이지로 이동해보세요!", color="info", className="mb-0 mt-0"),

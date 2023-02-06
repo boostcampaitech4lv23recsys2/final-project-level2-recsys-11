@@ -180,6 +180,7 @@ async def user_info(ID: str, dataset_name: str, exp_id: int):
     )
 
     pred_item_pd = await s3_to_pd(key_hash=exp_row["pred_items"])
+    pred_item_pd['pred_items'] = pred_item_pd['pred_items'].apply(lambda x: x[:10])
 
     user_tsne_pd = await s3_to_pd(key_hash=exp_row["user_tsne"])
     user_tsne_pd = user_tsne_pd.rename(columns={"item_id": "user_id"})

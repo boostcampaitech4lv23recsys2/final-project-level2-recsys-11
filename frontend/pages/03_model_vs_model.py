@@ -121,7 +121,7 @@ layout = html.Div([html.Div(
     Input('compare_btn', 'n_clicks'),
     State('store_exp_ids', 'data')
 )
-def get_stored_selected_models(n, exp_ids:list[int]) -> pd.DataFrame:
+def get_stored_selected_models(_, exp_ids:list[int]) -> pd.DataFrame:
     global total_metrics
     global total_metrics_users
     params = {'ID':'mkdir', 'dataset_name':'ml-1m', 'exp_ids': exp_ids}
