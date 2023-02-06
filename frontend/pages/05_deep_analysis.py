@@ -138,12 +138,6 @@ layout = html.Div(
 )
 
 
-# @callback(Output("testin", "children"), Input("store_selected_exp", "data"))
-# def testing(val):
-#     tmp = val
-#     return str(tmp)
-
-
 ### 고객이 정한 장바구니가 담긴 store id가 필요함
 ##그거 토대로 버튼 그룹을 구성해야 함
 @callback(
@@ -202,30 +196,11 @@ def choose_experiment(
     user = user.set_index("user_id")
     item = requests.get(gct.API_URL + "/frontend/item_info", params=params).json()
     item = pd.DataFrame.from_dict(data=item, orient="tight")
-    # print(item.columns)
-    #'item_id', 'item_name', 'genres:multi', 'year', 'item_popularity',
-       #'item_url', 'item_profile', 'rec_user', 'xs', 'ys'
+
     item.columns = [
        'item_id', 'movie_title', 'genre', 'release_year', 'item_pop',
        'item_url', 'item_profile_user', 'recommended_users', 'xs', 'ys'
     ]
-    # item.columns = [
-    #     "item_id",
-    #     "movie_title",
-    #     "genre",
-    #     "release_year",
-    #     "item_pop",
-    #     "item_profile_user",
-    #     "recommended_users",
-    #     "xs",
-    #     "ys",
-    # ]
-    # print(item[item['release_year'] == '']['release_year'])
-    # TODO: s3에 이슈가 있다. 때문에 결측되는 값들을 일단 드롭한다.
-    # 현재 리랭크 안됨
-    # item = item[item['release_year'] != '']
-    # print()
-    # print(item[item['release_year'] == '']['release_year'])
     item["recommended_users"] = item["recommended_users"].apply(
         lambda d: d if isinstance(d, list) else []
     )
@@ -545,6 +520,7 @@ def update_graph(store1):
         margin={},
     )
     return fig
+
 
 
 # 최근에 저장된 store 기준으로 사이드 그래프를 그림
