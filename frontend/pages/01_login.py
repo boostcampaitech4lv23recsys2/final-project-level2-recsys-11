@@ -58,6 +58,10 @@ layout =  html.Div([
                     href='/signup',
             )),
             ]),
+            dcc.Link(
+                        children=dbc.Button(children='데모 시작하기!', className='w-100 mt-3', color="info", id="demo_start_btn", n_clicks=0),
+                    href='/compare-table'),
+
             html.Div(id='login-value')
 
         ],
@@ -69,14 +73,16 @@ layout =  html.Div([
         Output(component_id='login-value', component_property='children'),
         Output(component_id='store_user_state', component_property='data'),
 
+        Input("demo_start_btn", "n_clicks"),
         Input('login-button', 'n_clicks'),
         State('uname-box', 'value'),
         State('pwd-box', 'value'),
         prevent_initial_call=True
 )
-def login(n_click, uname, pwd):
-        if n_click == 0:
-                return None, None
+def login(demo_n, login_n, uname, pwd):
+        if login_n == 0:
+                # return None, None
+                raise PreventUpdate
         try:
                 pwd = pwd_context.hash(pwd, salt=salt_value)
         except TypeError as e:
@@ -90,3 +96,10 @@ def login(n_click, uname, pwd):
                 return dbc.Alert("Invalid ID or password.", color="primary"), None
         else:
                 return dbc.Alert(f"{response.status_code} Error.", color="primary"), None
+
+# @callback(
+#         Output("store_user_state", "data"),
+#         Input("demo_start_btn", "n_clicks")
+# )
+# def start_demo(_):
+#         return {"username": "mkdir"}
