@@ -26,13 +26,16 @@ sidebar = html.Div([
 
         html.Div([
             dbc.Button('➕', id='add_button', n_clicks=0, 
-                    #    style={'position':'absolute', 'right':0, 'margin-right':'2rem'}, 
+                    # style={'text-color':'#2E8B57'}, 
                     className="mt-1 me-5"),
-            dbc.Popover("실험 추가하기", trigger='hover', target='add_button', body=True),
+            dbc.Tooltip("실험 추가하기", target='add_button', placement='bottom',
+                     style={'width':120}
+                     ),       
+            # dbc.Popover("실험 추가하기", trigger='hover', target='add_button', body=True, placement='bottom'),
             dbc.Button('비교하기', id='compare_btn', n_clicks=0, 
                     className="ms-5 mt-1 w-50"
                     )
-        ], className="hstack gap-4")
+        ], className="hstack gap-3")
     ],
     className='sidebar'
 )
