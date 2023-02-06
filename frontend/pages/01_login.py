@@ -14,10 +14,6 @@ salt_value = gct.get_login_setting()['SALT']
 dash.register_page(__name__, path='/login')
 
 layout =  html.Div([
-        # html.Br(),
-        # html.Br(),
-        # html.Br(),
-        # html.Br(),
         html.Br(),
    
         html.H1(gct.BRAND_LOGO, style={
@@ -58,6 +54,10 @@ layout =  html.Div([
                     href='/signup',
             )),
             ]),
+        #     dcc.Link(
+                dbc.Button(children='데모 시작하기!', className='w-100 mt-3', color="info", id="demo_start_btn", n_clicks=0),
+                #     href='/compare-table'),
+
             html.Div(id='login-value')
 
         ],
@@ -69,18 +69,22 @@ layout =  html.Div([
         Output(component_id='login-value', component_property='children'),
         Output(component_id='store_user_state', component_property='data'),
 
+        Input("demo_start_btn", "n_clicks"),
         Input('login-button', 'n_clicks'),
         State('uname-box', 'value'),
         State('pwd-box', 'value'),
         prevent_initial_call=True
 )
-def login(n_click, uname, pwd):
-        if n_click == 0:
-                return None, None
+def login(demo_n, login_n, uname, pwd):
+        if login_n == 0 and demo_n == 0:
+                raise PreventUpdate
+        elif demo_n != 0:
+                return dcc.Location(pathname='compare-table', id='mvsm'), {"username": "mkdir"}
         try:
                 pwd = pwd_context.hash(pwd, salt=salt_value)
         except TypeError as e:
                 pass
+        
         header = {'Content-Type': 'application/x-www-form-urlencoded'}
         data = {'username': uname, 'password': pwd}
         response = requests.post(f'{gct.API_URL}/user/login', data, header)
