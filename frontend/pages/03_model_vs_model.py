@@ -12,7 +12,7 @@ from dash import html, dcc, callback, Input, Output, State,  MATCH, ALL
 from dash_bootstrap_templates import load_figure_template
 from dash.exceptions import PreventUpdate
 from . import global_component as gct
-API_url = 'http://127.0.0.1:30004'
+
 
 dash.register_page(__name__, path='/model-vs-model')
 
@@ -126,7 +126,7 @@ def get_stored_selected_models(_, exp_ids:list[int]) -> pd.DataFrame:
     global total_metrics
     global total_metrics_users
     params = {'ID':'mkdir', 'dataset_name':'ml-1m', 'exp_ids': exp_ids}
-    response = requests.get(API_url + '/frontend/selected_metrics', params = params)
+    response = requests.get(gct.API_URL + '/frontend/selected_metrics', params = params)
     a = response.json()
     total_metrics = pd.DataFrame().from_dict(a['model_metrics'], orient='tight')
     total_metrics_users = pd.DataFrame().from_dict(a['user_metrics'], orient='tight')
