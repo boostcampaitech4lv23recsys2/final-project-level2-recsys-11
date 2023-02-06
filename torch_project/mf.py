@@ -11,6 +11,8 @@ import pandas as pd
 import numpy as np
 from utils import NegativeSampler, set_seed, get_full_sort_score
 
+from web4rec.web4rec import Web4Rec, Web4RecDataset
+
 
 def get_parser():
     parser = argparse.ArgumentParser()
@@ -18,14 +20,17 @@ def get_parser():
     parser.add_argument('--data_dir', default='data/ml-1m')
     parser.add_argument('--device', default='cuda', type=str)
     parser.add_argument('--seed', default=42, type=int)
-    parser.add_argument('--n_valids', default=1, type=int)
+    parser.add_argument('--n_valids', default=2, type=int)
     
+    
+    parser.add_argument("--exp_name", type=str)
+
     parser.add_argument("--loss", default='bce', choices = ['bpr', 'bce'], type=str)
     parser.add_argument("--sampler", default='uni', choices=['uni', 'pop'], type=str)
     parser.add_argument("--n_negs", default=2, type=int)
 
     parser.add_argument("--lr", default=0.01, type=float)
-    parser.add_argument("--n_epochs", default=5, type=int)
+    parser.add_argument("--n_epochs", default=8, type=int)
     parser.add_argument("--batch_size", default=4096, type=int)
 
     # model dependent
@@ -81,6 +86,7 @@ class BPRLoss(nn.Module):
 
 def main(args):
     # 라이브러리 쭉쭉
+    print('start:', args.loss, args.sampler)
     ratings = pd.read_csv(os.path.join(args.data_dir, 'train_ratings.csv'))
     ratings = ratings.sort_values(by=['user_id', 'timestamp'], ignore_index=True)
 
@@ -93,12 +99,38 @@ def main(args):
     idx2user = {k: v for k, v in enumerate(ratings['user_id'].unique())}
     idx2item = {k: v for k, v in enumerate(ratings['item_id'].unique())}
 
-    # save data
-    with open('./data/idx2user.pickle','wb') as fw:
-        pickle.dump(idx2user, fw)
+    # # save data
+    # with open('./data/idx2user.pickle','wb') as fw:
+    #     pickle.dump(idx2user, fw)
 
-    with open('./data/idx2item.pickle','wb') as fw:
-        pickle.dump(idx2item, fw)
+    # with open('./data/idx2item.pickle','wb') as fw:
+    #     pickle.dump(idx2item, fw)
+
+    # Web4Rec - Dataset Process start
+    Web4Rec.login(token='mkdir_token')
+
+    ground_truth = pd.read_csv(os.path.join(args.data_dir, 'test_ratings.csv'))
+    user_side = pd.read_csv(os.path.join(args.data_dir, 'users.csv'))
+    item_side = pd.read_csv(os.path.join(args.data_dir, 'items.csv'))
+
+    item_side['genres'] = item_side['genres'].apply(lambda s: s.replace('|', ' '))
+    item_side.rename(
+        columns= {
+            'title': 'item_name',
+            'genres': 'genres:multi',
+            }, 
+        inplace=True
+    )
+
+    w4r_dataset = Web4RecDataset(dataset_name='ml-1m')
+    w4r_dataset.add_train_interaction(ratings)
+    w4r_dataset.add_ground_truth(ground_truth)
+    w4r_dataset.add_user_side(user_side)
+    w4r_dataset.add_item_side(item_side)
+
+    Web4Rec.register_dataset(w4r_dataset)
+    # Web4Rec - Dataset Process end
+
 
     ratings['user_idx'] = ratings['user_id'].map(user2idx)
     ratings['item_idx'] = ratings['item_id'].map(item2idx)
@@ -110,6 +142,7 @@ def main(args):
     
 
     train_data = train_ratings[['user_idx', 'item_idx']]
+    print(train_data['item_idx'].nunique())
     sampler = NegativeSampler(train_data, n_negs=args.n_negs, mode=args.sampler)
     dataset = TripletDataset(sampler)
     dataloader = DataLoader(
@@ -173,21 +206,50 @@ def main(args):
     with torch.no_grad():
         user_emb = model.user_embedding.weight.data
         item_emb = model.item_embedding.weight.data
-        pred_rating_mat = torch.matmul(user_emb, item_emb.T)
-        pred_rating_mat_npy = pred_rating_mat.cpu().numpy()
-        np.save('./data/pred_rating_mat.npy', pred_rating_mat_npy)
-        pred_rating_mat[train_data['user_idx'].values, train_data['item_idx'].values] = -999.9
 
-        _, recs = torch.sort(pred_rating_mat, dim=-1, descending=True)
+        total_pred_rating_mat = torch.matmul(user_emb, item_emb.T).cpu().numpy()
+        # total_pred_rating_mat[train_data['user_idx'].values, train_data['item_idx'].values] = -999.9
 
-        preds = recs.cpu().numpy()
-        preds = np.vectorize(lambda x: idx2item[x])(preds)
-        for u_idx in range(len(preds)):
-            topk[idx2user[u_idx]] = preds[u_idx].tolist()
-        # get_full_sort_score(valid_answers, preds)
+        # 필요 유저 - 아이템 들만 골라냄.
+        target_users = train_ratings['user_id'].unique()
+        user_indices = list(map(lambda u: user2idx[u], target_users))
 
-        topk = pd.Series(topk)
-        print(topk)
+        target_items = train_ratings['item_id'].unique()
+        item_indices = list(map(lambda i: item2idx[i], target_items))
+
+        scores = total_pred_rating_mat[user_indices, :][:, item_indices]
+
+        # Web4rec - Experiment Process
+        prediction_matrix = pd.DataFrame(
+            index=list(map(lambda u: idx2user[u], user_indices)),
+            columns=list(map(lambda i: idx2item[i], item_indices)),
+            data=scores
+        )
+
+        Web4Rec.upload_expermient(
+            experiment_name=args.exp_name,
+            hyper_parameters={
+                'sampling': args.sampler,
+                'embedding_size': args.embedding_size
+            },
+            prediction_matrix=prediction_matrix
+        )
+        # Web4rec - Experiment Process end
+
+
+        # pred_rating_mat_npy = pred_rating_mat.cpu().numpy()
+        # np.save('./data/pred_rating_mat.npy', pred_rating_mat_npy)
+
+        # _, recs = torch.sort(pred_rating_mat, dim=-1, descending=True)
+
+        # preds = recs.cpu().numpy()
+        # preds = np.vectorize(lambda x: idx2item[x])(preds)
+        # for u_idx in range(len(preds)):
+        #     topk[idx2user[u_idx]] = preds[u_idx].tolist()
+        # # get_full_sort_score(valid_answers, preds)
+
+        # topk = pd.Series(topk)
+        # print(topk)
 
 
 if __name__ == '__main__':

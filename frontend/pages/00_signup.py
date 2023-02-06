@@ -1,83 +1,105 @@
 from dash import html, dcc, callback, Input, Output, State
 import dash
-import dash_bootstrap_components as dbc
+import dash_bootstrap_components as dbc # pip install dash-bootstrap-components
 import requests
 import pandas as pd
 import plotly.express as px
 from dash.exceptions import PreventUpdate
+import json
+from passlib.context import CryptContext
+from . import global_component as gct
 
-API_url = 'http://127.0.0.1:8000'
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+salt_value = gct.get_login_setting()['SALT']
+API_url = 'http://127.0.0.1:30004'
 
 dash.register_page(__name__, path='/signup')
 
-username = requests.get(f'{API_url}/username').json()
-
-model_hype_type = requests.get(url=f'{API_url}/model_hype_type').json()
-
 
 layout = html.Div([
-    html.H1('Create User Account')
+
+    html.Br(),
+    html.H1(gct.BRAND_LOGO, style={
+                                # 'padding': 10,
+                                'text-align': 'center'}),
+    html.Hr(),
+    html.Br(),
+    html.H5('회원가입', style={'text-align': 'center'}),
+    html.Hr(style={'width': '50%', 'margin-left': '25%'}),
+    html.Br()
         , dcc.Location(id='create_user', refresh=True)
         , dbc.Input(id="username"
             , type="text"
-            , placeholder="user name"
+            , placeholder="아이디"
             , maxLength =15,
-            className='login-form'),
+            ),
             html.Br()
-        , dbc.Input(id="password"
+        , dbc.Input(id="password1"
             , type="password"
-            , placeholder="password",
-            className='login-form'),
+            , placeholder="비밀번호",
+            ),
             html.Br()
-        , dbc.Input(id="email"
-            , type="email"
-            , inputmode='email'
-            , placeholder="email"
-            , maxLength = 50,
-            className='login-form'),
-            html.Br()
-        ,
-            dbc.Button('Create User', id='submit-val', n_clicks=0, ),
+        , dbc.Input(id="password2"
+            , type="password"
+            , placeholder="비밀번호 확인",
+            ),
+        html.Br(),
+        dbc.Row([
+            html.Div(
+            id='container-button-basic'
+            ),
+            dbc.Col(
+                dbc.Button('회원가입', id='submit-val', n_clicks=0, className='w-100'
+                       #style={'margin':30}
+                       )),
+            dbc.Col(
             dcc.Link(
-                dbc.Button('Back', n_clicks=0, style={'margin': 30}),
-                href='/')
-        , html.Div(id='container-button-basic'),
-        
-    ], 
-                #   className='form-group'
-                  )#end div
+                dbc.Button('뒤로가기', n_clicks=0, className='w-100', color="dark"
+                           # style={'margin': 30}
+                           ),
+                href='/login'))
+                ])
+        ], className="mx-auto w-25 mt-5")  
 
 @callback(
     Output(component_id='container-button-basic', component_property='children'),
+    
     Input(component_id='submit-val', component_property='n_clicks'),
     State(component_id='username', component_property='value'),
-    State(component_id='password', component_property='value'),
-    State(component_id='email', component_property='value'),
+    State(component_id='password1', component_property='value'),
+    State(component_id='password2', component_property='value'),
+
+    prevent_initial_call=True
 )
-def create_user(n_click, username, password, email):
-    if n_click == 0:
-        raise PreventUpdate
-    # 빈칸이 있을 경우
-    if (username or password or email) in ['', None]:
-        return dbc.Modal([
-            dbc.ModalBody("Please enter everything"),
-            dbc.ModalFooter(
-                dbc.Button("Close")
-                )
-        ], is_open=True)
+def create_user(n_click, username, password1, password2):
+    # hashing password
+    password1=pwd_context.hash(password1, salt=salt_value)
+    password2=pwd_context.hash(password2, salt=salt_value)
     
-    # insert user info into db
-    pramas = {'id': username, 'password': password, 'email': email}
-    response = requests.get(url=f'{API_url}/create_user', params=pramas).json()
-    if response:
-        return dcc.Location(id='output-location', pathname='/')
+    data={'ID':username, 'password1':password1, 'password2': password2,}
+    response = requests.post(f'{API_url}/user/create_user', json=data)
+    
+    if response.status_code == 422:
+        return dbc.Alert("Password doesn't match. Please check agian.", color="primary"),
+
+    elif response.status_code == 200:
+        return dcc.Location(pathname='/', id='mvsm')
+    
+    elif response.status_code == 409:
+        return dbc.Alert("Already exist ID.", color="primary"),
+    
+
+@callback(
+    Output('password2', 'valid'),
+    Output('password2', 'invalid'),
+    Input('password2', 'value'),
+    State('password1', 'value'),
+    prevent_initial_call=True
+)
+def is_same_password(password2, password1):
+    password1=pwd_context.hash(password1, salt=salt_value)
+    password2=pwd_context.hash(password2, salt=salt_value)
+    if password2 == password1:
+        return True, False
     else:
-        
-        return dbc.Modal([
-            dbc.ModalBody("This ID already exists."),
-            dbc.ModalFooter(
-                dbc.Button("Close")
-                )
-        ], is_open=True)
-    # TODO: DB에 이미 유저가 있는 경우 로그인 페이지가 아니라 경고 띄우고 그대로 있어야 함
-    return f'{username} {password} {email}'
+        return False, True

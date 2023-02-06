@@ -3,67 +3,94 @@ from dash import html, dcc, callback, Input, Output, State
 import dash_bootstrap_components as dbc
 import requests
 from dash.exceptions import PreventUpdate
-import hashlib
+from passlib.context import CryptContext
+from . import global_component as gct
+from pydantic import BaseSettings
 
-API_url = 'http://127.0.0.1:8000'
 
-dash.register_page(__name__, path='/')
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+salt_value = gct.get_login_setting()['SALT']
 
+dash.register_page(__name__, path='/login')
 
 layout =  html.Div([
-        html.H1('Web4Rec', style={
-                                # 'padding': 10, 
-                                'text-align': 'center'}),
         html.Br(),
+   
+        html.H1(gct.BRAND_LOGO, style={
+                                # 'padding': 10,
+                                'text-align': 'center'}),
+        html.Hr(),
+        html.Br(),
+        html.H5('로그인', style={'text-align': 'center'}),
+        html.Hr(style={'width': '50%', 'margin-left': '25%'}),
         dcc.Location(id='url_login', refresh=True)
-            , html.H5('''Please sign-in to continue:''', id='h1')
-            , dbc.Input(placeholder='Enter your username',
+            # html.H5('''가입한 아이디로 로그인 해주세요''', id='h1')
+            , html.Br() 
+            , dbc.Input(placeholder='아이디',
                     type='text',
                     id='uname-box',
                     className='login-form'),
             html.Br()
-            , dbc.Input(placeholder='Enter your password',
+            , dbc.Input(placeholder='비밀번호',
                     type='password',
                     id='pwd-box',
                     className='login-form'),
             html.Br(),
             dbc.Row([
                     dbc.Col([
-                dbc.Button(children='Sign-in',
-                    n_clicks=0,
-                    type='submit',
-                    id='login-button',
-                    style={'margin':10})
-            , html.Div(children='', id='output-state')]),
-            dbc.Col(
-            dcc.Link(
-                children=dbc.Button(children='Sign-up',
-                                     style={'margin':10}
+                        dbc.Button(children='로그인',
+                                n_clicks=0,
+                                type='submit',
+                                id='login-button',
+                                className='w-100'
+                #   style={'margin':10},
+                                ),
+                        html.Div(children='', id='output-state')]),
+                    dbc.Col(
+                        dcc.Link(
+                        children=dbc.Button(children='회원가입', className='w-100', color="secondary"
+                                #      style={'margin':10}
                 ),
-                    href='/signup'
+                    href='/signup',
             )),
             ]),
-            html.H6(id='login-value')
-            
-        ], style={'padding-left':'45%'}) #end div
+        #     dcc.Link(
+                dbc.Button(children='데모 시작하기!', className='w-100 mt-3', color="info", id="demo_start_btn", n_clicks=0),
+                #     href='/compare-table'),
+
+            html.Div(id='login-value')
+
+        ],
+        # style={'width':"40%"},
+        className="mx-auto w-25 mt-5"
+        ) #end div
 
 @callback(
         Output(component_id='login-value', component_property='children'),
+        Output(component_id='store_user_state', component_property='data'),
+
+        Input("demo_start_btn", "n_clicks"),
         Input('login-button', 'n_clicks'),
         State('uname-box', 'value'),
         State('pwd-box', 'value'),
+        prevent_initial_call=True
 )
-def login(n_click, uname, pwd):
-        if n_click == 0:
-                raise PreventUpdate     
-        params = {'id': uname, 'password': pwd}
-        resospnse = requests.get(f'{API_url}/login_user', params=params)
-        if resospnse:
-                return dcc.Location(pathname='compare-table', id='mvsm')
+def login(demo_n, login_n, uname, pwd):
+        if login_n == 0 and demo_n == 0:
+                raise PreventUpdate
+        elif demo_n != 0:
+                return dcc.Location(pathname='compare-table', id='mvsm'), {"username": "mkdir"}
+        try:
+                pwd = pwd_context.hash(pwd, salt=salt_value)
+        except TypeError as e:
+                pass
+        
+        header = {'Content-Type': 'application/x-www-form-urlencoded'}
+        data = {'username': uname, 'password': pwd}
+        response = requests.post(f'{gct.API_URL}/user/login', data, header)
+        if response.status_code == 200:
+                return dcc.Location(pathname='compare-table', id='mvsm'), response.json()
+        elif response.status_code == 401:
+                return dbc.Alert("Invalid ID or password.", color="primary"), None
         else:
-                return dbc.Modal([
-            dbc.ModalBody("Invalid ID or password."),
-            dbc.ModalFooter(
-                dbc.Button("Close")
-                )
-        ], is_open=True)
+                return dbc.Alert(f"{response.status_code} Error.", color="primary"), None

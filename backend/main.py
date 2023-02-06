@@ -1,19 +1,33 @@
 from fastapi import FastAPI
 import uvicorn
-import pyximport
 
-pyximport.install()
+## json float precision 4
+import json
+class RoundingFloat(float):
+    __repr__ = staticmethod(lambda x: format(x, '.4f'))
 
-import pyximport
-pyximport.install()
+json.encoder.c_make_encoder = None
+if hasattr(json.encoder, 'FLOAT_REPR'):
+    # Python 2
+    json.encoder.FLOAT_REPR = RoundingFloat.__repr__
+else:
+    # Python 3
+    json.encoder.float = RoundingFloat
 
-from routers import database, frontend, web4rec
+
+try: 
+    import pyximport
+    pyximport.install()
+except:
+    pass
+
+from routers import frontend, web4rec, login 
 
 app = FastAPI()
 
-app.include_router(database.router, prefix='/databsase')
-app.include_router(frontend.router, prefix='/frontend')
+app.include_router(frontend.router,)
 app.include_router(web4rec.router, prefix='/web4rec-lib')
+app.include_router(login.router, prefix='/user')
 
 
 
