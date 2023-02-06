@@ -90,7 +90,7 @@ layout = html.Div([
 
     ## 3. Web4Rec Library란?
 
-    ### 성훈이형 여기에 써줘
+    - 추후 업데이트 예정
 
 
 
