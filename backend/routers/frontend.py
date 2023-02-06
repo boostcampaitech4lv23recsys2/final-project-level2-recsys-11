@@ -223,7 +223,7 @@ async def item_info(ID: str, dataset_name: str, exp_id: int):
 
     item_side = await s3_to_pd(key_hash=df_row["item_side"])
     item_side_pd = item_side[
-        ["item_id", "item_name", "genres:multi", "year", "item_popularity"]
+        ["item_id", "item_name", "genres:multi", "year", "item_popularity", 'item_url']
     ]
     item_profile_pd = await inter_to_profile(
         key_hash=df_row["train_interaction"], group_by="item_id", col="user_id"
