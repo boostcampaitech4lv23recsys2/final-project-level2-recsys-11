@@ -192,6 +192,7 @@ def display_output(selected_dropdown:str, data) -> str: #
     tmp_df = pd.DataFrame(data).set_index('experiment_name')
     exp_hype = tmp_df.loc[selected_dropdown,'hyperparameters']
     exp_hype = exp_hype[1:-1]
+    exp_hype = exp_hype.replace('"','')
     exp_hype = exp_hype.split(',')
     # TODO: 마크다운으로 리턴
     
