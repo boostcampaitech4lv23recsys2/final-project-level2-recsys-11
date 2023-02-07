@@ -16,7 +16,7 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import requests
 
-dash.register_page(__name__, path="/deep_analysis")
+dash.register_page(__name__,  path="/deep_analysis")
 
 
 user = None
@@ -76,14 +76,14 @@ header_user_or_item = html.Div(
     children=[
         dbc.Row(
             [
-                dbc.Tabs(
-                    [
-                        dbc.Tab(label="유저",id="tab_user"),
-                        dbc.Tab(label="아이템", id="tab_item"),
-                    ],
-                    id="da_input_tabs",
-                    active_tab="tab_user"
-                ),
+                # dbc.Tabs(
+                #     [
+                #         dbc.Tab(label="유저",id="tab_user"),
+                #         dbc.Tab(label="아이템", id="tab_item"),
+                #     ],
+                #     id="da_input_tabs",
+                #     active_tab="tab_user"
+                # ),
                 dbc.RadioItems(
                     id="show_user_or_item",
                     className="btn-group",
@@ -91,7 +91,9 @@ header_user_or_item = html.Div(
                     labelClassName="btn btn-outline-primary",
                     labelCheckedClassName="active",
                 ),
-            ]
+                # dbc.Button(id=f"{kind}_run", children="RUN", className="ms-auto w-100"),
+            ],
+            className="radio-group mb-3"
         ),
         # first_interval:=dcc.Interval(interval=15*1000, n_intervals=0)
     ]
@@ -112,6 +114,7 @@ def get_input_options(year_min=None, year_max=None, user=None, kind:str="user"):
                     multi=True,
                     id="selected_genre",
                 ),
+                
                 html.H6("년도", className="my-2"),
                 dcc.RangeSlider(
                     min=year_min,
@@ -128,8 +131,10 @@ def get_input_options(year_min=None, year_max=None, user=None, kind:str="user"):
                     },
                     allowCross=False,
                     id="selected_year",
+                    className="my-2 ps-2"
                 ),
-            ]
+            ], 
+            # className="border-end"
         )
     elif kind == "user":
         option_age = html.Div(
@@ -184,14 +189,15 @@ def get_input_options(year_min=None, year_max=None, user=None, kind:str="user"):
                                 style={"margin-bottom": '1rem'}
                                 ),
                         input_list,
+                        html.H6(id=f"n_{kind}s"),
 
                         dbc.Button(
                             id=f"{kind}_reset_selection",
                             children="초기화",
                             color="primary",
                         ),
-                        html.P(id=f"n_{kind}s"),
-                        dbc.Button(id=f"{kind}_run", children="RUN"),
+                        
+                        dbc.Button(id=f"{kind}_run", children="RUN", className="w-100 mt-3"),
                         dcc.Store(
                             id=f"{kind}s_selected_by_option",
                             storage_type="session",
@@ -212,7 +218,7 @@ def get_input_options(year_min=None, year_max=None, user=None, kind:str="user"):
             dbc.Col(
                 html.Div(
                     children=[
-                        html.H6(f"{pretty_value[kind]} 2차원 임베딩"),
+                        html.H4(f"{pretty_value[kind]} 2차원 임베딩"),
                         html.Br(),
                         dcc.Graph(
                             id=f"{kind}_emb_graph",
@@ -225,14 +231,15 @@ def get_input_options(year_min=None, year_max=None, user=None, kind:str="user"):
             dbc.Col(
                 html.Div(
                     children=[
-                        html.H6("사이드인포"),
+                        html.H4("사이드인포"),
                         html.Div(id=f"{kind}_side_graph"),
                     ],
-                    style={"overflow": "scroll", "height": 700},
+                    style={"overflow": "scroll", "height": "50%"},
                 ),
               
             ),
         ],
+        # className="h-25" # Row css
     )
 
 
