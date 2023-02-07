@@ -100,18 +100,17 @@ header_user_or_item = html.Div(
 )
 
 
-def get_input_options(year_min=None, year_max=None, user=None, kind:str="user"):
+def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user"):
     pretty_value = {
-                    "user":"유저",
-                    "item":"아이템",
-                    }
+        "user": "유저",
+        "item": "아이템",
+    }
     if kind == "item":
         input_list = html.Div(
             [
                 html.H6("장르"),
                 dcc.Dropdown(
                     options=uniq_genre,
-                    multi=True,
                     id="selected_genre",
                 ),
                 
@@ -138,15 +137,13 @@ def get_input_options(year_min=None, year_max=None, user=None, kind:str="user"):
         )
     elif kind == "user":
         option_age = html.Div(
-                children=[
-                    html.H6("연령대", className=""),
-                    dbc.Checklist(
-                        options=sorted(user["age"].unique()),
-                        id="selected_age",
-                        inline=True
-                    ),
-                ]
-            )
+            children=[
+                html.H6("연령대", className=""),
+                dbc.Checklist(
+                    options=sorted(user["age"].unique()), id="selected_age", inline=True
+                ),
+            ]
+        )
         option_gender = html.Div(
             children=[
                 html.H6("성별"),
@@ -173,21 +170,23 @@ def get_input_options(year_min=None, year_max=None, user=None, kind:str="user"):
                     id="selected_wrong",
                 ),
             ]
-            )
-        input_list = html.Div([
-                                option_age,
-                                option_gender,
-                                option_occupation,
-                                option_wrong,
-                               ])
+        )
+        input_list = html.Div(
+            [
+                option_age,
+                option_gender,
+                option_occupation,
+                option_wrong,
+            ]
+        )
     return dbc.Row(
         [
             dbc.Col(
                 html.Div(
                     children=[
-                        html.H4("사이드 정보", className="mb-3",
-                                style={"margin-bottom": '1rem'}
-                                ),
+                        html.H4(
+                            "사이드 정보", className="mb-3", style={"margin-bottom": "1rem"}
+                        ),
                         input_list,
                         html.H6(id=f"n_{kind}s"),
 
@@ -220,10 +219,7 @@ def get_input_options(year_min=None, year_max=None, user=None, kind:str="user"):
                     children=[
                         html.H4(f"{pretty_value[kind]} 2차원 임베딩"),
                         html.Br(),
-                        dcc.Graph(
-                            id=f"{kind}_emb_graph",
-                            style={"margin-top":0}
-                        ),
+                        dcc.Graph(id=f"{kind}_emb_graph", style={"margin-top": 0}),
                     ],
                 ),
                 width=6,
@@ -236,7 +232,6 @@ def get_input_options(year_min=None, year_max=None, user=None, kind:str="user"):
                     ],
                     style={"overflow": "scroll", "height": "50%"},
                 ),
-              
             ),
         ],
         # className="h-25" # Row css
@@ -247,7 +242,6 @@ item_top = html.Div(
     id="item_top_poster",
     children=[html.P("골라야 볼 수 있습니다.")],
 )
-
 
 
 # 유저 분석
@@ -269,9 +263,10 @@ layout = html.Div(
                 input_optinos := html.Div(id="input_options"),
                 # html.Div(id="item_top_poster"),
                 # html.Div(id="rerank_box"),
-                html.Div(id="deep_analysis_page",),
-                
-                # html.Div(id="item_related_users"), 
+                html.Div(
+                    id="deep_analysis_page",
+                ),
+                # html.Div(id="item_related_users"),
             ],
             className="container",
             style={"margin-top": "4rem"},  # navbar에 가려지는것 방지
@@ -324,9 +319,9 @@ def choose_experiment(
     global uniq_genre
 
     # params = {"ID": vip["username"], "dataset_name": dataset_name, "exp_id": exp}
-    params = {"ID": 'mkdir', "dataset_name": 'ml-1m', "exp_id": 140}
-    
-    user = requests.get(gct.API_URL + "/frontend/user_info", params=params).json()    
+    params = {"ID": "mkdir", "dataset_name": "ml-1m", "exp_id": 140}
+
+    user = requests.get(gct.API_URL + "/frontend/user_info", params=params).json()
     user = pd.DataFrame.from_dict(data=user, orient="tight")
     user.columns = [
         "user_id",
@@ -378,6 +373,7 @@ def choose_experiment(
         None,
     )
 
+
 # @callback(
 #         Output("deep_analysis_page", "children"),
 #         Input("da_input_tabs","active_tab"),
@@ -390,7 +386,7 @@ def choose_experiment(
 #         print(123)
 #         user_selection = html.Div(
 #                 children=[
-#                     get_input_options(user=user, 
+#                     get_input_options(user=user,
 #                                       kind="user"),
 #                 ])
 #         return [
@@ -405,8 +401,8 @@ def choose_experiment(
 
 #         item_selection = html.Div(
 #                 children=[
-#                     get_input_options(year_min=year_min, 
-#                                       year_max=year_max, 
+#                     get_input_options(year_min=year_min,
+#                                       year_max=year_max,
 #                                       kind="item")
 #                 ])
 #         return [
@@ -434,31 +430,30 @@ def display_overall(val, exp_id):
 
             item_selection = html.Div(
                 children=[
-                    get_input_options(year_min=year_min, 
-                                      year_max=year_max, 
-                                      kind="item")
+                    get_input_options(year_min=year_min, year_max=year_max, kind="item")
                 ]
             )
             return [
                 item_selection,
-                html.Div(id="item_top_poster",),
-                html.Div(id="item_related_users",)
-                ]
-            
+                html.Div(
+                    id="item_top_poster",
+                ),
+                html.Div(
+                    id="item_related_users",
+                ),
+            ]
+
         elif val == "user":
             user_selection = html.Div(
                 children=[
-                    get_input_options(user=user, 
-                                      kind="user"),
+                    get_input_options(user=user, kind="user"),
                 ]
             )
             return [
                 user_selection,
                 html.Div(id="rerank_box"),
                 html.Div(id="user_deep_analysis"),
-                ]
-        
-
+            ]
 
 
 #########################################################
@@ -473,11 +468,12 @@ def display_overall(val, exp_id):
 )
 def save_items_selected_by_option(genre, year):
     item_lst = item.copy()
-    item_lst = item_lst[
-        item_lst["genre"].str.contains(
-            "".join([*map(lambda x: f"(?=.*{x})", genre)]) + ".*", regex=True
-        )
-    ]
+    if genre is not None:
+        item_lst = item_lst[
+            item_lst["genre"].str.contains(
+                "".join([*map(lambda x: f"(?=.*{x})", genre)]) + ".*", regex=True
+            )
+        ]
     item_lst = item_lst[
         (item_lst["release_year"] >= year[0]) & (item_lst["release_year"] <= year[1])
     ]
@@ -493,12 +489,15 @@ def save_items_selected_by_option(genre, year):
 def save_items_selected_by_embed(emb, data_from_option):
     if emb is None:
         raise PreventUpdate
+    option_len = len(data_from_option)
+    if option_len == len(item):
+        raise PreventUpdate
     item_idx = []
     for i in emb["points"]:
         if i["curveNumber"] == 0:
             item_idx.append(i["pointNumber"])
     item_lst = item.iloc[item_idx]
-    if len(data_from_option) != len(item):
+    if option_len != len(item):
         # 옵션으로 그림을 그리면 두번에 걸쳐서 그림을 넣기 때문에 아이템 순서가 달라진다.
         item_lst = selected_item.iloc[item_idx]
 
@@ -513,11 +512,11 @@ def save_items_selected_by_embed(emb, data_from_option):
 @callback(
     Output("items_for_analysis", "data"),
     Output("n_items", "children"),
-    Input("items_selected_by_option", "data"),
     Input("items_selected_by_embed", "data"),
+    Input("items_selected_by_option", "data"),
 )
 def prepare_analysis(val1, val2):
-    if ctx.triggered_id == "items_selected_by_option":
+    if ctx.triggered_id == "items_selected_by_embed":
         return val1, f"selected items: {len(val1)}"
     else:
         return val2, f"selected items: {len(val2)}"
@@ -586,19 +585,46 @@ def update_graph(store1, store2):
     for i in tmp["genre"]:
         genre_counter += Counter(i.split())
     genre_fig = daf.plot_info_counter(genre_counter, "genre")
-    # genre = px.histogram(tmp, x="genre")
     return (dcc.Graph(figure=year), dcc.Graph(figure=genre_fig))
+
+
+# 임베딩 그래프에서 선택할 시 옵션 비활성화, 초기화 눌렀을 때만 다시 활성화
+@callback(
+    Output("selected_genre", "disabled"),
+    Output("selected_year", "disabled"),
+    Input("item_reset_selection", "n_clicks"),
+    Input("item_emb_graph", "selectedData"),
+    State("items_selected_by_option", "data"),
+    prevent_initial_call=True,
+)
+def disable_options(able, disable, option):
+    # print(ctx.triggered_id)
+    if ctx.triggered_id == "item_reset_selection" or (len(option) == len(item)):
+        return False, False
+    else:
+        return True, True
 
 
 # 초기화 버튼 누를 때 선택 초기화
 @callback(
     Output("selected_genre", "value"),
     Output("selected_year", "value"),
-    Output("item_run", "n_clicks"),
     Input("item_reset_selection", "n_clicks"),
 )
 def item_reset_selection(value):
-    return [], [item["release_year"].min(), item["release_year"].max()], 0
+    return [], [item["release_year"].min(), item["release_year"].max()]
+
+
+# 초기화 버튼을 누르지 않더라도 위에서 값을 바꾸면 다시 run 누를 수 있도록 수정
+@callback(
+    Output("item_run", "n_clicks"),
+    Input("item_reset_selection", "n_clicks"),
+    Input("items_selected_by_option", "data"),
+    Input("items_selected_by_embed", "data"),
+    prevent_intial_call=True,
+)
+def item_reset_selection(v1, v2, v3):
+    return 0
 
 
 #### item run 실행 시 실행될 함수들 #####
