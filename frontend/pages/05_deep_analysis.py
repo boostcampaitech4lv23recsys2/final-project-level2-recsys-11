@@ -16,7 +16,7 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import requests
 
-dash.register_page(__name__,  path="/deep_analysis")
+dash.register_page(__name__, path="/deep_analysis")
 
 
 user = None
@@ -93,7 +93,7 @@ header_user_or_item = html.Div(
                 ),
                 # dbc.Button(id=f"{kind}_run", children="RUN", className="ms-auto w-100"),
             ],
-            className="radio-group mb-3"
+            className="radio-group mb-3",
         ),
         # first_interval:=dcc.Interval(interval=15*1000, n_intervals=0)
     ]
@@ -113,7 +113,6 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                     options=uniq_genre,
                     id="selected_genre",
                 ),
-                
                 html.H6("년도", className="my-2"),
                 dcc.RangeSlider(
                     min=year_min,
@@ -130,9 +129,9 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                     },
                     allowCross=False,
                     id="selected_year",
-                    className="my-2 ps-2"
+                    className="my-2 ps-2",
                 ),
-            ], 
+            ],
             # className="border-end"
         )
     elif kind == "user":
@@ -179,62 +178,82 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                 option_wrong,
             ]
         )
-    return dbc.Row(
+    return html.Div(
         [
-            dbc.Col(
-                html.Div(
-                    children=[
-                        html.H4(
-                            "사이드 정보", className="mb-3", style={"margin-bottom": "1rem"}
+            dbc.Row(
+                [
+                    dbc.Col(
+                        html.Div(
+                            children=[
+                                html.H4(
+                                    "사이드 정보",
+                                    className="mb-3",
+                                    style={"margin-bottom": "1rem"},
+                                ),
+                                input_list,
+                                html.H6(id=f"n_{kind}s"),
+                                dbc.Button(
+                                    id=f"{kind}_reset_selection",
+                                    children="초기화",
+                                    color="primary",
+                                ),
+                                dcc.Store(
+                                    id=f"{kind}s_selected_by_option",
+                                    storage_type="session",
+                                ),  # 데이터를 저장하는 부분
+                                dcc.Store(
+                                    id=f"{kind}s_selected_by_embed",
+                                    storage_type="session",
+                                ),  # 데이터를 저장하는 부분
+                                dcc.Store(
+                                    id=f"{kind}s_for_analysis",
+                                    storage_type="session",
+                                ),  # 데이터를 저장하는 부분
+                            ],
+                            # className='form-style'
                         ),
-                        input_list,
-                        html.H6(id=f"n_{kind}s"),
-
-                        dbc.Button(
-                            id=f"{kind}_reset_selection",
-                            children="초기화",
-                            color="primary",
+                        width=2,
+                        # className="h-1",
+                    ),
+                    dbc.Col(
+                        html.Div(
+                            children=[
+                                html.H4(f"{pretty_value[kind]} 2차원 임베딩"),
+                                html.Br(),
+                                dcc.Graph(
+                                    id=f"{kind}_emb_graph", style={"margin-top": 0}
+                                ),
+                            ],
                         ),
-                        
-                        dbc.Button(id=f"{kind}_run", children="RUN", className="w-100 mt-3"),
-                        dcc.Store(
-                            id=f"{kind}s_selected_by_option",
-                            storage_type="session",
-                        ),  # 데이터를 저장하는 부분
-                        dcc.Store(
-                            id=f"{kind}s_selected_by_embed",
-                            storage_type="session",
-                        ),  # 데이터를 저장하는 부분
-                        dcc.Store(
-                            id=f"{kind}s_for_analysis",
-                            storage_type="session",
-                        ),  # 데이터를 저장하는 부분
-                    ],
-                    # className='form-style'
-                ),
-                width=2,
+                        width=6,
+                    ),
+                    dbc.Col(
+                        [
+                            html.Div(
+                                children=[
+                                    html.H4("사이드인포"),
+                                    html.Div(
+                                        id=f"{kind}_side_graph",
+                                        style={"height": "10px"},
+                                    ),
+                                ],
+                                # className="h-50",
+                            )
+                        ],
+                        style={"overflow": "scrolly", "height": "10px"},
+                    ),
+                ],
+                className="mb-1",
+                # style={"height": "30%"},
             ),
-            dbc.Col(
-                html.Div(
-                    children=[
-                        html.H4(f"{pretty_value[kind]} 2차원 임베딩"),
-                        html.Br(),
-                        dcc.Graph(id=f"{kind}_emb_graph", style={"margin-top": 0}),
-                    ],
-                ),
-                width=6,
-            ),
-            dbc.Col(
-                html.Div(
-                    children=[
-                        html.H4("사이드인포"),
-                        html.Div(id=f"{kind}_side_graph"),
-                    ],
-                    style={"overflow": "scroll", "height": "50%"},
-                ),
+            dbc.Button(
+                id=f"{kind}_run",
+                children="RUN",
+                className="w-100",
+                style={"margin-top": "-3rem"},
             ),
         ],
-        # className="h-25" # Row css
+        # className="hstack",
     )
 
 
@@ -265,6 +284,7 @@ layout = html.Div(
                 # html.Div(id="rerank_box"),
                 html.Div(
                     id="deep_analysis_page",
+                    # style={"height":40}
                 ),
                 # html.Div(id="item_related_users"),
             ],
@@ -584,6 +604,9 @@ def update_graph(store1, store2):
     genre_counter = Counter()
     for i in tmp["genre"]:
         genre_counter += Counter(i.split())
+    genre_counter = dict(
+        sorted(genre_counter.items(), key=lambda x: x[1], reverse=True)
+    )
     genre_fig = daf.plot_info_counter(genre_counter, "genre")
     return (dcc.Graph(figure=year), dcc.Graph(figure=genre_fig))
 

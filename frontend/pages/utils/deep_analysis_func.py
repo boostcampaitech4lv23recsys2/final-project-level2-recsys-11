@@ -38,9 +38,8 @@ import requests
 #     return card
 
 
-
 # related user 그래프 그리는 준비하는 함수
-def get_user_side_by_items(selected_item: list, item:pd.DataFrame, user:pd.DataFrame):
+def get_user_side_by_items(selected_item: list, item: pd.DataFrame, user: pd.DataFrame):
     """
     선택된 item들의 idx를 넣어주면, 그 아이템들을 사용한 유저, 추천받은 유저들의 인구통계학적 정보 수집
     총 6개의 Counter가 return, 앞에서 부터 2개씩 age, gender, occupation 정보
@@ -232,150 +231,147 @@ def plot_occupation_counter(
 
     return fig
 
+
 # 유저 세 번째 사이드 정보
 def plot_usergroup_genre(item, origin_item, rerank_item, profile_item, tmp):
-            """
-            need variance :
-            dataset = dataset.info class
-            run1 = model_managers['EASE'].get_all_model_configs()[0] 과 같은 실험 정보
-            user_df = pd.merge(dataset.user_df, dataset.ground_truth, on='user_id')
-            중복 아이템을 셀지 말지의 여부를 가르는 문제가 있다.
-            """
+    """
+    need variance :
+    dataset = dataset.info class
+    run1 = model_managers['EASE'].get_all_model_configs()[0] 과 같은 실험 정보
+    user_df = pd.merge(dataset.user_df, dataset.ground_truth, on='user_id')
+    중복 아이템을 셀지 말지의 여부를 가르는 문제가 있다.
+    """
 
-            # ['user_id', 'gender', 'age', 'occupation', 'user_profile', 'pred_item', 'xs', 'ys', 'recall']
-            ### 함수화 하면 좋을 부분 ###
-            total_item_genre = Counter()
-            user_profile = Counter()
-            user_rec = Counter()
-            user_rerank = Counter()
+    # ['user_id', 'gender', 'age', 'occupation', 'user_profile', 'pred_item', 'xs', 'ys', 'recall']
+    ### 함수화 하면 좋을 부분 ###
+    total_item_genre = Counter()
+    user_profile = Counter()
+    user_rec = Counter()
+    user_rerank = Counter()
 
-            for i in item["genre"]:
-                total_item_genre += Counter(i.split())
-            for i in origin_item:
-                user_rec += Counter(item.loc[i]["genre"].split())
-            for i in rerank_item:
-                user_rerank += Counter(item.loc[i]["genre"].split())
-            for i in profile_item:
-                user_profile += Counter(item.loc[i]["genre"].split())
+    for i in item["genre"]:
+        total_item_genre += Counter(i.split())
+    for i in origin_item:
+        user_rec += Counter(item.loc[i]["genre"].split())
+    for i in rerank_item:
+        user_rerank += Counter(item.loc[i]["genre"].split())
+    for i in profile_item:
+        user_profile += Counter(item.loc[i]["genre"].split())
 
-            user_profile = dict(
-                sorted(user_profile.items(), key=lambda x: x[1], reverse=True)
-            )
-            user_rec = dict(sorted(user_rec.items(), key=lambda x: x[1], reverse=True))
-            total_item_genre = dict(
-                sorted(total_item_genre.items(), key=lambda x: x[1], reverse=True)
-            )
-            user_rerank = dict(
-                sorted(user_rerank.items(), key=lambda x: x[1], reverse=True)
-            )
+    user_profile = dict(sorted(user_profile.items(), key=lambda x: x[1], reverse=True))
+    user_rec = dict(sorted(user_rec.items(), key=lambda x: x[1], reverse=True))
+    total_item_genre = dict(
+        sorted(total_item_genre.items(), key=lambda x: x[1], reverse=True)
+    )
+    user_rerank = dict(sorted(user_rerank.items(), key=lambda x: x[1], reverse=True))
 
-            user_profile_labels = list(user_profile.keys())
-            user_profile_values = list(user_profile.values())
-            user_rec_labels = list(user_rec.keys())
-            user_rec_values = list(user_rec.values())
-            user_rerank_labels = list(user_rerank.keys())
-            user_rerank_values = list(user_rerank.values())
-            total_item_genre_labels = list(total_item_genre.keys())
-            total_item_genre_values = list(total_item_genre.values())
+    user_profile_labels = list(user_profile.keys())
+    user_profile_values = list(user_profile.values())
+    user_rec_labels = list(user_rec.keys())
+    user_rec_values = list(user_rec.values())
+    user_rerank_labels = list(user_rerank.keys())
+    user_rerank_values = list(user_rerank.values())
+    total_item_genre_labels = list(total_item_genre.keys())
+    total_item_genre_values = list(total_item_genre.values())
 
-            fig = make_subplots(
-                rows=2,
-                cols=2,
-                specs=[
-                    [{"type": "domain"}, {"type": "domain"}],
-                    [{"type": "domain"}, {"type": "domain"}],
-                ],
-                subplot_titles=(
-                    "total item",
-                    "profile",
-                    "reccomend list",
-                    "rerank list",
-                ),
-            )
-            fig.add_trace(
-                go.Pie(
-                    labels=total_item_genre_labels,
-                    values=total_item_genre_values,
-                    name="total item genre",
-                    pull=[0.07] + [0] * (len(total_item_genre_values) - 1),
-                ),  # textinfo='label+percent', pull=[0.2]+[0]*(len(total_item_genre_values)-1)
-                1,
-                1,
-            )
-            fig.add_trace(
-                go.Pie(
-                    labels=user_profile_labels,
-                    values=user_profile_values,
-                    name="user profile genre",
-                    pull=[0.07] + [0] * (len(user_profile_values) - 1),
-                ),  # textinfo='label+percent', pull=[0.2]+[0]*(len(user_profile_values)-1)
-                1,
-                2,
-            )
-            fig.add_trace(
-                go.Pie(
-                    labels=user_rec_labels,
-                    values=user_rec_values,
-                    name="user Rec list genre",
-                    pull=[0.07] + [0] * (len(user_rec_values) - 1),
-                ),  # textinfo='label+percent', pull=[0.2]+[0]*(len(user_rec_values)-1)
-                2,
-                1,
-            )
-            fig.add_trace(
-                go.Pie(
-                    labels=user_rerank_labels,
-                    values=user_rerank_values,
-                    name="user rerank",
-                    pull=[0.07] + [0] * (len(user_rerank_values) - 1),
-                ),  # textinfo='label+percent', pull=[0.2]+[0]*(len(user_rerank_values)-1)
-                2,
-                2,
-            )
+    fig = make_subplots(
+        rows=2,
+        cols=2,
+        specs=[
+            [{"type": "domain"}, {"type": "domain"}],
+            [{"type": "domain"}, {"type": "domain"}],
+        ],
+        subplot_titles=(
+            "total item",
+            "profile",
+            "reccomend list",
+            "rerank list",
+        ),
+    )
+    fig.add_trace(
+        go.Pie(
+            labels=total_item_genre_labels,
+            values=total_item_genre_values,
+            name="total item genre",
+            pull=[0.07] + [0] * (len(total_item_genre_values) - 1),
+        ),  # textinfo='label+percent', pull=[0.2]+[0]*(len(total_item_genre_values)-1)
+        1,
+        1,
+    )
+    fig.add_trace(
+        go.Pie(
+            labels=user_profile_labels,
+            values=user_profile_values,
+            name="user profile genre",
+            pull=[0.07] + [0] * (len(user_profile_values) - 1),
+        ),  # textinfo='label+percent', pull=[0.2]+[0]*(len(user_profile_values)-1)
+        1,
+        2,
+    )
+    fig.add_trace(
+        go.Pie(
+            labels=user_rec_labels,
+            values=user_rec_values,
+            name="user Rec list genre",
+            pull=[0.07] + [0] * (len(user_rec_values) - 1),
+        ),  # textinfo='label+percent', pull=[0.2]+[0]*(len(user_rec_values)-1)
+        2,
+        1,
+    )
+    fig.add_trace(
+        go.Pie(
+            labels=user_rerank_labels,
+            values=user_rerank_values,
+            name="user rerank",
+            pull=[0.07] + [0] * (len(user_rerank_values) - 1),
+        ),  # textinfo='label+percent', pull=[0.2]+[0]*(len(user_rerank_values)-1)
+        2,
+        2,
+    )
 
-            fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
+    fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
 
-            fig.add_annotation(
-                text=f"Total users num in this group : {len(tmp)}",
-                x=0.5,
-                y=0.5,
-                font_size=20,
-                showarrow=False,
-            )
-            fig.update_layout(
-                # title_text=f"User group genre pie chart",
-                width=1000,
-                height=800,
-            )
+    fig.add_annotation(
+        text=f"Total users num in this group : {len(tmp)}",
+        x=0.5,
+        y=0.5,
+        font_size=20,
+        showarrow=False,
+    )
+    fig.update_layout(
+        # title_text=f"User group genre pie chart",
+        width=1000,
+        height=800,
+    )
 
-            return fig
+    return fig
 
 
-def plot_info_counter(Counter_profile: Counter, info_name:str, k:int=10):
-        """
-        임베딩 그래프 옆에 사이드 정보 그려주는 함수
+def plot_info_counter(Counter_profile: Counter, info_name: str, k: int = 10):
+    """
+    임베딩 그래프 옆에 사이드 정보 그려주는 함수
 
-        Counter_profile:
-        info_name: 그래프에 출력될 문자열
-        k: 파이 차트로 보여줄 원소 갯수. 너무 많으면 보기 안 좋기에 적당히 설정
-        """
-        Counter_profile_labels = list(Counter_profile.keys())[:k]
-        Counter_profile_values = list(Counter_profile.values())[:k]
-        fig = make_subplots(
-            rows=1,
-            cols=1,
-            specs=[[{"type": "domain"}]],
-            subplot_titles=(f"{info_name} ratio(profile)"),
-        )
-        fig.add_trace(
-            go.Pie(
-                labels=Counter_profile_labels,
-                values=Counter_profile_values,
-                name=f"{info_name}(profile)",
-                pull=[0.07] + [0] * (len(Counter_profile_values) - 1),
-            ),  # textinfo='label+percent', pull=[0.2]+[0]*(len(user_rec_values)-1)
-            1,
-            1,
-        )
-        fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
-        return fig
+    Counter_profile:
+    info_name: 그래프에 출력될 문자열
+    k: 파이 차트로 보여줄 원소 갯수. 너무 많으면 보기 안 좋기에 적당히 설정
+    """
+    Counter_profile_labels = list(Counter_profile.keys())[:k]
+    Counter_profile_values = list(Counter_profile.values())[:k]
+    fig = make_subplots(
+        rows=1,
+        cols=1,
+        specs=[[{"type": "domain"}]],
+        subplot_titles=(f"{info_name} ratio(profile)"),
+    )
+    fig.add_trace(
+        go.Pie(
+            labels=Counter_profile_labels,
+            values=Counter_profile_values,
+            name=f"{info_name}(profile)",
+            pull=[0.07] + [0] * (len(Counter_profile_values) - 1),
+        ),  # textinfo='label+percent', pull=[0.2]+[0]*(len(user_rec_values)-1)
+        1,
+        1,
+    )
+    fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
+    return fig
