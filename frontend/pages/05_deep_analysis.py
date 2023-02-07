@@ -72,7 +72,7 @@ header_exp = html.Div(
                 html.H3("실험 선택", className="mt-3"),
                 dcc.Dropdown(
                     id="exp_id_for_deep_analysis",
-                    options=["exp1"],
+                    options=[],
                     className="w-25 my-3",
                 ),
             ]
@@ -101,7 +101,7 @@ header_user_or_item = html.Div(
                 ),
                 # dbc.Button(id=f"{kind}_run", children="RUN", className="ms-auto w-100"),
             ],
-            className="radio-group mb-3",
+            className="radio-group mb-3 mt-0",
         ),
         # first_interval:=dcc.Interval(interval=15*1000, n_intervals=0)
     ]
@@ -154,11 +154,12 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
         option_gender = html.Div(
             children=[
                 html.H6("성별"),
-                dcc.Dropdown(
-                    options=["M", "F"],
+                dbc.Checklist(
                     id="selected_gender",
+                    options=["M", "F"],
+                    inline=True
                 ),
-            ]
+            ],
         )
         option_occupation = html.Div(
             children=[
@@ -172,9 +173,11 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
         )
         option_wrong = html.Div(
             children=[
-                dcc.Checklist(
-                    options=["틀린 유저들만(0.5 기준으로)"],
+                dbc.Checklist(
+                    options=["틀린 유저만 보기"],
                     id="selected_wrong",
+                    inline=True,
+                    switch=True
                 ),
             ]
         )
@@ -184,7 +187,9 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                 option_gender,
                 option_occupation,
                 option_wrong,
-            ]
+                choose_rerank,
+            ],
+            className="vstack gap-3 mb-0"
         )
     return html.Div(
         [
@@ -217,12 +222,12 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                                     id=f"{kind}s_for_analysis",
                                     storage_type="session",
                                 ),  # 데이터를 저장하는 부분
-                                choose_rerank,
+                                
                             ],
                             # className='form-style'
                         ),
                         width=2,
-                        # className="h-1",
+                        className="border-end border-2",
                     ),
                     dbc.Col(
                         html.Div(
@@ -235,6 +240,7 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                             ],
                         ),
                         width=6,
+                        className="border-end border-2",
                     ),
                     dbc.Col(
                         [
@@ -259,6 +265,7 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                 id=f"{kind}_run",
                 children="RUN",
                 className="w-100",
+                # color="success"
                 # style={"margin-top": "-3rem"},
             ),
         ],
@@ -268,47 +275,52 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
 
 item_top = html.Div(
     id="item_top_poster",
-    children=[html.P("골라야 볼 수 있습니다.")],
+    children=[],
 )
 
 choose_rerank = html.Div(
     [
-        html.P("Reranking Options"),
-        dcc.Markdown(
-            """$$\\alpha \\cdot rel(i) + (1 - \\alpha) \\cdot obj(i)$$
-            """,
-            mathjax=True,
-        ),
-        html.Br(),
+        html.Hr(),
+        html.H4("리랭킹 조건"),
+        html.H6("목적 함수 선택"),
         html.Div(
-            dbc.RadioItems(
+            # TODO: radio to dropdown
+            dcc.Dropdown(
                 id="rerank_obj",
-                inputClassName="btn-check",
-                labelClassName="btn btn-outline-primary",
-                labelCheckedClassName="active",
                 options=[
                     {"label": "Diversity(Cosine)", "value": "diversity(cos)"},
                     {"label": "Diversity(Jaccard)", "value": "diversity(jac)"},
                     {"label": "Serendipity(PMI)", "value": "serendipity(pmi)"},
                     {"label": "Serendipity(Jaccard)", "value": "serendipity(jac)"},
                     {"label": "Novelty", "value": "novelty"},
-                ],
-                inline=True,
+                    ]
             ),
         ),
         html.Div(
             [
-                dcc.Input(
-                    id="rerank_alpha",
-                    type="number",
-                    placeholder="Type alpha value",
+                html.H6("Reranking 파라미터"),
+                dcc.Slider(
                     min=0,
                     max=1,
+                    value=0.5,
                     step=0.1,
+                    marks=None,
+                    tooltip={"placement": "bottom", "always_visible": True},
+                    id="rerank_alpha",
+                    className="my-2 ps-2",
                 ),
+                # dcc.Input(
+                #     id="rerank_alpha",
+                #     type="number",
+                #     placeholder="Type alpha value",
+                #     min=0,
+                #     max=1,
+                #     step=0.1,
+                # ),
             ]
         ),
-    ]
+    ],
+    className="vstack gap-3 mt-1"
 )
 
 
@@ -434,8 +446,8 @@ def choose_experiment(
     uniq_genre = [*uniq_genre]
 
     option = [
-        {"label": "item", "value": "item"},
-        {"label": "user", "value": "user"},
+        {"label": "유저", "value": "user"},
+        {"label": "아이템", "value": "item"},
     ]
     # print(item.describe())
     return (
@@ -589,9 +601,9 @@ def save_items_selected_by_embed(emb, data_from_option):
 )
 def prepare_analysis(val1, val2):
     if ctx.triggered_id == "items_selected_by_embed":
-        return val1, f"selected items: {len(val1)}"
+        return val1, f"선택된 아이템 수: {len(val1)}"
     else:
-        return val2, f"selected items: {len(val2)}"
+        return val2, f"선택된 아이템 수: {len(val2)}"
 
 
 # 최근에 저장된 store 기준으로 임베딩 그래프를 그림
@@ -855,9 +867,9 @@ def save_users_selected_by_embed(emb, data_from_option):
 )
 def prepare_analysis(val1, val2):
     if ctx.triggered_id == "users_selected_by_option":
-        return val1, f"selected users: {len(val1)}"
+        return val1, f"선택된 유저 수: {len(val1)}"
     else:
-        return val2, f"selected users: {len(val2)}"
+        return val2, f"선택된 유저 수: {len(val2)}"
 
 
 # 최근에 저장된 store 기준으로 유저 임베딩 그래프를 그림
