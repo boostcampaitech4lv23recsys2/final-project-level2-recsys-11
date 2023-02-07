@@ -27,7 +27,8 @@ select_dataset = html.Div([
         dbc.Row([
             dbc.Col(dcc.Dropdown(
                     id='dataset-list',
-                    className="pe-5 w-50"
+                    className="pe-5 w-50",
+                    placeholder="분석할 데이터셋을 선택하세요"
                     ),),
             dbc.Col(html.Div(id='message',
                 # style={'height': '25px'},
@@ -138,7 +139,7 @@ def test_request(n, user_state):
 )
 def get_exp_data(user_state:dict, dataset_name:str,):
     if dataset_name == None:
-        return None, dbc.Alert("데이터셋을 선택해주세요.", color="info", className="w-50"), None, None
+        return None, dbc.Alert("데이터셋을 선택해주세요.", color="info", style={'width':267}), None, None
     params = {
         "ID": user_state["username"],
         "dataset_name": dataset_name
