@@ -5,7 +5,7 @@ import dash_bootstrap_components as dbc
 import requests
 import pandas as pd
 from dash.exceptions import PreventUpdate
-from . import global_component as gct
+from .utils import global_component as gct
 import json
 # AgGrid docs:
 # https://www.ag-grid.com/javascript-data-grid/column-pinning/
@@ -25,9 +25,10 @@ select_dataset = html.Div([
         html.H3('데이터 선택', style={"margin-top": '5rem', "margin-bottom": '1rem'}),
         html.Div([
         dbc.Row([
-            dbc.Col( dcc.Dropdown(
+            dbc.Col(dcc.Dropdown(
                     id='dataset-list',
-                    className="pe-5 w-50"
+                    className="pe-5 w-50",
+                    placeholder="분석할 데이터셋을 선택하세요"
                     ),),
             dbc.Col(html.Div(id='message',
                 # style={'height': '25px'},
@@ -38,17 +39,17 @@ select_dataset = html.Div([
         html.Hr(),
 
         ], )
-], className="my-5")])
+], className="mt-5")])
 
 
 def get_table(df):
     compare_table = html.Div([
         html.Div([
-        html.H3(['전체 실험 목록 ', html.Span(" �", id="compare-table-tooltip", style={'font-size': "25px"})], className="mb-3s"),
-        dbc.Button('선택 완료', id='select_done', n_clicks=0, color="success", className="ms-auto mb-2"),
+        html.H3(['전체 실험 목록 ', html.Span(" �", id="compare-table-tooltip", style={'font-size': "25px"})], className="mb-1"),
+        dbc.Button('선택 완료', id='select_done', n_clicks=0, color="success", className="ms-auto"),
         # html.Div(id="guide-to-model-vs"),
         ], className="hstack gap-5 mb-3 mt-1"),
-        dbc.Tooltip("각 column을 누르면 정렬이 가능합니다. 특정 값을 찾으려면 Column 내부의 검색창을 이용해주세요.",
+        dbc.Tooltip("각 column을 누르면 정렬이 가능합니다. 특정 값을 찾으려면 column 내부의 검색창을 이용해주세요.",
                      target="compare-table-tooltip",
                      style={'width':250}
                      ),
@@ -138,7 +139,7 @@ def test_request(n, user_state):
 )
 def get_exp_data(user_state:dict, dataset_name:str,):
     if dataset_name == None:
-        return None, dbc.Alert("데이터셋을 선택해주세요.", color="info", className="w-50"), None, None
+        return None, dbc.Alert("데이터셋을 선택해주세요.", color="info", style={'width':267}), None, None
     params = {
         "ID": user_state["username"],
         "dataset_name": dataset_name
@@ -149,12 +150,12 @@ def get_exp_data(user_state:dict, dataset_name:str,):
     temp_col1 = df.columns[4:].to_list()
     temp_col2 = df.columns[:4].to_list()
     df = df[temp_col1+temp_col2]
-    msg = dbc.Alert("선택된 실험이 추후 분석 페이지에 쓰입니다.", id='guide_msg_ct', color="info", className="pb-0", 
+    msg = dbc.Alert("선택한 실험들을 추후 분석 페이지에 사용할 수 있습니다.", id='guide_msg_ct', color="info", className="pb-0", 
                     style={
-                            "width": "500px",
+                            "width": "400px",
                             "height": "35px",
                             "margin-right":"0",
-                            "margin-left": "140px",
+                            "margin-left": "260px",
                             "margin-bottom": "0",
                             "padding": "1% 2% 3%"
                             })
@@ -190,13 +191,13 @@ def plot_selected_table(n, seleceted_rows, exp_column):
     #     rowDragManaged=True,
     #     animateRows=True,
     # )
-    selects = [html.H6("선택한 실험 목록: ", className="mt-4")]
+    selects = [html.H6("선택한 실험 목록: ", className="mt-3")]
     if seleceted_rows == None:
         PreventUpdate
     else:
         for row in seleceted_rows:
             selects.append(
-                dbc.Badge(row["experiment_name"], color="info", className="mt-3")
+                dbc.Badge(row["experiment_name"], color="info", className="mt-2")
                 )
     return selects, seleceted_rows
 
@@ -239,7 +240,7 @@ def msg_change(select_names, _, n):
         raise PreventUpdate
 
     elif select_names and n >= 1:
-        return "Model vs Model 페이지로 이동해보세요!", "success"
+        return "Model vs Model 페이지로 이동해 그래프를 그려 보세요!", "success"
 
     if select_names == [] or n >= 1:
         return "실험을 하나 이상 선택해주세요.", 'danger'

@@ -21,6 +21,7 @@ def get_login_setting():
 # API_URL = 'http://127.0.0.1:30004'
 API_URL = 'http://49.50.162.87:30001'
 
+
 BRAND_LOGO = "𝙒𝙚𝙗𝟰𝙍𝙚𝙘"
 
 def get_navbar(has_sidebar=True):
@@ -30,11 +31,14 @@ def get_navbar(has_sidebar=True):
         classname = "nosidebar-navbar"
     navbar = dbc.NavbarSimple(
         children=[
-            dbc.NavItem(dbc.NavLink("Compare Table", href="/compare-table", class_name="nav-menu-color")),
-            dbc.NavItem(dbc.NavLink('Model vs Model', href="/model-vs-model", class_name="nav-menu-color")),
-            dbc.NavItem(dbc.NavLink('Reranking', href="/reranking", class_name="nav-menu-color")),
-            dbc.NavItem(dbc.NavLink('Deep Analysis', href="/deep_analysis", class_name="nav-menu-color")),
-            dbc.NavItem(dbc.NavLink('FAQ', href="/FAQ", class_name="nav-menu-color")),
+            dbc.Nav([
+                dbc.NavItem(dbc.NavLink("Compare Table", active='exact', href="/compare-table", class_name="nav-menu-color")),
+                dbc.NavItem(dbc.NavLink('Model vs Model', active='exact', href="/model-vs-model", class_name="nav-menu-color")),
+                dbc.NavItem(dbc.NavLink('Reranking', active='exact', href="/reranking", class_name="nav-menu-color")),
+                dbc.NavItem(dbc.NavLink('Deep Analysis', active='exact', href="/deep_analysis", class_name="nav-menu-color")),
+                dbc.NavItem(dbc.NavLink('FAQ', active='exact', href="/FAQ", class_name="nav-menu-color"
+                )),
+        ], pills=True),
             dbc.DropdownMenu(
                 children=[
                     dbc.DropdownMenuItem("Get API Key", href="#"),

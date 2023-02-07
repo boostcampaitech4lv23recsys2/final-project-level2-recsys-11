@@ -2,7 +2,7 @@ import dash
 from dash import Dash, dcc, html, Input, Output
 import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
-from . import global_component as gct
+from .utils import global_component as gct
 
 dash.register_page(__name__, path='/')
 
@@ -37,7 +37,7 @@ def get_feature_component(img_url:str, emoji:str,
     else:
         ValueError("img_url must be left or right")
 
-img_url = "https://s3.us-west-2.amazonaws.com/secure.notion-static.com/a9401680-b68f-4c66-898b-bf51d3e93c6b/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45EIPT3X45%2F20230206%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20230206T074253Z&X-Amz-Expires=86400&X-Amz-Signature=7f5bb4bffb9f39294c4e24f601d52a569c98ba0e14aa4cf3066c4e1a8323a872&X-Amz-SignedHeaders=host&response-content-disposition=filename%3D%22Untitled.png%22&x-id=GetObject"
+img_url = "https://user-images.githubusercontent.com/67850665/217193988-a3b45bcd-ce8c-4e89-a8be-f95ae8f6f433.png"
 
 feature_compare_table = get_feature_component(
     img_url=img_url,
@@ -56,7 +56,7 @@ feature1 = get_feature_component(
     img_position="right"
 )
 
-img_url = "https://s3.us-west-2.amazonaws.com/secure.notion-static.com/61a511fc-932a-4cf9-b369-2fe9e1d940ab/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45EIPT3X45%2F20230206%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20230206T074706Z&X-Amz-Expires=86400&X-Amz-Signature=a105df63067c112eda7ef4a86430965043611e59a9a87d5b6710d01f1bf6ca3e&X-Amz-SignedHeaders=host&response-content-disposition=filename%3D%22Untitled.png%22&x-id=GetObject"
+img_url = "https://user-images.githubusercontent.com/67850665/217196527-9699cd4d-df74-42fd-8a7d-61030cbf0ef4.png"
 feature2 = get_feature_component(
     img_url=img_url,
     emoji="😊",

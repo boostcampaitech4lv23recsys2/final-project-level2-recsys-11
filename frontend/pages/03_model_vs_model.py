@@ -11,16 +11,15 @@ import dash_bootstrap_components as dbc
 from dash import html, dcc, callback, Input, Output, State,  MATCH, ALL
 from dash_bootstrap_templates import load_figure_template
 from dash.exceptions import PreventUpdate
-from . import global_component as gct
-
+from .utils import global_component as gct
 
 dash.register_page(__name__, path='/model-vs-model')
 
 total_metrics = None
 total_metrics_users = None
-SPECIFIC_PLOT_WIDTH = 500
+SPECIFIC_PLOT_WIDTH = 1200
 sidebar = html.Div([
-        html.H3("실험 선택",className="mt-3", style={"margin-bottom":25}),
+        html.H3("실험 선택",className="mt-3", style={"margin-bottom":21}),
         html.Hr(),
         html.Div(id='model_form', children=[]),
 
@@ -75,14 +74,17 @@ def specific_metric():
                     
                 ),
                 html.Br(),
-                dcc.Dropdown(id='metric_list', className="specific-metric")
-                ], width=3),
+                dbc.Row([
+                    dbc.Col(dcc.Dropdown(id='metric_list', className="specific-metric", placeholder='지표를 선택하세요')),
+                    dbc.Col(html.Div(id='metric_info_message'))
+                ], className='hstack gap-3')
+                ], width=60),
                 html.Br(),
                 html.Div([html.P(id="print_metric"),]),
             html.Div([
                 dcc.Graph(id = 'bar_fig'),
                 dbc.Col(dbc.Spinner(html.Div(id = 'dist_fig'), color="primary")),
-            ], className="hstack")
+            ], className="vstack")
             # dbc.Col([
             #     dbc.Row([
             #         dbc.Col(dcc.Graph(id = 'bar_fig')), #figure=fig_qual),
@@ -223,8 +225,7 @@ def save_selected_exp_names(value, data):
 )
 def plot_total_metrics(data, n, state, store): # df:pd.DataFrame
     if state == 0:
-        return html.Div([]), dbc.Alert([
-                                        "왼쪽에서 모델을 선택하고 '비교하기' 버튼을 눌러 실험들의 지표를 확인해보세요! ",
+        return html.Div([]), dbc.Alert(["왼쪽에서 모델을 선택하고 '비교하기' 버튼을 눌러 실험들의 지표를 그래프로 확인해보세요! ",
                                         # html.Span("(2개 이상부터 가능합니다.)", className="fw-bold")
                                         ], 
                                         color="info", style={"width":"80%"})
@@ -232,23 +233,39 @@ def plot_total_metrics(data, n, state, store): # df:pd.DataFrame
         # 모델간 정량, 정성 지표 plot (Compare Table에 있는 모든 정보들 활용)
         colors = ['#9771D0', '#D47DB2', '#5C1F47', '#304591', '#BAE8C8', '#ECEBC6', '#3D3D3D'] # 사용자 입력으로 받을 수 있어야 함
         store_df = pd.DataFrame(store).set_index('experiment_name')
-        tmp_metrics = total_metrics.drop(['diversity_jac','serendipity_jac'], axis=1)
+        tmp_metrics = total_metrics.drop(['diversity_jac','serendipity_pmi'], axis=1)
         metrics = list(tmp_metrics.columns)
         fig = go.Figure()
         for i,exp_name in enumerate(data):
             exp_id = store_df.loc[exp_name, 'exp_id'] # exp_name에 맞는 exp_id 찾아주기
-            fig.add_bar(name=exp_name, x=metrics, y=list(tmp_metrics.loc[exp_id,:]), text=list(tmp_metrics.loc[exp_id,:]), marker={'color' : colors[i]})
+            fig.add_bar(name=exp_name, x=metrics, y=list(tmp_metrics.loc[exp_id,:]), text=list(tmp_metrics.loc[exp_id,:])) # , marker={'color' : colors[i]}
             # .apply(eval)은 np.array나 list를 문자열로 인식할 때만 활용해주면 됨
             # 아니면 TypeError: eval() arg 1 must be a string, bytes or code object 발생
         fig.update_layout(
+            yaxis_range=[0,1.05],
             barmode='group',
-            bargap=0.15, # gap between bars of adjacent location coordinates.
+            bargap=0.25, # gap between bars of adjacent location coordinates.
             bargroupgap=0.1, # gap between bars of the same location coordinate.)
+            template='ggplot2'
             # title_text='Metric indicators'
         )
         fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
-
-        return specific_metric(), [html.H3('전체 지표 정보'),dcc.Graph(figure=fig)]  # id = 'total_metric'
+        child = html.Div(
+            dbc.Row([
+                dbc.Col(html.H3('전체 지표 정보')),
+                dbc.Col(dbc.Alert("아래 그래프를 확인하며 사용할 모델을 결정하고, Rerank/Deep Analysis 페이지로 이동하세요!",
+                                        # html.Span("(2개 이상부터 가능합니다.)", className="fw-bold") 
+                                        color="warning", 
+                                        style={
+                                            "width":"700px",
+                                            "margin-right":"0",
+                                            "margin-left": "260px",
+                                            }
+                                        )
+                        )
+                ])
+        )    
+        return specific_metric(), [child, dcc.Graph(figure=fig)]
 
 
 ### metric lists를 보여주는 callback
@@ -260,17 +277,17 @@ def load_metric_list(sort_of_metric:str) -> list:
     if sort_of_metric == 'Quant':
         metric_list = [
             {'label': 'Recall@k', 'value' : 'recall'},
-            {'label':'NDCG', 'value':'ndcg'},
             {'label':'AP@K', 'value':'map'},
+            {'label':'NDCG', 'value':'ndcg'},
+            {'label':'TailPercentage', 'value':'tail_percentage'},
             {'label':'AvgPopularity', 'value':'avg_popularity'},
-            {'label':'TailPercentage', 'value':'tail_percentage'}
             ]
     elif sort_of_metric == 'Qual':
         metric_list = [
-            {'label':'Diversity(jaccard)', 'value':'diversity_jac'},
             {'label':'Diversity(cosine)', 'value':'diversity_cos'},
-            {'label':'Serendipity(jaccard)', 'value':'serendipity_jac'},
+            {'label':'Diversity(jaccard)', 'value':'diversity_jac'},
             {'label':'Serendipity(PMI)', 'value':'serendipity_pmi'},
+            {'label':'Serendipity(jaccard)', 'value':'serendipity_jac'},
             {'label':'Novelty', 'value':'novelty'},
             ]
     return metric_list
@@ -292,14 +309,19 @@ def plot_bar(data, sort_of_metric, store):
         fig = go.Figure()
         for i,exp_name in enumerate(data):
             exp_id = store_df.loc[exp_name, 'exp_id'] # exp_name에 맞는 exp_id 찾아주기
-            fig.add_bar(name=exp_name, x=metrics, y=list(qual_metrics.loc[exp_id,:]), text=list(qual_metrics.loc[exp_id,:]), marker={'color' : colors[i]})
+            fig.add_bar(name=exp_name, x=metrics, y=list(qual_metrics.loc[exp_id,:]), text=list(qual_metrics.loc[exp_id,:])) # , marker={'color' : colors[i]}
 
         fig.update_layout(
+            yaxis_range=[0,1.05],
             barmode='group',
-            bargap=0.15, # gap between bars of adjacent location coordinates.
+            bargap=0.25, # gap between bars of adjacent location coordinates.
             bargroupgap=0.1, # gap between bars of the same location coordinate.)
             title_text='전체 정성 지표',
-            width=SPECIFIC_PLOT_WIDTH
+            width=SPECIFIC_PLOT_WIDTH,
+            template='ggplot2',
+            font=dict(
+                size=18,
+            )
         )
         fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
         return fig
@@ -311,14 +333,19 @@ def plot_bar(data, sort_of_metric, store):
         fig = go.Figure()
         for i,exp_name in enumerate(data):
             exp_id = store_df.loc[exp_name, 'exp_id'] # exp_name에 맞는 exp_id 찾아주기
-            fig.add_bar(name=exp_name, x=metrics, y=list(quant_metrics.loc[exp_id,:]), text=list(quant_metrics.loc[exp_id,:]), marker={'color' : colors[i]})
+            fig.add_bar(name=exp_name, x=metrics, y=list(quant_metrics.loc[exp_id,:]), text=list(quant_metrics.loc[exp_id,:])) # , marker={'color' : colors[i]}
 
         fig.update_layout(
+            yaxis_range=[0,1.05],
             barmode='group',
-            bargap=0.15, # gap between bars of adjacent location coordinates.
+            bargap=0.25, # gap between bars of adjacent location coordinates.
             bargroupgap=0.1, # gap between bars of the same location coordinate.)
             title_text='전체 정량 지표',
-            width=SPECIFIC_PLOT_WIDTH
+            width=SPECIFIC_PLOT_WIDTH,
+            template='ggplot2',
+            font=dict(
+                size=18,
+            ),
         )
         fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
         return fig
@@ -337,6 +364,7 @@ def plot_bar(data, sort_of_metric, store):
 ### 선택한 metric에 대한 dist plot을 띄워주는 callback, 나중에 refactoring 가능
 @callback(
     Output('dist_fig', 'children'),
+    Output('metric_info_message','children'),
     State('store_selected_exp_names', 'data'),
     Input("metric_list", 'value'),
     State('store_selected_exp','data')
@@ -345,13 +373,21 @@ def plot_dist(data, value, store):
     colors = ['#9771D0', '#D47DB2', '#5C1F47', '#304591', '#BAE8C8', '#ECEBC6', '#3D3D3D']
     store_df = pd.DataFrame(store).set_index('experiment_name')
     selected_id = store_df.loc[data,'exp_id'].values  # 선택한 실험만 보여줘야 함
-
+    metric_info_list = dbc.Alert(
+                            "아래로 스크롤해 선택 지표의 distribution을 확인해보세요", color="info", className="w-500",
+                            style={
+                                "width":"100%"
+                                }
+                            )
     if value in ['diversity_jac', 'diversity_cos', 'serendipity_pmi', 'serendipity_jac', 'novelty']:
         group_labels = data
         colors = colors[:len(data)]
         hist_data = total_metrics_users.loc[selected_id, value].values
-        fig = ff.create_distplot(hist_data, group_labels, colors=colors,
-                                bin_size=0.025, show_rug=True, curve_type='kde')
+        fig = go.Figure()
+        for each in hist_data:
+            fig.add_trace(go.Histogram(x=each, nbinsx=100))
+        # fig = ff.create_distplot(hist_data, group_labels, # colors=colors,
+        #                         bin_size=0.025, show_rug=True, curve_type='kde')
 
         metric_list = {
             "diversity_jac": "Diversity(jaccard)",
@@ -360,21 +396,29 @@ def plot_dist(data, value, store):
             'serendipity_pmi':'Serendipity(PMI)',
             'novelty':'Novelty',
             }
-        fig.update_layout(title_text=f'유저별 {metric_list[value]} 분포',
-                          width=SPECIFIC_PLOT_WIDTH
-                          )
-        return dcc.Graph(figure=fig)
+        fig.update_layout(
+            title_text=f'유저별 {metric_list[value]} 분포',
+            barmode='overlay',
+            width=SPECIFIC_PLOT_WIDTH, template='ggplot2',
+            font=dict(
+                size=18,
+            )
+        )
+        fig.update_traces(opacity=0.6)
+        return dcc.Graph(figure=fig), metric_info_list
 
     elif value in ['recall', 'ndcg', 'map', 'avg_popularity', 'tail_percentage']:
         if value == 'map':
             value = 'avg_precision'
         group_labels = data
         colors = colors[:len(data)]
-        # TODO: check recall, avg_precision
-        
         hist_data = total_metrics_users.loc[selected_id, value].values
-        fig = ff.create_distplot(hist_data, group_labels, colors=colors,
-                                bin_size=0.025, show_rug=True, curve_type='kde')
+
+        fig = go.Figure()
+        for each in hist_data:
+            fig.add_trace(go.Histogram(x=each, nbinsx=100))
+        # fig = ff.create_distplot(hist_data, group_labels, # colors=colors,
+        #                         bin_size=0.025, show_rug=True, curve_type='kde')
         
         metric_list = {
             'recall':'Recall@k',
@@ -384,8 +428,15 @@ def plot_dist(data, value, store):
             "tail_percentage":"TailPercentage"
             }
 
-        fig.update_layout(title_text=f'유저별 {metric_list[value]} 분포',
-                          width=SPECIFIC_PLOT_WIDTH)
-        return dcc.Graph(figure=fig)
+        fig.update_layout(
+            title_text=f'유저별 {metric_list[value]} 분포',
+            barmode='overlay',
+            width=SPECIFIC_PLOT_WIDTH, template='ggplot2',
+            font=dict(
+                size=18,
+            )
+        )
+        fig.update_traces(opacity=0.6)
+        return dcc.Graph(figure=fig), metric_info_list
     else:
-        return html.Div([])
+        return html.Div([]), html.Div([])
