@@ -110,7 +110,6 @@ def get_input_options(year_min, year_max, kind: str):
                 html.H6("장르"),
                 dcc.Dropdown(
                     options=uniq_genre,
-                    multi=True,
                     id="selected_genre",
                 ),
                 html.H6("년도"),
@@ -605,11 +604,11 @@ def save_items_selected_by_embed(emb, data_from_option):
 @callback(
     Output("items_for_analysis", "data"),
     Output("n_items", "children"),
-    Input("items_selected_by_option", "data"),
     Input("items_selected_by_embed", "data"),
+    Input("items_selected_by_option", "data"),
 )
 def prepare_analysis(val1, val2):
-    if ctx.triggered_id == "items_selected_by_option":
+    if ctx.triggered_id == "items_selected_by_embed":
         return val1, f"selected items: {len(val1)}"
     else:
         return val2, f"selected items: {len(val2)}"
@@ -682,15 +681,42 @@ def update_graph(store1, store2):
     return (dcc.Graph(figure=year), dcc.Graph(figure=genre_fig))
 
 
+# 임베딩 그래프에서 선택할 시 옵션 비활성화, 초기화 눌렀을 때만 다시 활성화
+@callback(
+    Output("selected_genre", "disabled"),
+    Output("selected_year", "disabled"),
+    Input("item_reset_selection", "n_clicks"),
+    Input("item_emb_graph", "selectedData"),
+    prevent_initial_call=True,
+)
+def disable_options(able, disable):
+    print(ctx.triggered_id)
+    if ctx.triggered_id == "item_reset_selection":
+        return False, False
+    else:
+        return True, True
+
+
 # 초기화 버튼 누를 때 선택 초기화
 @callback(
     Output("selected_genre", "value"),
     Output("selected_year", "value"),
-    Output("item_run", "n_clicks"),
     Input("item_reset_selection", "n_clicks"),
 )
 def item_reset_selection(value):
-    return [], [item["release_year"].min(), item["release_year"].max()], 0
+    return [], [item["release_year"].min(), item["release_year"].max()]
+
+
+# 초기화 버튼을 누르지 않더라도 위에서 값을 바꾸면 다시 run 누를 수 있도록 수정
+@callback(
+    Output("item_run", "n_clicks"),
+    Input("item_reset_selection", "n_clicks"),
+    Input("items_selected_by_option", "data"),
+    Input("items_selected_by_embed", "data"),
+    prevent_intial_call=True,
+)
+def item_reset_selection(v1, v2, v3):
+    return 0
 
 
 #### item run 실행 시 실행될 함수들 #####
