@@ -18,7 +18,7 @@ dash.register_page(__name__, path='/model-vs-model')
 
 total_metrics = None
 total_metrics_users = None
-SPECIFIC_PLOT_WIDTH = 500
+SPECIFIC_PLOT_WIDTH = 1000
 sidebar = html.Div([
         html.H3("실험 선택",className="mt-3", style={"margin-bottom":25}),
         html.Hr(),
@@ -82,7 +82,7 @@ def specific_metric():
             html.Div([
                 dcc.Graph(id = 'bar_fig'),
                 dbc.Col(dbc.Spinner(html.Div(id = 'dist_fig'), color="primary")),
-            ], className="hstack")
+            ], className="vstack")
             # dbc.Col([
             #     dbc.Row([
             #         dbc.Col(dcc.Graph(id = 'bar_fig')), #figure=fig_qual),
@@ -237,13 +237,14 @@ def plot_total_metrics(data, n, state, store): # df:pd.DataFrame
         fig = go.Figure()
         for i,exp_name in enumerate(data):
             exp_id = store_df.loc[exp_name, 'exp_id'] # exp_name에 맞는 exp_id 찾아주기
-            fig.add_bar(name=exp_name, x=metrics, y=list(tmp_metrics.loc[exp_id,:]), text=list(tmp_metrics.loc[exp_id,:]), marker={'color' : colors[i]})
+            fig.add_bar(name=exp_name, x=metrics, y=list(tmp_metrics.loc[exp_id,:]), text=list(tmp_metrics.loc[exp_id,:])) # , marker={'color' : colors[i]}
             # .apply(eval)은 np.array나 list를 문자열로 인식할 때만 활용해주면 됨
             # 아니면 TypeError: eval() arg 1 must be a string, bytes or code object 발생
         fig.update_layout(
             barmode='group',
             bargap=0.15, # gap between bars of adjacent location coordinates.
             bargroupgap=0.1, # gap between bars of the same location coordinate.)
+            template='ggplot2'
             # title_text='Metric indicators'
         )
         fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
@@ -292,14 +293,15 @@ def plot_bar(data, sort_of_metric, store):
         fig = go.Figure()
         for i,exp_name in enumerate(data):
             exp_id = store_df.loc[exp_name, 'exp_id'] # exp_name에 맞는 exp_id 찾아주기
-            fig.add_bar(name=exp_name, x=metrics, y=list(qual_metrics.loc[exp_id,:]), text=list(qual_metrics.loc[exp_id,:]), marker={'color' : colors[i]})
+            fig.add_bar(name=exp_name, x=metrics, y=list(qual_metrics.loc[exp_id,:]), text=list(qual_metrics.loc[exp_id,:])) # , marker={'color' : colors[i]}
 
         fig.update_layout(
             barmode='group',
             bargap=0.15, # gap between bars of adjacent location coordinates.
             bargroupgap=0.1, # gap between bars of the same location coordinate.)
             title_text='전체 정성 지표',
-            width=SPECIFIC_PLOT_WIDTH
+            width=SPECIFIC_PLOT_WIDTH,
+            template='ggplot2'
         )
         fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
         return fig
@@ -311,14 +313,15 @@ def plot_bar(data, sort_of_metric, store):
         fig = go.Figure()
         for i,exp_name in enumerate(data):
             exp_id = store_df.loc[exp_name, 'exp_id'] # exp_name에 맞는 exp_id 찾아주기
-            fig.add_bar(name=exp_name, x=metrics, y=list(quant_metrics.loc[exp_id,:]), text=list(quant_metrics.loc[exp_id,:]), marker={'color' : colors[i]})
+            fig.add_bar(name=exp_name, x=metrics, y=list(quant_metrics.loc[exp_id,:]), text=list(quant_metrics.loc[exp_id,:])) # , marker={'color' : colors[i]}
 
         fig.update_layout(
             barmode='group',
             bargap=0.15, # gap between bars of adjacent location coordinates.
             bargroupgap=0.1, # gap between bars of the same location coordinate.)
             title_text='전체 정량 지표',
-            width=SPECIFIC_PLOT_WIDTH
+            width=SPECIFIC_PLOT_WIDTH,
+            template='ggplot2'
         )
         fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
         return fig
@@ -350,8 +353,11 @@ def plot_dist(data, value, store):
         group_labels = data
         colors = colors[:len(data)]
         hist_data = total_metrics_users.loc[selected_id, value].values
-        fig = ff.create_distplot(hist_data, group_labels, colors=colors,
-                                bin_size=0.025, show_rug=True, curve_type='kde')
+        fig = go.Figure()
+        for each in hist_data:
+            fig.add_trace(go.Histogram(x=each, nbinsx=100))
+        # fig = ff.create_distplot(hist_data, group_labels, # colors=colors,
+        #                         bin_size=0.025, show_rug=True, curve_type='kde')
 
         metric_list = {
             "diversity_jac": "Diversity(jaccard)",
@@ -361,8 +367,10 @@ def plot_dist(data, value, store):
             'novelty':'Novelty',
             }
         fig.update_layout(title_text=f'유저별 {metric_list[value]} 분포',
-                          width=SPECIFIC_PLOT_WIDTH
+                          barmode='overlay',
+                          width=SPECIFIC_PLOT_WIDTH, template='ggplot2'
                           )
+        fig.update_traces(opacity=0.6)
         return dcc.Graph(figure=fig)
 
     elif value in ['recall', 'ndcg', 'map', 'avg_popularity', 'tail_percentage']:
@@ -370,11 +378,13 @@ def plot_dist(data, value, store):
             value = 'avg_precision'
         group_labels = data
         colors = colors[:len(data)]
-        # TODO: check recall, avg_precision
-        
         hist_data = total_metrics_users.loc[selected_id, value].values
-        fig = ff.create_distplot(hist_data, group_labels, colors=colors,
-                                bin_size=0.025, show_rug=True, curve_type='kde')
+
+        fig = go.Figure()
+        for each in hist_data:
+            fig.add_trace(go.Histogram(x=each, nbinsx=100))
+        # fig = ff.create_distplot(hist_data, group_labels, # colors=colors,
+        #                         bin_size=0.025, show_rug=True, curve_type='kde')
         
         metric_list = {
             'recall':'Recall@k',
@@ -385,7 +395,10 @@ def plot_dist(data, value, store):
             }
 
         fig.update_layout(title_text=f'유저별 {metric_list[value]} 분포',
-                          width=SPECIFIC_PLOT_WIDTH)
+                          barmode='overlay',
+                          width=SPECIFIC_PLOT_WIDTH, template='ggplot2',
+                          )
+        fig.update_traces(opacity=0.6)
         return dcc.Graph(figure=fig)
     else:
         return html.Div([])

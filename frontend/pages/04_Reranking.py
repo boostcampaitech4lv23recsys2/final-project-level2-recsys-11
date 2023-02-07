@@ -18,7 +18,7 @@ dash.register_page(__name__, path='/reranking')
 
 rerank_total_metrics = None
 rerank_total_metrics_users = None
-SPECIFIC_PLOT_WIDTH = 500
+SPECIFIC_PLOT_WIDTH = 1000
 
 rerank_metric_option = [
     {'label':' Diversity(cosine)', 'value':'diversity(cos)'},
@@ -39,32 +39,34 @@ rerank_metric_list = [
 
 
 ### alpha 선택하는 부분, radio
-alpha_radio = html.Div([
-    dbc.RadioItems(
-            id="alpha",
-            className="btn-group",
-            inputClassName="btn-check",
-            labelClassName="btn btn-outline-primary",
-            labelCheckedClassName="active",
-            options=[
-                {"label": "0.5", "value": 0.5},
-                # {"label": "1", "value": 1, "disabled":True},  # 사용자가 지정한 alpha로 지정
-            ],
-            value=0.5,
-                        ),
+alpha_info = html.Div([
+    dcc.Markdown(id="user_alpha", dangerously_allow_html=True),
+    # dbc.RadioItems(
+    #         id="alpha",
+    #         className="btn-group",
+    #         inputClassName="btn-check",
+    #         labelClassName="btn btn-outline-primary",
+    #         labelCheckedClassName="active",
+    #         options=[
+    #             {"label": "0.5", "value": 0.5}, # TODO: 사용자가 지정한 alpha값으로 
+    #             # {"label": "1", "value": 1, "disabled":True},  # 사용자가 지정한 alpha로 지정
+    #         ],
+    #         value=0.5,
+    #                     ),
 ], className="radio-group mb-2 mt-0")
 
 model_form = html.Div([
     html.H6(["실험 선택"], id="test431", className="mb-2"),
     dcc.Dropdown(id="selected_model_by_name", placeholder=""),
             html.Hr(),
-            html.H6(["α 값 선택 ", html.Span("�", id="alpha-tooltip")], className="mb-0"),
-            dbc.Tooltip(["목적함수의 가중치입니다. 높을수록 실험한 모델의 추천이 반영됩니다.",
-                         html.Span("FAQ를 참조하세요!", id="alpha_faq_link")],
+            html.H6(["Reranking 파라미터 α ", html.Span("�", id="alpha-tooltip")], className="mb-0"),
+            dbc.Tooltip(["일종의 가중치이며, 낮을수록 Reranking 모델의 추천이 많이 반영됩니다.",
+                         html.Span("FAQ를 참고하세요!", id="alpha_faq_link")],
                      target="alpha-tooltip",
                     #  className="w-auto"
                      ),
-            alpha_radio,
+            html.Br(),
+            dcc.Markdown(id="user_alpha", dangerously_allow_html=True),
             html.Hr(),
             html.H6("목적 함수 선택"),
     dcc.Checklist(
@@ -128,7 +130,7 @@ def specific_metric():
             html.Div([
                 dcc.Graph(id = 'rerank_bar_fig'), #figure=fig_qual
                 dbc.Col(dbc.Spinner(html.Div(id = 'rerank_dist_fig'), color="primary")),  # dcc.Graph(id = 'dist_fig')
-            ], className="hstack")
+            ], className="vstack")
         ]),
 
         ],
@@ -146,7 +148,7 @@ layout = html.Div(
     total_graph,
     html.Div(id = 'rerank_specific_metric_children')
     ], className="content"),
-    html.Div(id='trash2'),
+    # html.Div(id='trash2'),
     dcc.Store(id='store_selected_exp', storage_type='session'),
     dcc.Store(id='store_exp_names', storage_type="session"),
     dcc.Store(id='store_exp_ids', storage_type='session'),
@@ -169,16 +171,17 @@ def print_selected_exp_name(n, exp_name):
     exp_name = list(set(exp_name))
     return exp_name
 
-### exp_names가 들어오면 original + rerank 실험 정보들 return 하는 callback
+### exp_names가 들어오면 original + rerank 실험 정보들 선언하고 alpha값 return 하는 callback
 @callback(
-    Output('trash2', 'children'),
+    Output('user_alpha', 'children'),
     # Input('rerank_btn', 'n_clicks'),
     Input('selected_model_by_name', 'value'),
     State('store_selected_exp','data')
 )
 def get_stored_selected_models(exp_names:str, store) -> pd.DataFrame:
     if exp_names is None:
-        raise PreventUpdate
+        return "위에서 실험을 선택해주세요."
+
     ### original 실험 정보 가져오기
     store_df = pd.DataFrame(store).set_index('experiment_name')
     exp_id = store_df.loc[exp_names, 'exp_id']
@@ -209,8 +212,18 @@ def get_stored_selected_models(exp_names:str, store) -> pd.DataFrame:
     rerank_total_metrics_users = pd.DataFrame().from_dict(a['user_metrics'], orient='tight')
     rerank_total_metrics_users.index = rerank_total_metrics.index[1:]
     rerank_total_metrics_users = pd.concat([exp_metrics_users, rerank_total_metrics_users], axis=0)
-    return html.Div([])
 
+    print(rerank_total_metrics.loc['novelty','alpha'])
+    return f"현재 실험에서 선택한 α : {rerank_total_metrics.loc['novelty','alpha']}"
+
+### 사용자가 선택한 alpha 값이 무엇인지 표시해주는 callback
+# @callback(
+#         Output('alpha_user', 'children'),
+#         State(),
+#         Input(),
+# )
+# def print_alpha():
+#     rerank_total_metrics['alpha'] = 
 
 
 ### rerank! 버튼을 누르면 plot을 그려주는 callback
@@ -234,22 +247,21 @@ def plot_total_metrics(data, n, obj_funcs, state, store): # df:pd.DataFrame
         # 모델간 정량, 정성 지표 plot (Compare Table에 있는 모든 정보들 활용)
         colors = ['#9771D0', '#D47DB2', '#5C1F47', '#304591', '#BAE8C8', '#ECEBC6', '#3D3D3D'] # 사용자 입력으로 받을 수 있어야 함
         store_df = pd.DataFrame(store).set_index('experiment_name')
-        tmp_metrics = rerank_total_metrics.drop(['diversity_jac','serendipity_jac'], axis=1)
+        tmp_metrics = rerank_total_metrics.drop(['diversity_jac','serendipity_jac','alpha'], axis=1)
         obj_funcs = ['original'] + obj_funcs
         tmp_metrics = tmp_metrics.loc[obj_funcs]
-        print('obj_funcs:', obj_funcs)
-        print('tmp_metrics:', tmp_metrics)
         metrics = list(tmp_metrics.columns)
         fig = go.Figure()
         for i,obj_fn in enumerate(tmp_metrics.index):  # data
             # exp_id = store_df.loc[exp_name, 'exp_id'] # exp_name에 맞는 exp_id 찾아주기
-            fig.add_bar(name=obj_fn, x=metrics, y=list(tmp_metrics.loc[obj_fn,:]), text=list(tmp_metrics.loc[obj_fn,:]), marker={'color' : colors[i]})
+            fig.add_bar(name=obj_fn, x=metrics, y=list(tmp_metrics.loc[obj_fn,:]), text=list(tmp_metrics.loc[obj_fn,:]),) #  marker={'color' : colors[i]}
             # .apply(eval)은 np.array나 list를 문자열로 인식할 때만 활용해주면 됨
             # 아니면 TypeError: eval() arg 1 must be a string, bytes or code object 발생
         fig.update_layout(
             barmode='group',
             bargap=0.15, # gap between bars of adjacent location coordinates.
             bargroupgap=0.1, # gap between bars of the same location coordinate.)
+            template='ggplot2'
         )
         fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
 
@@ -292,41 +304,44 @@ def plot_bar(data, obj_funcs, sort_of_metric, store):
     colors = ['#9771D0', '#D47DB2', '#5C1F47', '#304591', '#BAE8C8', '#ECEBC6', '#3D3D3D']
     obj_funcs = ['original'] + obj_funcs
     if sort_of_metric == 'Qual':
-        qual_metrics = rerank_total_metrics.iloc[:,6:]
+        qual_metrics = rerank_total_metrics.iloc[:,7:]
+        qual_metrics = qual_metrics.drop(['alpha'], axis=1)
         qual_metrics = qual_metrics.loc[obj_funcs]
         metrics = list(qual_metrics.columns)
 
         fig = go.Figure()
         for i,obj_fn in enumerate(qual_metrics.index):  # data
             # exp_id = store_df.loc[exp_name, 'exp_id'] # exp_name에 맞는 exp_id 찾아주기
-            fig.add_bar(name=obj_fn, x=metrics, y=list(qual_metrics.loc[obj_fn,:]), text=list(qual_metrics.loc[obj_fn,:]), marker={'color' : colors[i]})
+            fig.add_bar(name=obj_fn, x=metrics, y=list(qual_metrics.loc[obj_fn,:]), text=list(qual_metrics.loc[obj_fn,:])) #, marker={'color' : colors[i]}
 
         fig.update_layout(
             barmode='group',
             bargap=0.15, # gap between bars of adjacent location coordinates.
             bargroupgap=0.1, # gap between bars of the same location coordinate.)
             title_text='전체 정성 지표',
-            width = SPECIFIC_PLOT_WIDTH
+            width = SPECIFIC_PLOT_WIDTH,
+            template='ggplot2'
         )
         fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
         return fig
 
     elif sort_of_metric == 'Quant':
-        quant_metrics = rerank_total_metrics.iloc[:,:6]
+        quant_metrics = rerank_total_metrics.iloc[:,1:7]
         quant_metrics = quant_metrics.loc[obj_funcs]
         metrics = list(quant_metrics.columns)
 
         fig = go.Figure()
         for i,obj_fn in enumerate(quant_metrics.index):  # data
             # exp_id = store_df.loc[exp_name, 'exp_id'] # exp_name에 맞는 exp_id 찾아주기
-            fig.add_bar(name=obj_fn, x=metrics, y=list(quant_metrics.loc[obj_fn,:]), text=list(quant_metrics.loc[obj_fn,:]), marker={'color' : colors[i]})
+            fig.add_bar(name=obj_fn, x=metrics, y=list(quant_metrics.loc[obj_fn,:]), text=list(quant_metrics.loc[obj_fn,:])) #, marker={'color' : colors[i]}
 
         fig.update_layout(
             barmode='group',
             bargap=0.15, # gap between bars of adjacent location coordinates.
             bargroupgap=0.1, # gap between bars of the same location coordinate.)
             title_text='전체 정량 지표',
-            width=SPECIFIC_PLOT_WIDTH
+            width=SPECIFIC_PLOT_WIDTH,
+            template='ggplot2'
         )
         fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
         return fig
@@ -355,9 +370,11 @@ def plot_dist(obj_funcs, value):
         group_labels = obj_funcs
         colors = colors[:len(obj_funcs)]
         hist_data = rerank_total_metrics_users.loc[obj_funcs, value].values
-
-        fig = ff.create_distplot(np.array(hist_data), group_labels, colors=colors,
-                                bin_size=0.025, show_rug=True, curve_type='kde')
+        fig = go.Figure()
+        for each in hist_data:
+            fig.add_trace(go.Histogram(x=each, nbinsx=100))
+        # fig = ff.create_distplot(np.array(hist_data), group_labels, # colors=colors,
+        #                         bin_size=0.025, show_rug=True, curve_type='kde')
 
         metric_list = {
             "diversity_cos": "Diversity(cosine)",
@@ -367,7 +384,9 @@ def plot_dist(obj_funcs, value):
             'novelty':'Novelty',
             }
         fig.update_layout(title_text=f'유저별 {metric_list[value]} 분포',
-                            width=SPECIFIC_PLOT_WIDTH)
+                          barmode='overlay',
+                          width=SPECIFIC_PLOT_WIDTH, template='ggplot2')
+        fig.update_traces(opacity=0.6)
         return dcc.Graph(figure=fig)
 
     elif value in ['recall', 'ndcg', 'map', 'avg_popularity', 'tail_percentage']:
@@ -376,8 +395,11 @@ def plot_dist(obj_funcs, value):
         group_labels = obj_funcs
         colors = colors[:len(obj_funcs)]
         hist_data = rerank_total_metrics_users.loc[obj_funcs, value].values
-        fig = ff.create_distplot(hist_data, group_labels, colors=colors,
-                                bin_size=0.025, show_rug=True, curve_type='kde')
+        fig = go.Figure()
+        for each in hist_data:
+            fig.add_trace(go.Histogram(x=each, nbinsx=100))
+        # fig = ff.create_distplot(hist_data, group_labels, # colors=colors,
+        #                         bin_size=0.025, show_rug=True, curve_type='kde')
 
         metric_list = {
             'recall':'Recall@k',
@@ -387,7 +409,9 @@ def plot_dist(obj_funcs, value):
             "avg_popularity":"AvgPopularity",
             }                                
         fig.update_layout(title_text=f'유저별 {metric_list[value]} 분포',
-                          width=SPECIFIC_PLOT_WIDTH)
+                          barmode='overlay',
+                          width=SPECIFIC_PLOT_WIDTH, template='ggplot2')
+        fig.update_traces(opacity=0.6)
         return dcc.Graph(figure=fig)
     else:
         return html.Div([])
