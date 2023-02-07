@@ -216,6 +216,7 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                                     id=f"{kind}s_for_analysis",
                                     storage_type="session",
                                 ),  # 데이터를 저장하는 부분
+                                choose_rerank,
                             ],
                             # className='form-style'
                         ),
@@ -241,7 +242,7 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                                     html.H4("사이드인포"),
                                     html.Div(
                                         id=f"{kind}_side_graph",
-                                        
+
                                     ),
                                 ],
                                 # className="h-50",
@@ -267,6 +268,46 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
 item_top = html.Div(
     id="item_top_poster",
     children=[html.P("골라야 볼 수 있습니다.")],
+)
+
+choose_rerank = html.Div(
+    [
+        html.P("Reranking Options"),
+        dcc.Markdown(
+            """$$\\alpha \\cdot rel(i) + (1 - \\alpha) \\cdot obj(i)$$
+            """,
+            mathjax=True,
+        ),
+        html.Br(),
+        html.Div(
+            dbc.RadioItems(
+                id="rerank_obj",
+                inputClassName="btn-check",
+                labelClassName="btn btn-outline-primary",
+                labelCheckedClassName="active",
+                options=[
+                    {"label": "Diversity(Cosine)", "value": "diversity(cos)"},
+                    {"label": "Diversity(Jaccard)", "value": "diversity(jac)"},
+                    {"label": "Serendipity(PMI)", "value": "serendipity(pmi)"},
+                    {"label": "Serendipity(Jaccard)", "value": "serendipity(jac)"},
+                    {"label": "Novelty", "value": "novelty"},
+                ],
+                inline=True,
+            ),
+        ),
+        html.Div(
+            [
+                dcc.Input(
+                    id="rerank_alpha",
+                    type="number",
+                    placeholder="Type alpha value",
+                    min=0,
+                    max=1,
+                    step=0.1,
+                ),
+            ]
+        ),
+    ]
 )
 
 
@@ -346,7 +387,7 @@ def choose_experiment(
     global uniq_genre
 
     params = {"ID": vip["username"], "dataset_name": dataset_name, "exp_id": exp}
-    # params = {"ID": 'mkdir', "dataset_name": 'ml-1m', "exp_id": 1}
+    # params = {"ID": 'mkdir', "dataset_name": 'ml-1m', "exp_id": 140}
     # print(params)
     user = requests.get(gct.API_URL + "/frontend/user_info", params=params).json()
     # print(user)
@@ -475,12 +516,14 @@ def display_overall(val, exp_id):
             user_selection = html.Div(
                 children=[
                     get_input_options(user=user, kind="user"),
+                    html.Div(id="rerank_box"),
+
                 ]
             )
             return [
                 user_selection,
-                html.Div(id="rerank_box"),
-                html.Div(id="user_deep_analysis"),
+                # html.Div(id="rerank_box"),
+                dbc.Spinner(html.Div(id="user_deep_analysis")),
             ]
 
 
@@ -906,71 +949,16 @@ def item_reset_selection(value):
 
 #### run 실행 시 실행될 함수들 #####
 
-# 최종 store가 업데이트됐을 때 리랭킹 선택지 등장
-@callback(
-    Output("rerank_box", "children"),
-    Input("user_run", "n_clicks"),
-    prevent_initial_call=True,
-)
-def prepare_rerank(value):
-    if value != 1:
-        raise PreventUpdate
-    else:
-        tmp = [
-            html.P("Reranking Options"),
-            dcc.Markdown(
-                """$$\\alpha \\cdot rel(i) + (1 - \\alpha) \\cdot obj(i)$$
-                """,
-                mathjax=True,
-            ),
-            html.Br(),
-            html.Div(
-                dbc.RadioItems(
-                    id="rerank_obj",
-                    inputClassName="btn-check",
-                    labelClassName="btn btn-outline-primary",
-                    labelCheckedClassName="active",
-                    options=[
-                        {"label": "Diversity(Cosine)", "value": "diversity(cos)"},
-                        {"label": "Diversity(Jaccard)", "value": "diversity(jac)"},
-                        {"label": "Serendipity(PMI)", "value": "serendipity(pmi)"},
-                        {"label": "Serendipity(Jaccard)", "value": "serendipity(jac)"},
-                        {"label": "Novelty", "value": "novelty"},
-                    ],
-                    inline=True,
-                ),
-            ),
-            html.Div(
-                [
-                    dcc.Input(
-                        id="rerank_alpha",
-                        type="number",
-                        placeholder="Type alpha value",
-                        min=0,
-                        max=1,
-                        step=0.1,
-                    ),
-                ]
-            ),
-            html.Div(
-                [
-                    dbc.Button(id="rerank_reset", children="리랭킹 초기화"),
-                    dbc.Button(id="rerank_run", children="Rerank"),
-                ]
-            ),
-        ]
-        return tmp
-
 
 # 초기화 버튼 누를 때 선택 초기화
-@callback(
-    Output("rerank_obj", "value"),
-    Output("rerank_alpha", "value"),
-    Output("rerank_run", "n_clicks"),
-    Input("rerank_reset", "n_clicks"),
-)
-def item_reset_selection(value):
-    return [], None, 0
+# @callback(
+#     Output("rerank_obj", "value"),
+#     Output("rerank_alpha", "value"),
+#     Output("rerank_run", "n_clicks"),
+#     Input("rerank_reset", "n_clicks"),
+# )
+# def item_reset_selection(value):
+#     return [], None, 0
 
 
 ######################### 리랭킹 진행 ##############################
@@ -981,7 +969,7 @@ def item_reset_selection(value):
 # 그리고 통째로 리턴
 @callback(
     Output("user_deep_analysis", "children"),
-    Input("rerank_run", "n_clicks"),  #  선택하기 전까지 비활성화도 필요
+    Input("user_run", "n_clicks"),  #  선택하기 전까지 비활성화도 필요
     State("users_for_analysis", "data"),
     State("rerank_obj", "value"),
     State("rerank_alpha", "value"),
