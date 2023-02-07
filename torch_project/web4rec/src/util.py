@@ -10,7 +10,7 @@ from scipy.sparse import csr_matrix, linalg
 import json
 
 class RoundingFloat(float):
-    __repr__ = staticmethod(lambda x: format(x, '.4f'))
+    __repr__ = staticmethod(lambda x: format(x, '.6f'))
 
 json.encoder.c_make_encoder = None
 if hasattr(json.encoder, 'FLOAT_REPR'):
