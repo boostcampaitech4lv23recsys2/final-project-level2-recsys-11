@@ -78,7 +78,7 @@ model_form = html.Div([
 
 sidebar = html.Div(
     [
-        html.H3("옵션 선택", className="mt-3", style={"margin-bottom":25}),
+        html.H3("옵션 선택", className="mt-3", style={"margin-bottom":21}),
         html.Hr(),
         html.Div(id='rerank_form', children=model_form),
         dbc.Button('Rerank!', id="rerank_btn", n_clicks=0, className="mt-3")
