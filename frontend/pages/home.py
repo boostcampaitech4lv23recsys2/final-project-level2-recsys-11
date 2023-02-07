@@ -47,6 +47,9 @@ feature_compare_table = get_feature_component(
     img_position="left"
 )
 
+
+workflow_img_url = "https://user-images.githubusercontent.com/55279227/217210198-8df93292-b18d-4ee0-81dc-03f768e88c39.jpg"
+
 img_url = "https://user-images.githubusercontent.com/76675506/216320888-7b790e97-61af-442c-93b3-c574ed0c119e.png"
 feature1 = get_feature_component(
     img_url=img_url,
@@ -89,6 +92,12 @@ layout = html.Div([
             
             html.H4([gct.BRAND_LOGO+'은 이를 해결할 수 있는 ', html.Span('실험 관리 툴', className="text-info"),'입니다.'], className="mt-5 pt-4 pb-3 text-center fs-1"),
             html.Hr(),
+            dbc.Row([
+                    dbc.Col([
+                        html.Img(src=workflow_img_url, className="feature-image rounded-2 border border-primary border-4"),
+                    ], width={'size':8, 'offset':2})
+                    ], 
+                className="center"),
             feature_compare_table,
             feature1,
             feature2,
