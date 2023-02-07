@@ -28,7 +28,11 @@ uniq_genre = None
 # 포스터를 띄우는 함수
 def make_card(element):
     tmp = item.loc[element]
-    img = 'https://s3.us-west-2.amazonaws.com/secure.notion-static.com/3e0c51b2-0058-4c7e-a081-63c36afbb9ab/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45EIPT3X45%2F20230206%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20230206T092314Z&X-Amz-Expires=86400&X-Amz-Signature=459ae00b0cb7fe0924f62f17992549f0cb0de1fd2db35bd510675575b2c2ba8e&X-Amz-SignedHeaders=host&response-content-disposition=filename%3D%22Untitled.png%22&x-id=GetObject' if tmp['item_url'] == '' else tmp['item_url']
+    img = (
+        "https://s3.us-west-2.amazonaws.com/secure.notion-static.com/3e0c51b2-0058-4c7e-a081-63c36afbb9ab/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45EIPT3X45%2F20230206%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20230206T092314Z&X-Amz-Expires=86400&X-Amz-Signature=459ae00b0cb7fe0924f62f17992549f0cb0de1fd2db35bd510675575b2c2ba8e&X-Amz-SignedHeaders=host&response-content-disposition=filename%3D%22Untitled.png%22&x-id=GetObject"
+        if tmp["item_url"] == ""
+        else tmp["item_url"]
+    )
 
     card = dbc.Col(
         children=dbc.Card(
@@ -61,7 +65,7 @@ header_exp = html.Div(
                 dcc.Dropdown(
                     id="exp_id_for_deep_analysis",
                     options=["exp1"],
-                    className="w-25 my-3"
+                    className="w-25 my-3",
                 ),
             ]
         )
@@ -74,10 +78,7 @@ header_user_or_item = html.Div(
             [
                 # html.Div(dbc.Progress(id="first_progress_bar")),
                 html.Div("해당 실험의 아이템, 유저 페이지"),
-                dbc.Tabs([
-                    dbc.Tab(label="유저"),
-                    dbc.Tab(label="아이템")
-                ]),
+                dbc.Tabs([dbc.Tab(label="유저"), dbc.Tab(label="아이템")]),
                 dbc.RadioItems(
                     id="show_user_or_item",
                     className="btn-group",
@@ -117,7 +118,7 @@ layout = html.Div(
             children=[
                 header_exp,
                 dbc.Spinner(
-                header_user_or_item,
+                    header_user_or_item,
                 ),
                 # 스피너로 묶었는데 생각대로 안 나옴
                 # dbc.Spinner(
@@ -155,7 +156,6 @@ def show_exp_choice(exp_name, exp_id):
     Output("show_user_or_item", "options"),
     Output("show_user_or_item", "value"),
     # Output(progress_bar_DA, "value", ),
-
     # Input(first_interval, "n_intervals"),
     Input("exp_id_for_deep_analysis", "value"),
     State("store_user_state", "data"),
@@ -198,8 +198,16 @@ def choose_experiment(
     item = pd.DataFrame.from_dict(data=item, orient="tight")
 
     item.columns = [
-       'item_id', 'movie_title', 'genre', 'release_year', 'item_pop',
-       'item_url', 'item_profile_user', 'recommended_users', 'xs', 'ys'
+        "item_id",
+        "movie_title",
+        "genre",
+        "release_year",
+        "item_pop",
+        "item_url",
+        "item_profile_user",
+        "recommended_users",
+        "xs",
+        "ys",
     ]
     item["recommended_users"] = item["recommended_users"].apply(
         lambda d: d if isinstance(d, list) else []
@@ -218,7 +226,10 @@ def choose_experiment(
         {"label": "user", "value": 2},
     ]
     # print(item.describe())
-    return option, None,
+    return (
+        option,
+        None,
+    )
 
 
 # 유저 페이지를 띄울지, 아이템 페이지를 띄울지
@@ -456,14 +467,27 @@ def save_items_selected_by_option(genre, year):
 
 # embed graph에서 선택한 아이템을 store2에 저장
 @callback(
-    Output("items_selected_by_embed", "data"), Input("item_emb_graph", "selectedData")
+    Output("items_selected_by_embed", "data"),
+    Input("item_emb_graph", "selectedData"),
+    State("items_selected_by_option", "data"),
 )
-def save_items_selected_by_embed(emb):
+def save_items_selected_by_embed(emb, data_from_option):
     if emb is None:
         raise PreventUpdate
-    item_idx = [i["pointNumber"] for i in emb["points"]]
+    item_idx = []
+    for i in emb["points"]:
+        if i["curveNumber"] == 0:
+            item_idx.append(i["pointNumber"])
     item_lst = item.iloc[item_idx]
-    return item_lst.index.to_list()
+    if len(data_from_option) != len(item):
+        # 옵션으로 그림을 그리면 두번에 걸쳐서 그림을 넣기 때문에 아이템 순서가 달라진다.
+        item_lst = selected_item.iloc[item_idx]
+
+    emb_set = set(item_lst.index.to_list())
+    option_set = set(data_from_option)
+    item_lst = list(emb_set & option_set)
+
+    return item_lst
 
 
 # 최근에 선택한 아이템을 최종 store에 저장
@@ -489,18 +513,12 @@ def update_graph(store1):
     item["selected"] = "Not Selected"
     item.loc[store1, "selected"] = "Selected"
 
+    global selected_item
     selected_item = item.loc[item["selected"] == "Selected"]
+    # print("selected", selected_item.index)
     Notselected_item = item.loc[item["selected"] != "Selected"]
     fig = go.Figure()
 
-    fig.add_trace(
-        go.Scatter(
-            x=Notselected_item["xs"],
-            y=Notselected_item["ys"],
-            name="Not selected",
-            marker_color="red",
-        )
-    )
     fig.add_trace(
         go.Scatter(
             x=selected_item["xs"],
@@ -508,6 +526,14 @@ def update_graph(store1):
             name="selected       ",
             mode="markers",
             marker_color="green",
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=Notselected_item["xs"],
+            y=Notselected_item["ys"],
+            name="Not selected",
+            marker_color="red",
         )
     )
     fig.add_trace(go.Scatter(x=[0], y=[0], name=" ", marker_color="white"))
@@ -520,7 +546,6 @@ def update_graph(store1):
         margin={},
     )
     return fig
-
 
 
 # 최근에 저장된 store 기준으로 사이드 그래프를 그림
@@ -539,12 +564,11 @@ def update_graph(store1, store2):
 
     year = px.histogram(tmp, x="release_year")
     genre_counter = Counter()
-    for i in tmp['genre']:
+    for i in tmp["genre"]:
         genre_counter += Counter(i.split())
-    genre_fig = daf.plot_info_counter(genre_counter, 'genre')
+    genre_fig = daf.plot_info_counter(genre_counter, "genre")
     # genre = px.histogram(tmp, x="genre")
     return (dcc.Graph(figure=year), dcc.Graph(figure=genre_fig))
-
 
 
 # 초기화 버튼 누를 때 선택 초기화
@@ -606,7 +630,9 @@ def draw_item_related_users(value, data):
             occupation_Counter_profile,
             occupation_Counter_rec,
         ) = daf.get_user_side_by_items(data, item, user)
-        age = dcc.Graph(figure=daf.plot_age_counter(age_Counter_profile, age_Counter_rec))
+        age = dcc.Graph(
+            figure=daf.plot_age_counter(age_Counter_profile, age_Counter_rec)
+        )
         gender = dcc.Graph(
             figure=daf.plot_gender_counter(gender_Counter_profile, gender_Counter_rec)
         )
@@ -657,14 +683,28 @@ def save_users_selected_by_option(age, gender, occupation, wrong):
 
 # user embed graph에서 선택한 유저들을 store2에 저장
 @callback(
-    Output("users_selected_by_embed", "data"), Input("user_emb_graph", "selectedData")
+    Output("users_selected_by_embed", "data"),
+    Input("user_emb_graph", "selectedData"),
+    State("users_selected_by_option", "data"),
 )
-def save_users_selected_by_embed(emb):
+def save_users_selected_by_embed(emb, data_from_option):
     if emb is None:
         raise PreventUpdate
-    user_idx = [i["pointNumber"] for i in emb["points"]]
+
+    user_idx = []
+    for i in emb["points"]:
+        if i["curveNumber"] == 0:
+            user_idx.append(i["pointNumber"])
     user_lst = user.iloc[user_idx]
-    return user_lst.index.to_list()
+    if len(data_from_option) != len(user):
+        # 옵션으로 그림을 그리면 두번에 걸쳐서 그림을 넣기 때문에 아이템 순서가 달라진다.
+        user_lst = selected_user.iloc[user_idx]
+
+    emb_set = set(user_lst.index.to_list())
+    option_set = set(data_from_option)
+    user_lst = list(emb_set & option_set)
+
+    return user_lst
 
 
 # 최근에 선택한 유저를 최종 store에 저장
@@ -690,18 +730,11 @@ def update_graph(store1):
     user["selected"] = "Not Selected"
     user.loc[store1, "selected"] = "Selected"
 
+    global selected_user
     selected_user = user.loc[user["selected"] == "Selected"]
     Notselected_user = user.loc[user["selected"] != "Selected"]
     fig = go.Figure()
 
-    fig.add_trace(
-        go.Scatter(
-            x=Notselected_user["xs"],
-            y=Notselected_user["ys"],
-            name="Not selected",
-            marker_color="red",
-        )
-    )
     fig.add_trace(
         go.Scatter(
             x=selected_user["xs"],
@@ -709,6 +742,14 @@ def update_graph(store1):
             name="selected       ",
             mode="markers",
             marker_color="green",
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=Notselected_user["xs"],
+            y=Notselected_user["ys"],
+            name="Not selected",
+            marker_color="red",
         )
     )
     fig.add_trace(go.Scatter(x=[0], y=[0], name=" ", marker_color="white"))
@@ -784,7 +825,8 @@ def prepare_rerank(value):
             html.P("Reranking Options"),
             dcc.Markdown(
                 """$$\\alpha \\cdot rel(i) + (1 - \\alpha) \\cdot obj(i)$$
-                """, mathjax=True
+                """,
+                mathjax=True,
             ),
             html.Br(),
             html.Div(
@@ -926,7 +968,6 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
         )
         new_lst = [make_card(item) for item in new]
 
-
         indicator = dbc.Row(
             children=[
                 html.H3("리랭킹 후 지표 변화"),
@@ -954,12 +995,11 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
         item_side = dbc.Row(
             children=[
                 html.H3("리랭킹 관련한 장르 분포"),
-                dcc.Graph(figure=daf.plot_usergroup_genre(item,
-                                                          origin_item,
-                                                          rerank_item,
-                                                          profile_item,
-                                                          tmp
-                                                          )),
+                dcc.Graph(
+                    figure=daf.plot_usergroup_genre(
+                        item, origin_item, rerank_item, profile_item, tmp
+                    )
+                ),
             ],
         )
         children = [indicator, item_poster, item_side]
