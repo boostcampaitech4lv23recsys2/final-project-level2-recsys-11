@@ -140,6 +140,7 @@ def plot_age_counter(age_Counter_profile: Counter, age_Counter_rec: Counter):
 
     fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
     fig.update_layout(
+         template='ggplot2'
         # title_text="Selected Item profile vs Selected Item rec list (Age)",
         #     width=1000,
         #     height=500
@@ -182,6 +183,7 @@ def plot_gender_counter(gender_Counter_profile: Counter, gender_Counter_rec: Cou
     )
     fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
     fig.update_layout(
+         template='ggplot2'
         # title_text="Selected Item profile vs Selected Item rec list (Gender)",
         # width=1000,
         # height=500
@@ -225,6 +227,7 @@ def plot_occupation_counter(
     )
     fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
     fig.update_layout(
+         template='ggplot2'
         # title_text="Selected Item profile vs Selected Item rec list (Occupation)",
         # width=1000,
         # height=500
@@ -346,6 +349,7 @@ def plot_usergroup_genre(item, origin_item, rerank_item, profile_item, tmp):
                 # title_text=f"User group genre pie chart",
                 width=1000,
                 height=800,
+                template='ggplot2'
             )
 
             return fig
@@ -377,5 +381,8 @@ def plot_info_counter(Counter_profile: Counter, info_name:str, k:int=10):
             1,
             1,
         )
+        fig.update_layout(
+            template='ggplot2'
+            )
         fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
         return fig
