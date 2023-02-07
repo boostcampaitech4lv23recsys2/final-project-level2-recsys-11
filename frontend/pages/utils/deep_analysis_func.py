@@ -114,13 +114,13 @@ def plot_age_counter(age_Counter_profile: Counter, age_Counter_rec: Counter):
         rows=1,
         cols=2,
         specs=[[{"type": "domain"}, {"type": "domain"}]],
-        subplot_titles=("Age(profile)", "Age(rec)"),
+        # subplot_titles=("나이(시청)", "나이(추천)"),
     )
     fig.add_trace(
         go.Pie(
             labels=age_Counter_profile_labels,
             values=age_Counter_profile_values,
-            name="Age(profile)",
+            name="",
             pull=[0.07] + [0] * (len(age_Counter_profile_values) - 1),
         ),  # textinfo='label+percent', pull=[0.2]+[0]*(len(total_item_genre_values)-1)
         1,
@@ -130,7 +130,7 @@ def plot_age_counter(age_Counter_profile: Counter, age_Counter_rec: Counter):
         go.Pie(
             labels=age_Counter_rec_labels,
             values=age_Counter_rec_values,
-            name="Age(rec)",
+            name="",
             pull=[0.07] + [0] * (len(age_Counter_rec_values) - 1),
         ),  # textinfo='label+percent', pull=[0.2]+[0]*(len(user_profile_values)-1)
         1,
@@ -139,6 +139,9 @@ def plot_age_counter(age_Counter_profile: Counter, age_Counter_rec: Counter):
 
     fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
     fig.update_layout(
+        title_text="나이",
+        title_font_size=25,
+        annotations=[dict(text='VS.', x=0.5, y=0.35, font_size=25, showarrow=False)]
         # title_text="Selected Item profile vs Selected Item rec list (Age)",
         #     width=1000,
         #     height=500
@@ -157,13 +160,13 @@ def plot_gender_counter(gender_Counter_profile: Counter, gender_Counter_rec: Cou
         rows=1,
         cols=2,
         specs=[[{"type": "domain"}, {"type": "domain"}]],
-        subplot_titles=("Gender(profile)", "Gender(rec)"),
+        # subplot_titles=("성별(시청)", "성별(추천)"),
     )
     fig.add_trace(
         go.Pie(
             labels=gender_Counter_profile_labels,
             values=gender_Counter_profile_values,
-            name="user Rec list genre",
+            name="",
             pull=[0.07] + [0] * (len(gender_Counter_profile_values) - 1),
         ),
         1,
@@ -173,7 +176,7 @@ def plot_gender_counter(gender_Counter_profile: Counter, gender_Counter_rec: Cou
         go.Pie(
             labels=gender_Counter_rec_labels,
             values=gender_Counter_rec_values,
-            name="user rerank",
+            name="",
             pull=[0.07] + [0] * (len(gender_Counter_rec_values) - 1),
         ),
         1,
@@ -181,6 +184,10 @@ def plot_gender_counter(gender_Counter_profile: Counter, gender_Counter_rec: Cou
     )
     fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
     fig.update_layout(
+        title_text="성별",
+        title_font_size=25,
+        annotations=[dict(text='VS.', x=0.5, y=0.4, font_size=25, showarrow=False)]
+
         # title_text="Selected Item profile vs Selected Item rec list (Gender)",
         # width=1000,
         # height=500
@@ -192,21 +199,21 @@ def plot_gender_counter(gender_Counter_profile: Counter, gender_Counter_rec: Cou
 def plot_occupation_counter(
     occupation_Counter_profile: Counter, occupation_Counter_rec: Counter
 ):
-    occupation_Counter_profile_labels = list(occupation_Counter_profile.keys())
-    occupation_Counter_profile_values = list(occupation_Counter_profile.values())
-    occupation_Counter_rec_labels = list(occupation_Counter_rec.keys())
-    occupation_Counter_rec_values = list(occupation_Counter_rec.values())
+    occupation_Counter_profile_labels = list(occupation_Counter_profile.keys())[:10]
+    occupation_Counter_profile_values = list(occupation_Counter_profile.values())[:10]
+    occupation_Counter_rec_labels = list(occupation_Counter_rec.keys())[:10]
+    occupation_Counter_rec_values = list(occupation_Counter_rec.values())[:10]
     fig = make_subplots(
         rows=1,
         cols=2,
         specs=[[{"type": "domain"}, {"type": "domain"}]],
-        subplot_titles=("Occupation(profile)", "Occupation(rec)"),
+        # subplot_titles=("Occupation(profile)", "Occupation(rec)"),
     )
     fig.add_trace(
         go.Pie(
             labels=occupation_Counter_profile_labels,
             values=occupation_Counter_profile_values,
-            name="user Rec list genre",
+            name="",
             pull=[0.07] + [0] * (len(occupation_Counter_profile_values) - 1),
         ),  # textinfo='label+percent', pull=[0.2]+[0]*(len(user_rec_values)-1)
         1,
@@ -216,7 +223,7 @@ def plot_occupation_counter(
         go.Pie(
             labels=occupation_Counter_rec_labels,
             values=occupation_Counter_rec_values,
-            name="user rerank",
+            name="",
             pull=[0.07] + [0] * (len(occupation_Counter_rec_values) - 1),
         ),  # textinfo='label+percent', pull=[0.2]+[0]*(len(user_rerank_values)-1)
         1,
@@ -224,6 +231,10 @@ def plot_occupation_counter(
     )
     fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
     fig.update_layout(
+        title_text="직업",
+        title_font_size=25,
+        annotations=[dict(text='VS.', x=0.5, y=0.35, font_size=25, showarrow=False)]
+
         # title_text="Selected Item profile vs Selected Item rec list (Occupation)",
         # width=1000,
         # height=500
