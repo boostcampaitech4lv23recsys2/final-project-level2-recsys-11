@@ -13,7 +13,7 @@ from dash import html, dcc, callback, Input, Output, State,  MATCH, ALL
 from dash_bootstrap_templates import load_figure_template
 from dash.exceptions import PreventUpdate
 from . import global_component as gct
-API_url = 'http://127.0.0.1:30004'
+
 dash.register_page(__name__, path='/reranking')
 
 rerank_total_metrics = None
@@ -188,7 +188,7 @@ def get_stored_selected_models(exp_names:str, store) -> pd.DataFrame:
     store_df = pd.DataFrame(store).set_index('experiment_name')
     exp_id = store_df.loc[exp_names, 'exp_id']
     params = {'ID':'mkdir', 'dataset_name':'ml-1m', 'exp_ids': [exp_id]}
-    response = requests.get(API_url + '/frontend/selected_metrics', params = params)
+    response = requests.get(gct.API_URL + '/frontend/selected_metrics', params = params)
     a = response.json()
     exp_metrics = pd.DataFrame().from_dict(a['model_metrics'], orient='tight')
     exp_metrics.index = ['original']
@@ -201,7 +201,7 @@ def get_stored_selected_models(exp_names:str, store) -> pd.DataFrame:
     global rerank_total_metrics
     global rerank_total_metrics_users
     params = {'ID':'mkdir', 'dataset_name':'ml-1m', 'exp_names': [exp_names]}
-    response = requests.get(API_url + '/frontend/reranked_exp', params = params)
+    response = requests.get(gct.API_URL + '/frontend/reranked_exp', params = params)
     a = response.json()
 
     rerank_total_metrics = pd.DataFrame().from_dict(a['model_info'], orient='tight')
