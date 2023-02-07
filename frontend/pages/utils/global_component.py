@@ -5,6 +5,20 @@ import requests
 from dash.exceptions import PreventUpdate
 
 env_path = '/opt/ml/final-project-level2-recsys-11/backend/login.env'
+
+pretty_metric = {
+    "recall": "Recall",
+    "ndcg": "NDCG",
+    "avg_precision": "AP@K",
+    "avg_popularity": "AVG_populartiy",
+    "tail_percentage": "Tail Ratio",
+    "diversity_cos": "Diversity(cosine)",
+    "diversity_jac": "Diversity(jaccard)",
+    "serendipity_pmi": "Serendipity(PMI)",
+    "serendipity_jac": "Serendipity(jaccard)",
+    "coverage": "Coverage",
+    "novelty": "Novelty",
+}
 class Login_Settings(BaseSettings):
         SALT: str
         ACCESS_TOKEN_EXPIRE_MINUTES: int
@@ -81,3 +95,5 @@ def Authenticate(input_btn_name:str, output_component_name:str):
             return [1,2,3,4]
         else:
             return list(str(response))
+        
+

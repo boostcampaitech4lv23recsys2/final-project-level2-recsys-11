@@ -10,6 +10,7 @@ from dash.exceptions import PreventUpdate
 
 # import feffery_antd_components as fac
 from .utils import global_component as gct
+from .utils.global_component import pretty_metric
 from .utils import deep_analysis_func as daf
 from collections import Counter
 from plotly.subplots import make_subplots
@@ -1051,20 +1052,45 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
             .index
         )
         new_lst = [make_card(item) for item in new]
-
+        def get_metric_list(metric, i, is_incremental):
+            if is_incremental:
+                color = "#7286D3"
+                plus="+"
+            else:
+                color = "#CD0404"
+                plus=""
+            return dbc.Card(
+                        [
+                            dbc.CardHeader(html.H6(f"{pretty_metric[metric]}"), ),
+                            dbc.CardBody(
+                                [
+                                    html.H6(f"{plus}{round(i,2)}", className="card-title",style={"color":color}),
+                                ]
+                            ),],
+                        style={"width": "12rem"},
+                        )
         indicator = dbc.Row(
             children=[
+                    
                 html.H3("리랭킹 후 지표 변화"),
+                html.H5("증가한 지표"),
                 html.Div(
                     children=[
-                        dbc.Badge(
-                            children=[html.P(metric), html.P(round(i, 4))],
-                            color="primary" if i < 0 else "danger",
-                        )
-                        for metric, i in zip(sub.index, sub)
+                        get_metric_list(metric, i, is_incremental=True)
+                        for metric, i in zip(sub.index, sub) if i>=0 
                     ],
+                    className="hstack gap-1"
+                ),
+                html.H5("감소한 지표"),
+                    html.Div(
+                    children=[
+                        get_metric_list(metric, i, is_incremental=False)
+                        for metric, i in zip(sub.index, sub) if i<0 
+                    ],
+                    className="hstack gap-1"
                 ),
             ],
+            className="gap-3 my-3"
         )
         item_poster = html.Div(
             children=[
@@ -1081,6 +1107,7 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
                         className= 'd-flex flex-row flex-nowrap overflow-auto',
                         style={"height": 548}),
             ],
+            className="gap-3 mb-3"
         )
         item_side = dbc.Row(
             children=[
@@ -1092,6 +1119,7 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
                     )
                 ),
             ],
+            # className=""
         )
         children = [indicator, item_poster, item_side]
 
