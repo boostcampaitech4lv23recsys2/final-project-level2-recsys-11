@@ -253,7 +253,7 @@ def plot_total_metrics(data, n, state, store): # df:pd.DataFrame
         child = html.Div(
             dbc.Row([
                 dbc.Col(html.H3('전체 지표 정보')),
-                dbc.Col(dbc.Alert("아래 그래프를 확인하며 사용할 모델을 결정하고, Rerank/Deep Analysis 페이지로 이동하세요",
+                dbc.Col(dbc.Alert("아래 그래프를 확인하며 사용할 모델을 결정하고, Rerank/Deep Analysis 페이지로 이동하세요!",
                                         # html.Span("(2개 이상부터 가능합니다.)", className="fw-bold") 
                                         color="warning", 
                                         style={
