@@ -714,9 +714,13 @@ def draw_item_top(value, data):
         rec_lst = [make_card(item) for item in rec]  # 보여줄 카드 갯수 지정 가능
         children = [
             html.H3("선택한 아이템 인기도 top 10"),
-            dbc.Row(children=pop_lst, style={"overflow": "scroll", "height": 500}),
+            dbc.Row(children=pop_lst, className = 'd-flex flex-row flex-nowrap overflow-auto', style={
+                # "overflow": "scroll", 
+                "height": 620}),
             html.H3("선택한 아이템 추천횟수 top 10"),
-            dbc.Row(children=rec_lst, style={"overflow": "scroll", "height": 500}),
+            dbc.Row(children=rec_lst, className ='d-flex flex-row flex-nowrap overflow-auto', style={
+                # "overflow": "scroll", 
+                "height": 620}),
             html.Br(),
         ]
         return children
