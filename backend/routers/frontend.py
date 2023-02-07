@@ -402,9 +402,6 @@ async def rerank_users(
         k=10,
     )
 
-    print(metrices)
-    print(rerank_metrices)
-
     # rerank predicts decode
     decode_re_predicts = np.vectorize(lambda x: idx2iid[x])(rerank_predicts)
     decode_re_pred_items = pd.Series(
@@ -425,19 +422,4 @@ async def rerank_users(
         "metric_diff": met.to_dict(orient="tight"),
         "rerank": decode_re_pred_items_df.to_dict(orient="tight"),
     }
-    # 필요한 아이템들로만 distance mat 구성
-
-    # uid2idx = {v: k for k, v in enumerate(pred_users)}
-    # iid2idx = {v: k for k, v in enumerate(pred_items)}
-
-    # idx2uid = {k: v for k, v in enumerate(pred_users)}
-    # idx2iid = {k: v for k, v in enumerate(pred_items)}
-
-    # train_interaction = train_interaction[train_interaction['user_id'].isin(pred_users)]
-    # train_interaction = train_interaction[train_interaction['item_id'].isin(pred_items)]
-    # train_interaction['user_idx'] = train_interaction['user_id'].map(uid2idx)
-    # train_interaction['item_idx'] = train_interaction['item_id'].map(iid2idx)
-
-    # if 'jac' in objective_fn:
-    #     item_side = await s3_to_pd(key_hash=df_row['item_side'])
-    #     item_vector = item_side[['user_id', 'item_vector']]
+    

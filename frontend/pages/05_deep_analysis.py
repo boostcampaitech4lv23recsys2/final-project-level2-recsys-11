@@ -78,7 +78,17 @@ header_user_or_item = html.Div(
             [
                 # html.Div(dbc.Progress(id="first_progress_bar")),
                 html.Div("해당 실험의 아이템, 유저 페이지"),
-                dbc.Tabs([dbc.Tab(label="유저"), dbc.Tab(label="아이템")]),
+                dbc.Tabs(
+                    [
+                        dbc.Tab(
+                            [
+                                # Input options
+                            ],
+                            label="유저",
+                        ),
+                        dbc.Tab(label="아이템"),
+                    ]
+                ),
                 dbc.RadioItems(
                     id="show_user_or_item",
                     className="btn-group",
@@ -91,6 +101,95 @@ header_user_or_item = html.Div(
         # first_interval:=dcc.Interval(interval=15*1000, n_intervals=0)
     ]
 )
+
+
+def get_input_options(year_min, year_max, kind: str):
+    if kind == "item":
+        input_list = html.Div(
+            [
+                html.H6("장르"),
+                dcc.Dropdown(
+                    options=uniq_genre,
+                    multi=True,
+                    id="selected_genre",
+                ),
+                html.H6("년도"),
+                dcc.RangeSlider(
+                    min=year_min,
+                    max=year_max,
+                    value=[
+                        year_min,
+                        year_max,
+                    ],
+                    step=1,
+                    marks=None,
+                    tooltip={
+                        "placement": "bottom",
+                        "always_visible": True,
+                    },
+                    allowCross=False,
+                    id="selected_year",
+                ),
+            ]
+        )
+    elif kind == "user":
+        input_list = html.Div([])
+    return dbc.Row(
+        [
+            dbc.Col(
+                html.Div(
+                    children=[
+                        html.H4("사이드 정보"),
+                        input_list,
+                        dbc.Button(
+                            id="item_reset_selection",
+                            children="초기화",
+                            color="primary",
+                        ),
+                        html.P(id="n_items"),
+                        dbc.Button(id="item_run", children="RUN"),
+                        dcc.Store(
+                            id="items_selected_by_option",
+                            storage_type="session",
+                        ),  # 데이터를 저장하는 부분
+                        dcc.Store(
+                            id="items_selected_by_embed",
+                            storage_type="session",
+                        ),  # 데이터를 저장하는 부분
+                        dcc.Store(
+                            id="items_for_analysis",
+                            storage_type="session",
+                        ),  # 데이터를 저장하는 부분
+                    ],
+                    # className='form-style'
+                ),
+                width=3,
+            ),
+            dbc.Col(
+                html.Div(
+                    children=[
+                        html.H6("아이템 2차원 임베딩"),
+                        html.P("참고로 리랭킹 관련한 지원은 유저 페이지에서만 됩니다."),
+                        html.Br(),
+                        dcc.Graph(
+                            id="item_emb_graph",
+                        ),
+                    ],
+                ),
+                width=6,
+            ),
+            dbc.Col(
+                html.Div(
+                    children=[
+                        html.H6("사이드인포"),
+                        html.Div(id="item_side_graph"),
+                    ],
+                    style={"overflow": "scroll", "height": 700},
+                ),
+                width=3,
+            ),
+        ],
+    )
 
 
 item_top = html.Div(
@@ -122,6 +221,8 @@ layout = html.Div(
                 ),
                 # 스피너로 묶었는데 생각대로 안 나옴
                 # dbc.Spinner(
+                # TODO: Input 옵션들 아래 결과랑 분리 해두기
+                input_optinos := html.Div(id="input_options"),
                 html.Div(
                     id="deep_analysis_page",
                 ),
@@ -147,6 +248,9 @@ layout = html.Div(
     State("store_exp_ids", "data"),
 )
 def show_exp_choice(exp_name, exp_id):
+    if exp_id == None:
+        # TODO: 모델이 선택되지 않으면 Alert 띄워주기
+        raise PreventUpdate
     option = [{"label": i, "value": j} for i, j in zip(exp_name, exp_id)]
     return option
 
@@ -232,6 +336,12 @@ def choose_experiment(
     )
 
 
+# @callback(
+#         Output(input_optinos, "children"),
+
+# )
+
+
 # 유저 페이지를 띄울지, 아이템 페이지를 띄울지
 @callback(
     Output("deep_analysis_page", "children"),
@@ -251,85 +361,86 @@ def display_overall(val, exp_id):
 
             item_selection = html.Div(
                 children=[
-                    dbc.Row(
-                        [
-                            dbc.Col(
-                                html.Div(
-                                    children=[
-                                        html.H6("옵션을 통한 선택"),
-                                        html.P("장르"),
-                                        dcc.Dropdown(
-                                            options=uniq_genre,
-                                            multi=True,
-                                            id="selected_genre",
-                                        ),
-                                        html.P("년도"),
-                                        dcc.RangeSlider(
-                                            min=year_min,
-                                            max=year_max,
-                                            value=[
-                                                year_min,
-                                                year_max,
-                                            ],
-                                            step=1,
-                                            marks=None,
-                                            tooltip={
-                                                "placement": "bottom",
-                                                "always_visible": True,
-                                            },
-                                            allowCross=False,
-                                            id="selected_year",
-                                        ),
-                                        html.P("인기도"),
-                                        dbc.Button(
-                                            id="item_reset_selection",
-                                            children="초기화",
-                                            color="primary",
-                                        ),
-                                        html.P(id="n_items"),
-                                        dbc.Button(id="item_run", children="RUN"),
-                                        dcc.Store(
-                                            id="items_selected_by_option",
-                                            storage_type="session",
-                                        ),  # 데이터를 저장하는 부분
-                                        dcc.Store(
-                                            id="items_selected_by_embed",
-                                            storage_type="session",
-                                        ),  # 데이터를 저장하는 부분
-                                        dcc.Store(
-                                            id="items_for_analysis",
-                                            storage_type="session",
-                                        ),  # 데이터를 저장하는 부분
-                                    ],
-                                    # className='form-style'
-                                ),
-                                width=3,
-                            ),
-                            dbc.Col(
-                                html.Div(
-                                    children=[
-                                        html.H6("아이템 2차원 임베딩"),
-                                        html.P("참고로 리랭킹 관련한 지원은 유저 페이지에서만 됩니다."),
-                                        html.Br(),
-                                        dcc.Graph(
-                                            id="item_emb_graph",
-                                        ),
-                                    ],
-                                ),
-                                width=6,
-                            ),
-                            dbc.Col(
-                                html.Div(
-                                    children=[
-                                        html.H6("사이드인포"),
-                                        html.Div(id="item_side_graph"),
-                                    ],
-                                    style={"overflow": "scroll", "height": 700},
-                                ),
-                                width=3,
-                            ),
-                        ],
-                    )
+                    get_input_options(year_min, year_max, kind="item")
+                    # dbc.Row(
+                    #     [
+                    #         dbc.Col(
+                    #             html.Div(
+                    #                 children=[
+                    #                     html.H6("옵션을 통한 선택"),
+                    #                     html.P("장르"),
+                    #                     dcc.Dropdown(
+                    #                         options=uniq_genre,
+                    #                         multi=True,
+                    #                         id="selected_genre",
+                    #                     ),
+                    #                     html.P("년도"),
+                    #                     dcc.RangeSlider(
+                    #                         min=year_min,
+                    #                         max=year_max,
+                    #                         value=[
+                    #                             year_min,
+                    #                             year_max,
+                    #                         ],
+                    #                         step=1,
+                    #                         marks=None,
+                    #                         tooltip={
+                    #                             "placement": "bottom",
+                    #                             "always_visible": True,
+                    #                         },
+                    #                         allowCross=False,
+                    #                         id="selected_year",
+                    #                     ),
+                    #                     html.P("인기도"),
+                    #                     dbc.Button(
+                    #                         id="item_reset_selection",
+                    #                         children="초기화",
+                    #                         color="primary",
+                    #                     ),
+                    #                     html.P(id="n_items"),
+                    #                     dbc.Button(id="item_run", children="RUN"),
+                    #                     dcc.Store(
+                    #                         id="items_selected_by_option",
+                    #                         storage_type="session",
+                    #                     ),  # 데이터를 저장하는 부분
+                    #                     dcc.Store(
+                    #                         id="items_selected_by_embed",
+                    #                         storage_type="session",
+                    #                     ),  # 데이터를 저장하는 부분
+                    #                     dcc.Store(
+                    #                         id="items_for_analysis",
+                    #                         storage_type="session",
+                    #                     ),  # 데이터를 저장하는 부분
+                    #                 ],
+                    #                 # className='form-style'
+                    #             ),
+                    #             width=3,
+                    #         ),
+                    #         dbc.Col(
+                    #             html.Div(
+                    #                 children=[
+                    #                     html.H6("아이템 2차원 임베딩"),
+                    #                     html.P("참고로 리랭킹 관련한 지원은 유저 페이지에서만 됩니다."),
+                    #                     html.Br(),
+                    #                     dcc.Graph(
+                    #                         id="item_emb_graph",
+                    #                     ),
+                    #                 ],
+                    #             ),
+                    #             width=6,
+                    #         ),
+                    #         dbc.Col(
+                    #             html.Div(
+                    #                 children=[
+                    #                     html.H6("사이드인포"),
+                    #                     html.Div(id="item_side_graph"),
+                    #                 ],
+                    #                 style={"overflow": "scroll", "height": 700},
+                    #             ),
+                    #             width=3,
+                    #         ),
+                    #     ],
+                    # )
                 ]
             )
             return [item_selection, item_top, item_related_users]
