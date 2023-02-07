@@ -884,7 +884,7 @@ def save_users_selected_by_option(age, gender, occupation, wrong):
     if age:
         user_lst = user_lst[user_lst["age"].isin(age)]
     if gender:
-        user_lst = user_lst[user_lst["gender"] == gender]
+        user_lst = user_lst[user_lst["gender"].isin(gender)]
     if occupation:
         user_lst = user_lst[user_lst["occupation"].isin(occupation)]
     if wrong:
