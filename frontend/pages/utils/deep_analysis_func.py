@@ -345,19 +345,19 @@ def plot_usergroup_genre(item, origin_item, rerank_item, profile_item, tmp):
 
     fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
 
-            fig.add_annotation(
-                text=f"Total users num in this group : {len(tmp)}",
-                x=0.5,
-                y=0.5,
-                font_size=20,
-                showarrow=False,
-            )
-            fig.update_layout(
-                # title_text=f"User group genre pie chart",
-                width=1000,
-                height=800,
-                template='ggplot2'
-            )
+    fig.add_annotation(
+        text=f"Total users num in this group : {len(tmp)}",
+        x=0.5,
+        y=0.5,
+        font_size=20,
+        showarrow=False,
+    )
+    fig.update_layout(
+        # title_text=f"User group genre pie chart",
+        width=1000,
+        height=800,
+        template='ggplot2'
+    )
 
     return fig
 

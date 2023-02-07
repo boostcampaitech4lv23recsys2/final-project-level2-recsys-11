@@ -241,13 +241,13 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                                     html.H4("사이드인포"),
                                     html.Div(
                                         id=f"{kind}_side_graph",
-                                        style={"height": "10px"},
+                                        
                                     ),
                                 ],
                                 # className="h-50",
-                            )
+                            style={"overflow": "scroll", "height":500})
                         ],
-                        style={"overflow": "scrolly", "height": "10px"},
+                        # style={"overflow": "scrolly", "height": "10px"},
                     ),
                 ],
                 className="mb-1",

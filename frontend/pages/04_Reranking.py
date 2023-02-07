@@ -271,7 +271,7 @@ def plot_total_metrics(data, n, obj_funcs, state, store): # df:pd.DataFrame
         child = html.Div(
             dbc.Row([
                 dbc.Col(html.H3('전체 지표 정보')),
-                dbc.Col(dbc.Alert("아래 그래프를 통해 어떤 Reranking 방식을 Deep Analsis에 사용할지 결정하세요!",
+                dbc.Col(dbc.Alert("아래 그래프를 통해 어떤 Reranking 방식을 Deep Analysis에 사용할지 결정하세요!",
                                         color="warning", 
                                         style={
                                             "width":"700px",
