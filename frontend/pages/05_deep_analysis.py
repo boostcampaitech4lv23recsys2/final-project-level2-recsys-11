@@ -37,19 +37,25 @@ def make_card(element):
     card = dbc.Col(
         children=dbc.Card(
             [
-                dbc.CardImg(src=img, top=True, className='h-3 mb-0'),
+                dbc.CardImg(src=img, top=True, className="h-3 mb-0"),
                 dbc.CardBody(
                     [
-                        html.H6(tmp["movie_title"], className='mt-0'),
-                        html.P(f'({tmp["release_year"]})', className='my-1'),
-                        html.Hr(className='my-1'),
-                        html.P("장르: " + ", ".join((tmp["genre"]).split()), className='my-1'),
-                        html.P(f'인기도: {round(tmp["item_pop"] * 100, 3)}%', className='my-1'),
+                        html.H6(tmp["movie_title"], className="mt-0"),
+                        html.P(f'({tmp["release_year"]})', className="my-1"),
+                        html.Hr(className="my-1"),
+                        html.P(
+                            "장르: " + ", ".join((tmp["genre"]).split()), className="my-1"
+                        ),
+                        html.P(
+                            f'인기도: {round(tmp["item_pop"] * 100, 3)}%', className="my-1"
+                        ),
                     ],
                 ),
             ],
-        style={'height':515, 'width':200}),
-        width={"size": 2}, style={'margin':'10px'}
+            style={"height": 515, "width": 200},
+        ),
+        width={"size": 2},
+        style={"margin": "10px"},
     )
     return card
 
@@ -251,7 +257,7 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                 id=f"{kind}_run",
                 children="RUN",
                 className="w-100",
-                style={"margin-top": "-3rem"},
+                # style={"margin-top": "-3rem"},
             ),
         ],
         # className="hstack",
@@ -672,14 +678,24 @@ def draw_item_top(value, data):
         rec = item.loc[data].sort_values(by=["len"], ascending=False).head(10).index
         rec_lst = [make_card(item) for item in rec]  # 보여줄 카드 갯수 지정 가능
         children = [
-            html.H3("선택한 아이템 인기도 top 10", className='mb-3'),
-            dbc.Row(children=pop_lst, className = 'g-0 d-flex flex-row flex-nowrap overflow-auto', style={
-                # "overflow": "scroll", 
-                "height": 547}),
-            html.H3("선택한 아이템 추천횟수 top 10", className='mt-5 mb-3'),
-            dbc.Row(children=rec_lst, className ='d-flex flex-row flex-nowrap overflow-auto', style={
-                # "overflow": "scroll", 
-                "height": 547}),
+            html.H3("선택한 아이템 인기도 top 10", className="mb-3"),
+            dbc.Row(
+                children=pop_lst,
+                className="g-0 d-flex flex-row flex-nowrap overflow-auto",
+                style={
+                    # "overflow": "scroll",
+                    "height": 547
+                },
+            ),
+            html.H3("선택한 아이템 추천횟수 top 10", className="mt-5 mb-3"),
+            dbc.Row(
+                children=rec_lst,
+                className="d-flex flex-row flex-nowrap overflow-auto",
+                style={
+                    # "overflow": "scroll",
+                    "height": 547
+                },
+            ),
             html.Br(),
         ]
         return children
@@ -717,9 +733,9 @@ def draw_item_related_users(value, data):
         )
 
         children = [
-            html.H3("아이템을 시청한 유저들 vs. 아이템을 추천받은 유저들", className='mt-4 mb-3'),
+            html.H3("아이템을 시청한 유저들 vs. 아이템을 추천받은 유저들", className="mt-4 mb-3"),
             html.Div(
-                [   
+                [
                     age,
                     gender,
                     occupation,
