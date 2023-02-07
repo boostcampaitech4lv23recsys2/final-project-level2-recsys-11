@@ -21,24 +21,19 @@ rerank_total_metrics_users = None
 SPECIFIC_PLOT_WIDTH = 500
 
 rerank_metric_option = [
-    {'label':' Diversity(jaccard)', 'value':'diversity(jac)'},
     {'label':' Diversity(cosine)', 'value':'diversity(cos)'},
-    {'label':' Serendipity(jaccard)', 'value':'serendipity(jac)'},
+    {'label':' Diversity(jaccard)', 'value':'diversity(jac)'},
     {'label':' Serendipity(PMI)', 'value':'serendipity(pmi)'},
+    {'label':' Serendipity(jaccard)', 'value':'serendipity(jac)'},
     {'label':' Novelty', 'value':'novelty'},
 ]
 
 rerank_metric_list = [
-    'diversity(jac)',
     'diversity(cos)',
-    'serendipity(jac)',
+    'diversity(jac)',
     'serendipity(pmi)',
+    'serendipity(jac)',
     'novelty'
-    # 'Diversity(jaccard)',
-    # 'Diversity(cosine)',
-    # 'Serendipity(jaccard)',
-    # 'Serendipity(PMI)',
-    # 'Novelty',
 ]
 
 
@@ -206,13 +201,14 @@ def get_stored_selected_models(exp_names:str, store) -> pd.DataFrame:
 
     rerank_total_metrics = pd.DataFrame().from_dict(a['model_info'], orient='tight')
     rerank_total_metrics = rerank_total_metrics.set_index('objective_fn')
-    rerank_total_metrics = rerank_total_metrics.drop(['experiment_name', 'alpha'], axis=1)
+    # print(rerank_total_metrics)
+    # rerank_total_metrics = rerank_total_metrics.loc['']
+    rerank_total_metrics = rerank_total_metrics.drop(['experiment_name'], axis=1) # , 'alpha'
     rerank_total_metrics = pd.concat([exp_metrics, rerank_total_metrics], axis=0)
 
     rerank_total_metrics_users = pd.DataFrame().from_dict(a['user_metrics'], orient='tight')
     rerank_total_metrics_users.index = rerank_total_metrics.index[1:]
     rerank_total_metrics_users = pd.concat([exp_metrics_users, rerank_total_metrics_users], axis=0)
-
     return html.Div([])
 
 
@@ -241,6 +237,8 @@ def plot_total_metrics(data, n, obj_funcs, state, store): # df:pd.DataFrame
         tmp_metrics = rerank_total_metrics.drop(['diversity_jac','serendipity_jac'], axis=1)
         obj_funcs = ['original'] + obj_funcs
         tmp_metrics = tmp_metrics.loc[obj_funcs]
+        print('obj_funcs:', obj_funcs)
+        print('tmp_metrics:', tmp_metrics)
         metrics = list(tmp_metrics.columns)
         fig = go.Figure()
         for i,obj_fn in enumerate(tmp_metrics.index):  # data
@@ -267,17 +265,17 @@ def load_metric_list(sort_of_metric:str) -> list:
     if sort_of_metric == 'Quant':
         metric_list = [
             {'label': 'Recall_k', 'value' : 'recall'},
-            {'label':'NDCG', 'value':'ndcg'},
             {'label':'AP@K', 'value':'map'},
+            {'label':'NDCG', 'value':'ndcg'},
+            {'label':'TailPercentage', 'value':'tail_percentage'},
             {'label':'AvgPopularity', 'value':'avg_popularity'},
-            {'label':'TailPercentage', 'value':'tail_percentage'}
             ]
     elif sort_of_metric == 'Qual':
         metric_list = [
-            {'label':'Diversity(jaccard)', 'value':'diversity_jac'},
             {'label':'Diversity(cosine)', 'value':'diversity_cos'},
-            {'label':'Serendipity(jaccard)', 'value':'serendipity_jac'},
+            {'label':'Diversity(jaccard)', 'value':'diversity_jac'},
             {'label':'Serendipity(PMI)', 'value':'serendipity_pmi'},
+            {'label':'Serendipity(jaccard)', 'value':'serendipity_jac'},
             {'label':'Novelty', 'value':'novelty'},
             ]
     return metric_list
@@ -362,10 +360,10 @@ def plot_dist(obj_funcs, value):
                                 bin_size=0.025, show_rug=True, curve_type='kde')
 
         metric_list = {
-            "diversity_jac": "Diversity(jaccard)",
             "diversity_cos": "Diversity(cosine)",
-            'serendipity_jac':'Serendipity(jaccard)',
+            "diversity_jac": "Diversity(jaccard)",
             'serendipity_pmi':'Serendipity(PMI)',
+            'serendipity_jac':'Serendipity(jaccard)',
             'novelty':'Novelty',
             }
         fig.update_layout(title_text=f'유저별 {metric_list[value]} 분포',
@@ -383,10 +381,10 @@ def plot_dist(obj_funcs, value):
 
         metric_list = {
             'recall':'Recall@k',
-            "ndcg": "NDCG",
             "avg_precision": "AP@K",
+            "ndcg": "NDCG",
+            "tail_percentage":"TailPercentage",
             "avg_popularity":"AvgPopularity",
-            "tail_percentage":"TailPercentage"
             }                                
         fig.update_layout(title_text=f'유저별 {metric_list[value]} 분포',
                           width=SPECIFIC_PLOT_WIDTH)

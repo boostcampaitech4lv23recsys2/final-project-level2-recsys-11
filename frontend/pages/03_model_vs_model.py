@@ -260,17 +260,17 @@ def load_metric_list(sort_of_metric:str) -> list:
     if sort_of_metric == 'Quant':
         metric_list = [
             {'label': 'Recall@k', 'value' : 'recall'},
-            {'label':'NDCG', 'value':'ndcg'},
             {'label':'AP@K', 'value':'map'},
+            {'label':'NDCG', 'value':'ndcg'},
+            {'label':'TailPercentage', 'value':'tail_percentage'},
             {'label':'AvgPopularity', 'value':'avg_popularity'},
-            {'label':'TailPercentage', 'value':'tail_percentage'}
             ]
     elif sort_of_metric == 'Qual':
         metric_list = [
-            {'label':'Diversity(jaccard)', 'value':'diversity_jac'},
             {'label':'Diversity(cosine)', 'value':'diversity_cos'},
-            {'label':'Serendipity(jaccard)', 'value':'serendipity_jac'},
+            {'label':'Diversity(jaccard)', 'value':'diversity_jac'},
             {'label':'Serendipity(PMI)', 'value':'serendipity_pmi'},
+            {'label':'Serendipity(jaccard)', 'value':'serendipity_jac'},
             {'label':'Novelty', 'value':'novelty'},
             ]
     return metric_list
