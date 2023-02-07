@@ -90,7 +90,66 @@ layout = html.Div([
 
     ## 3. Web4Rec Library란?
 
-    ### 성훈이형 여기에 써줘
+    - Web4Rec을 사용할 땐 라이브러리를 통해 업로드 합니다.
+    - 라이브러리 코드를 다운받아 추천시스템 학습 프로젝트에서 시작할 수 있습니다.
+
+    ```
+    from web4rec.web4rec import Web4Rec, Web4RecDataset
+    Web4Rec.login(token='...')
+    ```
+    1. web4rec 패키지에서 Web4Rec, Web4RecDataset 클래스를 임포트합니다.
+    2. 웹사이트에서 회원가입 시 발급 받는 API token을 login 함수에 인자로 보내면 스크립트 상에서 로그인 할 수 있습니다.
+
+    ```
+    w4r_dataset = Web4RecDataset(dataset_name='ml-1m')
+
+    w4r_dataset.add_train_interaction(train_interaction: pd.DataFrame)
+    w4r_dataset.add_ground_truth(ground_truth: pd.DataFrame)
+    w4r_dataset.add_user_side(user_side: pd.DataFrame)
+    w4r_dataset.add_item_side(item_side: pd.DataFrame)
+
+    Web4Rec.register_dataset(w4r_dataset)
+    ```
+    3. Web4RecDataset 클래스로 객체를 생성후 네 가지 멤버함수를 호출해 객체 내 필요 데이터를 삽입합니다.
+    (다음과 같은 데이터프레임 형태를 인자에 전달해야 합니다.)
+
+        - train_interaction은 상호작용이 있을 때의 'user_id', 'item_id' 쌍이 행으로 주어집니다.
+        - timestamp 정보가 있다면 유저별, 시간별로 정렬 후 삽입해 주세요.
+        - ground truth 또한 train interaction과 같은 형식입니다.
+        - item_side, user_side 는 각각 'item_id', 'user_id' 컬럼을 지녀야 합니다.
+        - 모든 side information 컬럼은 범주형 정보를 가정하며, 수치형의 경우 반드시 구간 범주화를 진행해야 합니다.
+        - item_side 에서 한 범주에서 여러 특성을 갖는 경우 컬럼 이름에 ':multi' postfix 를 붙여야 하며, 각 셀은 띄어쓰기로 구분되어야 합니다.
+        - 위와 같은 전처리를 진행하면 라이브러리 내부에서 이 컬럼을 아이템 멀티 핫 벡터로 계산하고, jaccard 관련 정성 지표들을 구할 수 있습니다.
+
+    4. 이후 Web4Rec 전역 함수 register_dataset 을 호출하여 데이터셋 객체를 전달합니다. 
+
+        - 데이터셋 객체가 이미 서버에 존재하면 pass 하고, 없으면 서버에 업로드합니다.
+
+    ```
+    # 학습 진행 후 prediction score matrix 구성
+
+    prediction_matrix = pd.DataFrame(
+        data = user_item_prediction_score_matrix,
+        index = user_ids,
+        columns = item_ids
+    )
+
+    Web4Rec.upload_experiment(
+        experiment_name='...',
+        hyper_parameters={
+            '...' = '...',
+            '...' = 1234
+        },
+        prediction_matrix = prediction_matrix
+    )
+    ```
+    5. Web4Rec upload_experiment 함수를 호출하여 세 가지 인자를 전달하면, 함수가 종료되면서 각종 실험결과를 서버에 업로드 합니다.
+
+        - prediction_matrix 데이터 프레임은 행은 user_id, 컬럼은 item_id 로 각 유저, 아이템 페어별 모델의 prediction score로 구성됩니다.
+        - 반드시 유저, 아이템은 위의 데이터셋 내 user_id, item_id 와 같아야 합니다.
+        - 여러 유저와 아이템으로 구성할수록 t-sne 정보가 구체화 됩니다.
+        - 유저 아이템 각각 최소 100개 이상 최대 20,000개 이하를 추천합니다.  
+
 
 
 
