@@ -222,7 +222,6 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                                     id=f"{kind}s_for_analysis",
                                     storage_type="session",
                                 ),  # 데이터를 저장하는 부분
-                                
                             ],
                             # className='form-style'
                         ),
@@ -571,17 +570,14 @@ def save_items_selected_by_option(genre, year):
     State("items_selected_by_option", "data"),
 )
 def save_items_selected_by_embed(emb, data_from_option):
-    if emb is None:
-        raise PreventUpdate
-    option_len = len(data_from_option)
-    if option_len == len(item):
+    if (emb is None) or (not emb['points']):
         raise PreventUpdate
     item_idx = []
     for i in emb["points"]:
         if i["curveNumber"] == 0:
             item_idx.append(i["pointNumber"])
     item_lst = item.iloc[item_idx]
-    if option_len != len(item):
+    if len(data_from_option) != len(item):
         # 옵션으로 그림을 그리면 두번에 걸쳐서 그림을 넣기 때문에 아이템 순서가 달라진다.
         item_lst = selected_item.iloc[item_idx]
 
@@ -598,8 +594,10 @@ def save_items_selected_by_embed(emb, data_from_option):
     Output("n_items", "children"),
     Input("items_selected_by_embed", "data"),
     Input("items_selected_by_option", "data"),
+    State("items_selected_by_embed", "data"),
+    State("items_selected_by_option", "data"),
 )
-def prepare_analysis(val1, val2):
+def prepare_analysis(trigger_embed, trigger_option, state_embed, state_option):
     if ctx.triggered_id == "items_selected_by_embed":
         return val1, f"선택된 아이템 수: {len(val1)}"
     else:
@@ -680,20 +678,22 @@ def update_graph(store1, store2):
 
 
 # 임베딩 그래프에서 선택할 시 옵션 비활성화, 초기화 눌렀을 때만 다시 활성화
-@callback(
-    Output("selected_genre", "disabled"),
-    Output("selected_year", "disabled"),
-    Input("item_reset_selection", "n_clicks"),
-    Input("item_emb_graph", "selectedData"),
-    State("items_selected_by_option", "data"),
-    prevent_initial_call=True,
-)
-def disable_options(able, disable, option):
-    # print(ctx.triggered_id)
-    if ctx.triggered_id == "item_reset_selection" or (len(option) == len(item)):
-        return False, False
-    else:
-        return True, True
+# @callback(
+#     Output("selected_genre", "disabled"),
+#     Output("selected_year", "disabled"),
+#     Input("item_reset_selection", "n_clicks"),
+#     Input("item_emb_graph", "selectedData"),
+#     State("items_selected_by_option", "data"),
+#     prevent_initial_call=True,
+# )
+# def disable_options(able, disable, option):
+#     # if ctx.triggered_id == "item_reset_selection" or (len(option) == len(item)):
+#     if ctx.triggered_id == "item_reset_selection":
+#         if not disable['points']:
+#             pass
+#         return False, False
+#     else:
+#         return True, True
 
 
 # 초기화 버튼 누를 때 선택 초기화
@@ -839,9 +839,8 @@ def save_users_selected_by_option(age, gender, occupation, wrong):
     State("users_selected_by_option", "data"),
 )
 def save_users_selected_by_embed(emb, data_from_option):
-    if emb is None:
+    if (emb is None) or (not emb['points']):
         raise PreventUpdate
-
     user_idx = []
     for i in emb["points"]:
         if i["curveNumber"] == 0:
@@ -954,25 +953,22 @@ def update_graph(store1, store2):
     Output("selected_gender", "value"),
     Output("selected_occupation", "value"),
     Output("selected_wrong", "value"),
-    Output("user_run", "n_clicks"),
+    Output("rerank_alpha", "value"),
+    Output("rerank_obj", "value"),
     Input("user_reset_selection", "n_clicks"),
 )
-def item_reset_selection(value):
-    return [], [], [], [], 0
+def user_reset_selection(value):
+    return [], [], [], [], 0, 0
 
-
-#### run 실행 시 실행될 함수들 #####
-
-
-# 초기화 버튼 누를 때 선택 초기화
-# @callback(
-#     Output("rerank_obj", "value"),
-#     Output("rerank_alpha", "value"),
-#     Output("rerank_run", "n_clicks"),
-#     Input("rerank_reset", "n_clicks"),
-# )
-# def item_reset_selection(value):
-#     return [], None, 0
+# 초기화 버튼을 누르지 않더라도 위에서 값을 바꾸면 다시 run 누를 수 있도록 수정
+@callback(
+    Output("user_run", "n_clicks"),
+    Input("user_reset_selection", "n_clicks"),
+    Input("users_selected_by_option", "data"),
+    Input("users_selected_by_embed", "data"),
+)
+def user_reset_selection(val1,val2,val3):
+    return 0
 
 
 ######################### 리랭킹 진행 ##############################
