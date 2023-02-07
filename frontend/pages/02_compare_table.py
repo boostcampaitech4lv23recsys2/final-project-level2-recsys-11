@@ -44,7 +44,7 @@ select_dataset = html.Div([
 def get_table(df):
     compare_table = html.Div([
         html.Div([
-        html.H3(['전체 실험 목록 ', html.Span(" �", id="compare-table-tooltip", style={'font-size': "25px"})], className="mb-3s"),
+        html.H3(['전체 실험 목록 ', html.Span(" �", id="compare-table-tooltip", style={'font-size': "25px"})], className="mb-3"),
         dbc.Button('선택 완료', id='select_done', n_clicks=0, color="success", className="ms-auto mb-2"),
         # html.Div(id="guide-to-model-vs"),
         ], className="hstack gap-5 mb-3 mt-1"),

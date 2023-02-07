@@ -76,8 +76,6 @@ header_user_or_item = html.Div(
     children=[
         dbc.Row(
             [
-                # html.Div(dbc.Progress(id="first_progress_bar")),
-                html.Div("해당 실험의 아이템, 유저 페이지"),
                 dbc.Tabs(
                     [
                         dbc.Tab(label="유저",id="tab_user"),
@@ -113,7 +111,7 @@ def get_input_options(year_min=None, year_max=None, user=None, kind:str="user"):
                     options=uniq_genre,
                     id="selected_genre",
                 ),
-                html.H6("년도"),
+                html.H6("년도", className="my-2"),
                 dcc.RangeSlider(
                     min=year_min,
                     max=year_max,
@@ -135,17 +133,17 @@ def get_input_options(year_min=None, year_max=None, user=None, kind:str="user"):
     elif kind == "user":
         option_age = html.Div(
                 children=[
-                    html.H6("옵션을 통한 선택"),
-                    html.P("연령대"),
-                    dcc.Checklist(
+                    html.H6("연령대", className=""),
+                    dbc.Checklist(
                         options=sorted(user["age"].unique()),
                         id="selected_age",
+                        inline=True
                     ),
                 ]
             )
         option_gender = html.Div(
             children=[
-                html.P("성별"),
+                html.H6("성별"),
                 dcc.Dropdown(
                     options=["M", "F"],
                     id="selected_gender",
@@ -154,7 +152,7 @@ def get_input_options(year_min=None, year_max=None, user=None, kind:str="user"):
         )
         option_occupation = html.Div(
             children=[
-                html.P("직업"),
+                html.H6("직업"),
                 dcc.Dropdown(
                     options=sorted(user["occupation"].unique()),
                     multi=True,
@@ -181,8 +179,9 @@ def get_input_options(year_min=None, year_max=None, user=None, kind:str="user"):
             dbc.Col(
                 html.Div(
                     children=[
-                        html.H4("사이드 정보"),
-
+                        html.H4("사이드 정보", className="mb-3",
+                                style={"margin-bottom": '1rem'}
+                                ),
                         input_list,
 
                         dbc.Button(
@@ -207,7 +206,7 @@ def get_input_options(year_min=None, year_max=None, user=None, kind:str="user"):
                     ],
                     # className='form-style'
                 ),
-                width=3,
+                width=2,
             ),
             dbc.Col(
                 html.Div(
@@ -230,7 +229,7 @@ def get_input_options(year_min=None, year_max=None, user=None, kind:str="user"):
                     ],
                     style={"overflow": "scroll", "height": 700},
                 ),
-                width=3,
+              
             ),
         ],
     )
