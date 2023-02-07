@@ -1,3 +1,4 @@
+from async_lru import alru_cache
 from typing import Dict, List
 import pandas as pd
 import numpy as np
@@ -178,7 +179,7 @@ def avg_metric(rows: Dict) -> Dict:
 
     return rows
 
-
+@alru_cache(maxsize=30)
 async def predicted_per_item(pred_item_hash: str) -> pd.DataFrame:
     pred_item_pd = await s3_to_pd(pred_item_hash)
     # pred_item_pd = pred_item_pd.reset_index()
@@ -187,6 +188,7 @@ async def predicted_per_item(pred_item_hash: str) -> pd.DataFrame:
     return predicted_per_item
 
 
+@alru_cache(maxsize=30)
 async def recall_per_user(key_hash: str):
     metric_per_user_pd = await s3_to_pd(key_hash=key_hash)
     recall_per_user = metric_per_user_pd.loc['recall', 'metric_per_used']

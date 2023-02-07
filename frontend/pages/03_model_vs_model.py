@@ -19,7 +19,7 @@ total_metrics = None
 total_metrics_users = None
 SPECIFIC_PLOT_WIDTH = 1200
 sidebar = html.Div([
-        html.H3("실험 선택",className="mt-3", style={"margin-bottom":25}),
+        html.H3("실험 선택",className="mt-3", style={"margin-bottom":21}),
         html.Hr(),
         html.Div(id='model_form', children=[]),
 

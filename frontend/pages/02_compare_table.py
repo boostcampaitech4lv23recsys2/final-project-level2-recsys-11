@@ -39,14 +39,14 @@ select_dataset = html.Div([
         html.Hr(),
 
         ], )
-], className="my-5")])
+], className="mt-5")])
 
 
 def get_table(df):
     compare_table = html.Div([
         html.Div([
-        html.H3(['전체 실험 목록 ', html.Span(" �", id="compare-table-tooltip", style={'font-size': "25px"})], className="mb-3s"),
-        dbc.Button('선택 완료', id='select_done', n_clicks=0, color="success", className="ms-auto mb-2"),
+        html.H3(['전체 실험 목록 ', html.Span(" �", id="compare-table-tooltip", style={'font-size': "25px"})], className="mb-1"),
+        dbc.Button('선택 완료', id='select_done', n_clicks=0, color="success", className="ms-auto"),
         # html.Div(id="guide-to-model-vs"),
         ], className="hstack gap-5 mb-3 mt-1"),
         dbc.Tooltip("각 column을 누르면 정렬이 가능합니다. 특정 값을 찾으려면 column 내부의 검색창을 이용해주세요.",
@@ -191,13 +191,13 @@ def plot_selected_table(n, seleceted_rows, exp_column):
     #     rowDragManaged=True,
     #     animateRows=True,
     # )
-    selects = [html.H6("선택한 실험 목록: ", className="mt-4")]
+    selects = [html.H6("선택한 실험 목록: ", className="mt-3")]
     if seleceted_rows == None:
         PreventUpdate
     else:
         for row in seleceted_rows:
             selects.append(
-                dbc.Badge(row["experiment_name"], color="info", className="mt-3")
+                dbc.Badge(row["experiment_name"], color="info", className="mt-2")
                 )
     return selects, seleceted_rows
 
