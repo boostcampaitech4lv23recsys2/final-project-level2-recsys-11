@@ -141,7 +141,8 @@ def plot_age_counter(age_Counter_profile: Counter, age_Counter_rec: Counter):
     fig.update_layout(
         title_text="나이",
         title_font_size=25,
-        annotations=[dict(text='VS.', x=0.5, y=0.35, font_size=25, showarrow=False)]
+        annotations=[dict(text='VS.', x=0.5, y=0.35, font_size=25, showarrow=False)],
+        template='ggplot2',
         # title_text="Selected Item profile vs Selected Item rec list (Age)",
         #     width=1000,
         #     height=500
@@ -184,6 +185,7 @@ def plot_gender_counter(gender_Counter_profile: Counter, gender_Counter_rec: Cou
     )
     fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
     fig.update_layout(
+        template='ggplot2',
         title_text="성별",
         title_font_size=25,
         annotations=[dict(text='VS.', x=0.5, y=0.4, font_size=25, showarrow=False)]
@@ -231,6 +233,7 @@ def plot_occupation_counter(
     )
     fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
     fig.update_layout(
+        template='ggplot2',
         title_text="직업",
         title_font_size=25,
         annotations=[dict(text='VS.', x=0.5, y=0.35, font_size=25, showarrow=False)]
@@ -342,18 +345,19 @@ def plot_usergroup_genre(item, origin_item, rerank_item, profile_item, tmp):
 
     fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
 
-    fig.add_annotation(
-        text=f"Total users num in this group : {len(tmp)}",
-        x=0.5,
-        y=0.5,
-        font_size=20,
-        showarrow=False,
-    )
-    fig.update_layout(
-        # title_text=f"User group genre pie chart",
-        width=1000,
-        height=800,
-    )
+            fig.add_annotation(
+                text=f"Total users num in this group : {len(tmp)}",
+                x=0.5,
+                y=0.5,
+                font_size=20,
+                showarrow=False,
+            )
+            fig.update_layout(
+                # title_text=f"User group genre pie chart",
+                width=1000,
+                height=800,
+                template='ggplot2'
+            )
 
     return fig
 
@@ -384,5 +388,8 @@ def plot_info_counter(Counter_profile: Counter, info_name: str, k: int = 10):
         1,
         1,
     )
+    fig.update_layout(
+        template='ggplot2'
+        )
     fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
     return fig

@@ -590,6 +590,7 @@ def update_graph(store1):
         yaxis_zeroline=True,
         xaxis_zeroline=False,
         margin={},
+        template='ggplot2',
     )
     return fig
 
@@ -609,6 +610,9 @@ def update_graph(store1, store2):
         tmp = item.loc[store2]
 
     year = px.histogram(tmp, x="release_year")
+    year.update_layout(
+        template='ggplot2'
+        )
     genre_counter = Counter()
     for i in tmp["genre"]:
         genre_counter += Counter(i.split())
@@ -850,6 +854,7 @@ def update_graph(store1):
         yaxis_zeroline=True,
         xaxis_zeroline=False,
         margin={},
+        template='ggplot2'
     )
     return fig
 

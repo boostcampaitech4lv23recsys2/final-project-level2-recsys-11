@@ -18,10 +18,10 @@ dash.register_page(__name__, path='/reranking')
 
 rerank_total_metrics = None
 rerank_total_metrics_users = None
-SPECIFIC_PLOT_WIDTH = 1000
+SPECIFIC_PLOT_WIDTH = 1200
 
 rerank_metric_option = [
-    {'label':' Diversity(cosine)', 'value':'diversity(cos)'},
+    {'label':' Diversity(cosine) - default', 'value':'diversity(cos)'},
     {'label':' Diversity(jaccard)', 'value':'diversity(jac)'},
     {'label':' Serendipity(PMI)', 'value':'serendipity(pmi)'},
     {'label':' Serendipity(jaccard)', 'value':'serendipity(jac)'},
@@ -39,8 +39,8 @@ rerank_metric_list = [
 
 
 ### alpha 선택하는 부분, radio
-alpha_info = html.Div([
-    dcc.Markdown(id="user_alpha", dangerously_allow_html=True),
+# alpha_info = html.Div([
+#     dcc.Markdown(id="user_alpha", dangerously_allow_html=True),
     # dbc.RadioItems(
     #         id="alpha",
     #         className="btn-group",
@@ -53,11 +53,11 @@ alpha_info = html.Div([
     #         ],
     #         value=0.5,
     #                     ),
-], className="radio-group mb-2 mt-0")
+# ], className="radio-group mb-2 mt-0")
 
 model_form = html.Div([
     html.H6(["실험 선택"], id="test431", className="mb-2"),
-    dcc.Dropdown(id="selected_model_by_name", placeholder=""),
+    dcc.Dropdown(id="selected_model_by_name", placeholder="Reranking 진행할 실험을 선택하세요"),
             html.Hr(),
             html.H6(["Reranking 파라미터 α ", html.Span("�", id="alpha-tooltip")], className="mb-0"),
             dbc.Tooltip(["일종의 가중치이며, 낮을수록 Reranking 모델의 추천이 많이 반영됩니다.",
@@ -66,12 +66,12 @@ model_form = html.Div([
                     #  className="w-auto"
                      ),
             html.Br(),
-            dcc.Markdown(id="user_alpha", dangerously_allow_html=True),
+            dbc.Spinner(dcc.Markdown(id="user_alpha", dangerously_allow_html=True)),
             html.Hr(),
             html.H6("목적 함수 선택"),
     dcc.Checklist(
         rerank_metric_option,
-        rerank_metric_list,
+        ['diversity(cos)'],
         labelStyle={"display":"block"},
         id="obj_funcs",)
 ], className='form-style')
@@ -123,8 +123,11 @@ def specific_metric():
                     
                 ),
                 html.Br(),
-                dcc.Dropdown(id='rerank_metric_list', className="specific-metric")
-                ], width=3),
+                dbc.Row([
+                    dbc.Col(dcc.Dropdown(id='rerank_metric_list', className="specific-metric", placeholder='지표를 선택하세요')),
+                    dbc.Col(html.Div(id='rerank_metric_info_message'))
+                ], className='hstack gap-3')
+                ], width=60),
                 html.Br(),
                 html.Div([html.P(id="print_metric"),]),
             html.Div([
@@ -213,7 +216,6 @@ def get_stored_selected_models(exp_names:str, store) -> pd.DataFrame:
     rerank_total_metrics_users.index = rerank_total_metrics.index[1:]
     rerank_total_metrics_users = pd.concat([exp_metrics_users, rerank_total_metrics_users], axis=0)
 
-    print(rerank_total_metrics.loc['novelty','alpha'])
     return f"현재 실험에서 선택한 α : {rerank_total_metrics.loc['novelty','alpha']}"
 
 ### 사용자가 선택한 alpha 값이 무엇인지 표시해주는 callback
@@ -247,7 +249,7 @@ def plot_total_metrics(data, n, obj_funcs, state, store): # df:pd.DataFrame
         # 모델간 정량, 정성 지표 plot (Compare Table에 있는 모든 정보들 활용)
         colors = ['#9771D0', '#D47DB2', '#5C1F47', '#304591', '#BAE8C8', '#ECEBC6', '#3D3D3D'] # 사용자 입력으로 받을 수 있어야 함
         store_df = pd.DataFrame(store).set_index('experiment_name')
-        tmp_metrics = rerank_total_metrics.drop(['diversity_jac','serendipity_jac','alpha'], axis=1)
+        tmp_metrics = rerank_total_metrics.drop(['diversity_jac','serendipity_pmi','alpha'], axis=1)
         obj_funcs = ['original'] + obj_funcs
         tmp_metrics = tmp_metrics.loc[obj_funcs]
         metrics = list(tmp_metrics.columns)
@@ -258,14 +260,29 @@ def plot_total_metrics(data, n, obj_funcs, state, store): # df:pd.DataFrame
             # .apply(eval)은 np.array나 list를 문자열로 인식할 때만 활용해주면 됨
             # 아니면 TypeError: eval() arg 1 must be a string, bytes or code object 발생
         fig.update_layout(
+            yaxis_range=[0,1.05],
             barmode='group',
-            bargap=0.15, # gap between bars of adjacent location coordinates.
+            bargap=0.25, # gap between bars of adjacent location coordinates.
             bargroupgap=0.1, # gap between bars of the same location coordinate.)
             template='ggplot2'
         )
         fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
 
-        return specific_metric(), [html.H3('전체 지표 정보'),dcc.Graph(figure=fig)]  # id = 'total_metric'
+        child = html.Div(
+            dbc.Row([
+                dbc.Col(html.H3('전체 지표 정보')),
+                dbc.Col(dbc.Alert("아래 그래프를 통해 어떤 Reranking 방식을 Deep Analsis에 사용할지 결정하세요!",
+                                        color="warning", 
+                                        style={
+                                            "width":"700px",
+                                            "margin-right":"0",
+                                            "margin-left": "260px",
+                                            }
+                                        )
+                        )
+                ])
+        )
+        return specific_metric(), [child, dcc.Graph(figure=fig)]  # id = 'total_metric'
 
 
 ### metric lists를 보여주는 callback
@@ -304,7 +321,7 @@ def plot_bar(data, obj_funcs, sort_of_metric, store):
     colors = ['#9771D0', '#D47DB2', '#5C1F47', '#304591', '#BAE8C8', '#ECEBC6', '#3D3D3D']
     obj_funcs = ['original'] + obj_funcs
     if sort_of_metric == 'Qual':
-        qual_metrics = rerank_total_metrics.iloc[:,7:]
+        qual_metrics = rerank_total_metrics.iloc[:,6:]
         qual_metrics = qual_metrics.drop(['alpha'], axis=1)
         qual_metrics = qual_metrics.loc[obj_funcs]
         metrics = list(qual_metrics.columns)
@@ -315,18 +332,23 @@ def plot_bar(data, obj_funcs, sort_of_metric, store):
             fig.add_bar(name=obj_fn, x=metrics, y=list(qual_metrics.loc[obj_fn,:]), text=list(qual_metrics.loc[obj_fn,:])) #, marker={'color' : colors[i]}
 
         fig.update_layout(
+            yaxis_range=[0,1.05],
             barmode='group',
-            bargap=0.15, # gap between bars of adjacent location coordinates.
+            bargap=0.25, # gap between bars of adjacent location coordinates.
             bargroupgap=0.1, # gap between bars of the same location coordinate.)
             title_text='전체 정성 지표',
             width = SPECIFIC_PLOT_WIDTH,
-            template='ggplot2'
+            template='ggplot2',
+            font=dict(
+
+                size=18,
+            )
         )
         fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
         return fig
 
     elif sort_of_metric == 'Quant':
-        quant_metrics = rerank_total_metrics.iloc[:,1:7]
+        quant_metrics = rerank_total_metrics.iloc[:,:6]
         quant_metrics = quant_metrics.loc[obj_funcs]
         metrics = list(quant_metrics.columns)
 
@@ -336,12 +358,17 @@ def plot_bar(data, obj_funcs, sort_of_metric, store):
             fig.add_bar(name=obj_fn, x=metrics, y=list(quant_metrics.loc[obj_fn,:]), text=list(quant_metrics.loc[obj_fn,:])) #, marker={'color' : colors[i]}
 
         fig.update_layout(
+            yaxis_range=[0,1.05],
             barmode='group',
-            bargap=0.15, # gap between bars of adjacent location coordinates.
+            bargap=0.25, # gap between bars of adjacent location coordinates.
             bargroupgap=0.1, # gap between bars of the same location coordinate.)
             title_text='전체 정량 지표',
             width=SPECIFIC_PLOT_WIDTH,
-            template='ggplot2'
+            template='ggplot2',
+            font=dict(
+
+                size=18,
+            )
         )
         fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
         return fig
@@ -360,12 +387,19 @@ def plot_bar(data, obj_funcs, sort_of_metric, store):
 ### 선택한 metric에 대한 dist plot을 띄워주는 callback
 @callback(
     Output('rerank_dist_fig', 'children'),
+    Output('rerank_metric_info_message', 'children'),
     State('obj_funcs','value'),
     Input("rerank_metric_list", 'value'),
 )
 def plot_dist(obj_funcs, value):
     colors = ['#9771D0', '#D47DB2', '#5C1F47', '#304591', '#BAE8C8', '#ECEBC6', '#3D3D3D']
     obj_funcs = ['original'] + obj_funcs
+    metric_info_list = dbc.Alert(
+                            "아래로 스크롤해 선택 지표의 distribution을 확인해보세요", color="info", className="w-500",
+                            style={
+                                "width":"100%"
+                                }
+                            )
     if value in ['diversity_jac', 'diversity_cos', 'serendipity_pmi', 'serendipity_jac', 'novelty']:
         group_labels = obj_funcs
         colors = colors[:len(obj_funcs)]
@@ -383,11 +417,18 @@ def plot_dist(obj_funcs, value):
             'serendipity_jac':'Serendipity(jaccard)',
             'novelty':'Novelty',
             }
-        fig.update_layout(title_text=f'유저별 {metric_list[value]} 분포',
-                          barmode='overlay',
-                          width=SPECIFIC_PLOT_WIDTH, template='ggplot2')
+        fig.update_layout(
+            title_text=f'유저별 {metric_list[value]} 분포',
+            barmode='overlay',
+            width=SPECIFIC_PLOT_WIDTH,
+            template='ggplot2',
+            font=dict(
+
+                size=18,
+            )
+        )
         fig.update_traces(opacity=0.6)
-        return dcc.Graph(figure=fig)
+        return dcc.Graph(figure=fig), metric_info_list
 
     elif value in ['recall', 'ndcg', 'map', 'avg_popularity', 'tail_percentage']:
         if value == 'map':
@@ -408,10 +449,17 @@ def plot_dist(obj_funcs, value):
             "tail_percentage":"TailPercentage",
             "avg_popularity":"AvgPopularity",
             }                                
-        fig.update_layout(title_text=f'유저별 {metric_list[value]} 분포',
-                          barmode='overlay',
-                          width=SPECIFIC_PLOT_WIDTH, template='ggplot2')
+        fig.update_layout(
+            title_text=f'유저별 {metric_list[value]} 분포',
+            barmode='overlay',
+            width=SPECIFIC_PLOT_WIDTH,
+            template='ggplot2',
+            font=dict(
+
+                size=18,
+            )
+        )
         fig.update_traces(opacity=0.6)
-        return dcc.Graph(figure=fig)
+        return dcc.Graph(figure=fig), metric_info_list
     else:
-        return html.Div([])
+        return html.Div([]), html.Div([])
