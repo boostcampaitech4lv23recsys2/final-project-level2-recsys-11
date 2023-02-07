@@ -19,8 +19,8 @@ def get_login_setting():
     return Login_Settings(_env_file=env_path, _env_file_encoding='utf-8').dict()
 
 # API_URL = 'http://127.0.0.1:30004'
-API_URL = 'http://49.50.162.87:30001'
-
+# API_URL = 'http://49.50.162.87:30001'
+API_URL = 'http://101.101.218.250:30001'
 
 BRAND_LOGO = "𝙒𝙚𝙗𝟰𝙍𝙚𝙘"
 
