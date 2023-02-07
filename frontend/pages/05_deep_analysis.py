@@ -10,6 +10,7 @@ from dash.exceptions import PreventUpdate
 
 # import feffery_antd_components as fac
 from .utils import global_component as gct
+from .utils.global_component import pretty_metric
 from .utils import deep_analysis_func as daf
 from collections import Counter
 from plotly.subplots import make_subplots
@@ -47,7 +48,7 @@ def make_card(element):
                             "장르: " + ", ".join((tmp["genre"]).split()), className="my-1"
                         ),
                         html.P(
-                            f'인기도: {round(tmp["item_pop"] * 100, 3)}%', className="my-1"
+                            f'인기도: {round(tmp["item_pop"] * 100, 3)}%', className="mt-1 mb-0"
                         ),
                     ],
                 ),
@@ -194,7 +195,7 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                         html.Div(
                             children=[
                                 html.H4(
-                                    "사이드 정보",
+                                    f"{pretty_value[kind]} 정보",
                                     className="mb-3",
                                     style={"margin-bottom": "1rem"},
                                 ),
@@ -226,7 +227,7 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                     dbc.Col(
                         html.Div(
                             children=[
-                                html.H4(f"{pretty_value[kind]} 2차원 임베딩"),
+                                html.H4(f"{pretty_value[kind]} 차원 축소 그래프"),
                                 html.Br(),
                                 dcc.Graph(
                                     id=f"{kind}_emb_graph", style={"margin-top": 0}
@@ -239,7 +240,7 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                         [
                             html.Div(
                                 children=[
-                                    html.H4("사이드인포"),
+                                    html.H4(f"선택된 {pretty_value[kind]}들의 분포"),
                                     html.Div(
                                         id=f"{kind}_side_graph",
 
@@ -726,13 +727,13 @@ def draw_item_top(value, data):
         rec = item.loc[data].sort_values(by=["len"], ascending=False).head(10).index
         rec_lst = [make_card(item) for item in rec]  # 보여줄 카드 갯수 지정 가능
         children = [
-            html.H3("선택한 아이템 인기도 top 10", className="mb-3"),
+            html.H3("선택한 아이템 인기도 top 10", className="mt-4 mb-3"),
             dbc.Row(
                 children=pop_lst,
                 className="g-0 d-flex flex-row flex-nowrap overflow-auto",
                 style={
                     # "overflow": "scroll",
-                    "height": 547
+                    "height": 548
                 },
             ),
             html.H3("선택한 아이템 추천횟수 top 10", className="mt-5 mb-3"),
@@ -741,7 +742,7 @@ def draw_item_top(value, data):
                 className="d-flex flex-row flex-nowrap overflow-auto",
                 style={
                     # "overflow": "scroll",
-                    "height": 547
+                    "height": 548
                 },
             ),
             html.Br(),
@@ -782,6 +783,7 @@ def draw_item_related_users(value, data):
 
         children = [
             html.H3("아이템을 시청한 유저들 vs. 아이템을 추천받은 유저들", className="mt-4 mb-3"),
+            html.Hr(),
             html.Div(
                 [
                     age,
@@ -1047,40 +1049,74 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
             .index
         )
         new_lst = [make_card(item) for item in new]
-
+        def get_metric_list(metric, i, is_incremental):
+            if is_incremental:
+                color = "#7286D3"
+                plus="+"
+            else:
+                color = "#CD0404"
+                plus=""
+            return dbc.Card(
+                        [
+                            dbc.CardHeader(html.H6(f"{pretty_metric[metric]}"), ),
+                            dbc.CardBody(
+                                [
+                                    html.H6(f"{plus}{round(i,2)}", className="card-title",style={"color":color}),
+                                ]
+                            ),],
+                        style={"width": "12rem"},
+                        )
         indicator = dbc.Row(
             children=[
+                    
                 html.H3("리랭킹 후 지표 변화"),
+                html.H5("증가한 지표"),
                 html.Div(
                     children=[
-                        dbc.Badge(
-                            children=[html.P(metric), html.P(round(i, 4))],
-                            color="primary" if i < 0 else "danger",
-                        )
-                        for metric, i in zip(sub.index, sub)
+                        get_metric_list(metric, i, is_incremental=True)
+                        for metric, i in zip(sub.index, sub) if i>=0 
                     ],
+                    className="hstack gap-1"
+                ),
+                html.H5("감소한 지표"),
+                    html.Div(
+                    children=[
+                        get_metric_list(metric, i, is_incremental=False)
+                        for metric, i in zip(sub.index, sub) if i<0 
+                    ],
+                    className="hstack gap-1"
                 ),
             ],
+            className="gap-3 my-3"
         )
         item_poster = html.Div(
             children=[
-                html.H3("리랭킹 전 많이 추천된 아이템 top 10"),
-                dbc.Row(children=pop_lst, style={"overflow": "scroll", "height": 500}),
-                html.H3("리랭킹 후 많이 추천된 아이템 top 10"),
-                dbc.Row(children=rer_lst, style={"overflow": "scroll", "height": 500}),
-                html.H3("기존에 추천되지 않은 아이템 top 10"),
-                dbc.Row(children=new_lst, style={"overflow": "scroll", "height": 500}),
+                html.H3("리랭킹 전 많이 추천된 아이템 top 10", className="mt-5 mb-3"),
+                dbc.Row(children=pop_lst, 
+                        className= 'd-flex flex-row flex-nowrap overflow-auto',
+                        style={"height": 548}),
+                html.H3("리랭킹 후 많이 추천된 아이템 top 10", className="mt-5 mb-3"),
+                dbc.Row(children=rer_lst, 
+                        className= 'd-flex flex-row flex-nowrap overflow-auto',
+                        style={"height": 548}),
+                html.H3("기존에 추천되지 않은 아이템 top 10", className="mt-5 mb-3"),
+                dbc.Row(children=new_lst, 
+                        className= 'd-flex flex-row flex-nowrap overflow-auto',
+                        style={"height": 548}),
             ],
+            className="gap-3 mb-3"
         )
         item_side = dbc.Row(
             children=[
-                html.H3("리랭킹 관련한 장르 분포"),
+                html.H3("리랭킹 관련한 장르 분포", className='mt-5 mb-2'),
+                html.Hr(className='mb-0'),
                 dcc.Graph(
                     figure=daf.plot_usergroup_genre(
                         item, origin_item, rerank_item, profile_item, tmp
                     )
                 ),
             ],
+            # className=""
         )
         children = [indicator, item_poster, item_side]
 
