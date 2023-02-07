@@ -88,8 +88,8 @@ sidebar = html.Div(
 
 total_graph = html.Div([
     html.Br(),
-    html.H1(children='Reranking', style={'text-align': 'center','font-weight': 'bold'}),
-    html.Hr(),
+    # html.H1(children='Reranking', style={'text-align': 'center','font-weight': 'bold'}),
+    # html.Hr(),
     
     html.Div(id='reranked_graph'),
     

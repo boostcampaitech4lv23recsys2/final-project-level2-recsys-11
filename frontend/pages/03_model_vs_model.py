@@ -107,8 +107,8 @@ layout = html.Div([html.Div(
     html.Div([
     sidebar,
     html.Br(),
-    html.H1(children='Model vs Model', style={'text-align': 'center','font-weight': 'bold'}),
-    html.Hr(),
+    # html.H1(children='Model vs Model', style={'text-align': 'center','font-weight': 'bold'}),
+    # html.Hr(),
     total_graph,
     html.Div(id = 'specific_metric_children')
     ], className="content w-75"),
