@@ -47,6 +47,9 @@ feature_compare_table = get_feature_component(
     img_position="left"
 )
 
+
+workflow_img_url = "https://user-images.githubusercontent.com/55279227/217210198-8df93292-b18d-4ee0-81dc-03f768e88c39.jpg"
+
 img_url = "https://user-images.githubusercontent.com/76675506/216320888-7b790e97-61af-442c-93b3-c574ed0c119e.png"
 feature1 = get_feature_component(
     img_url=img_url,
@@ -70,7 +73,7 @@ problem_intro = html.Div([
             html.H3("추천시스템 문제는 조금 다릅니다."),
             html.H5("일반적으로 AI 모델에서는 높은 정확성, 혹은 재현율이 서비스 사용자의 만족으로 이어집니다."),
             html.H5("하지만 추천시스템에서는 그렇지 않습니다.", className="fst-italic"),
-            html.H5(["정량적 지표인 정확성, 재현율 외에도 ", html.Span("정성적 지표", className="text-danger"), "(다양성, 참신성 의외성 등)를 같이 고려해야 합니다."], ),
+            html.H5(["정량적 지표인 정확성, 재현율 외에도 ", html.Span("정성적 지표", className="text-danger"), "(다양성, 참신성, 의외성 등)를 같이 고려해야 합니다."], ),
 ])
 layout = html.Div([
     dbc.NavbarSimple([
@@ -87,7 +90,14 @@ layout = html.Div([
             
             problem_intro,
             
-            html.H4([gct.BRAND_LOGO+'은 이를 해결할 수 있는 ', html.Span('실험 관리 툴', className="text-info"),'입니다.'], className="mt-5 pt-4 pb-3 text-center fs-1"),
+            html.H4([gct.BRAND_LOGO+'은 이를 해결할 수 있는 ', html.Span('실험 관리 툴', className="text-info"),'입니다.'], 
+            className="mt-5 pt-4 pb-3 text-center fs-1"),
+            dbc.Row([
+                    dbc.Col([
+                        html.Img(src=workflow_img_url, className="feature-image rounded-2 border border-primary border-4"),
+                    ], width={'size':10, 'offset':1})
+                    ], 
+                className="center"),
             html.Hr(),
             feature_compare_table,
             feature1,
