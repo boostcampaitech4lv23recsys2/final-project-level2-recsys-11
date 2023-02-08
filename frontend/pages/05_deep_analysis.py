@@ -73,6 +73,7 @@ header_exp = html.Div(
                 dcc.Dropdown(
                     id="exp_id_for_deep_analysis",
                     options=[],
+                    placeholder='사후분석 실행할 실험을 선택하세요',
                     className="w-25 my-3",
                 ),
             ]
@@ -99,12 +100,13 @@ header_user_or_item = html.Div(
                     labelClassName="btn btn-outline-primary",
                     labelCheckedClassName="active",
                 ),
-                dbc.Popover(
-                    "아이템과 유저를 선택하여 심층 분석을 진행할 수 있습니다.",
-                    target='show_user_or_item',
-                    trigger='hover',
-                    placement='left'
-                )
+                html.Div(id='user_item_select_alert')
+                # dbc.Popover(
+                #     "유저/아이템 관점을 선택하여 심층 분석을 진행할 수 있습니다.",
+                #     target='show_user_or_item',
+                #     trigger='hover',
+                #     placement='bottom'
+                # )
                 # dbc.Button(id=f"{kind}_run", children="RUN", className="ms-auto w-100"),
             ],
             className="radio-group mb-3 mt-0",
@@ -126,6 +128,7 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                 dcc.Dropdown(
                     options=uniq_genre,
                     id="selected_genre",
+                    placeholder='장르를 검색하세요',
                 ),
                 html.H6("년도", className="my-2"),
                 dcc.RangeSlider(
@@ -174,6 +177,7 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                     options=sorted(user["occupation"].unique()),
                     multi=True,
                     id="selected_occupation",
+                    placeholder='직업군을 검색하세요 (0-20)',
                 ),
             ]
         )
@@ -212,7 +216,7 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                                     style={"margin-bottom": "1rem"},
                                 ),
                                 dbc.Popover(
-                                    "사이드 정보를 활용하여 원하는 집단을 선택해보세요.",
+                                    "유저/아이템 사이드 정보를 활용하여 원하는 조건을 선택해보세요.",
                                     target='popover_option',
                                     trigger='hover',
                                     placement='top-start'
@@ -225,7 +229,7 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                                     color="primary",
                                 ),
                                 dbc.Popover(
-                                    "언제든지 선택한 집단을 초기화할 수 있습니다.",
+                                    "언제든지 선택한 조건을 초기화할 수 있습니다.",
                                     target=f"{kind}_reset_selection",
                                     trigger='hover',
                                     placement='left'
@@ -258,10 +262,10 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                                 dbc.Popover(
                                     [
                                         dbc.PopoverHeader("임베딩 그래프"),
-                                        dbc.PopoverBody("PCA로 축소한 그래프를 TSNE로 나타낸 그래프입니다."),
-                                        dbc.PopoverBody("범위 지정을 할 수 있습니다."),
+                                        dbc.PopoverBody("유저/아이템 벡터를 PCA, TSNE로 차원 축소하여 나타낸 그래프입니다."),
+                                        dbc.PopoverBody("plotly의 Lasso Selction, Box Selction을 이용해 범위 지정을 할 수 있습니다."),
                                         dbc.PopoverBody("좌측에서 선택된 아이템에 대해서만 선택됩니다."),
-                                        dbc.PopoverBody("임베딩 그래프에서 선택한 후 다시 좌측으로 넘어갈 경우 임베딩 그래프에서의 범위 지정은 초기화됩니다."),
+                                        dbc.PopoverBody("임베딩 그래프에서 선택한 후 다시 좌측으로 넘어갈 경우 임베딩 그래프에서의 범위 지정은 초기화 됩니다."),
                                     ],
                                     target=f"popover_embedding",
                                     trigger='hover',
@@ -285,7 +289,7 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                                         html.Span(" �", id="popover_info", style={'font-size': "25px"})
                                         ]),
                                     dbc.Popover(
-                                        "선택된 아이템들의 사이드 정보가 표시됩니다.",
+                                        "선택된 조건을 만족하는 유저/아이템들의 사이드 정보가 표시됩니다.",
                                         target=f"popover_info",
                                         trigger='hover',
                                         placement='top'
@@ -312,7 +316,7 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                 # style={"margin-top": "-3rem"},
             ),
             dbc.Popover(
-                "아이템들을 정했다면, 이 버튼을 눌러 더욱 심층적인 분석을 진행하세요!",
+                "유저/아이템들을 결정했다면, 이 버튼을 눌러 더욱 심층적인 분석을 진행하세요!",
                 target=f"{kind}_run",
                 trigger='hover',
                 placement='top'
@@ -331,13 +335,23 @@ choose_rerank = html.Div(
     [
         html.Hr(),
         html.H4([
-            "리랭킹 조건",
+            "리랭킹 옵션",
             html.Span(" �", id="popover_rerank_option", style={'font-size': "25px"})
         ]),
         dbc.Popover(
             [
-                dbc.PopoverHeader("리랭킹 공식"),
-                dbc.PopoverBody("리랭킹에 사용될 파라미터를 선택합니다."),
+                dbc.PopoverHeader("리랭킹 옵션"),
+                dbc.PopoverBody(["리랭킹에 사용될 파라미터를 선택합니다.",
+                                html.Br(),
+                                "특정 유저 군집에 리랭킹을 적용할 수 있습니다.",
+                                html.Br(),
+                                "유저 수가 많을 수록 리랭킹 진행 시간이 늘어납니다.",
+                                html.Br(),
+                                "자세한 사항은 FAQ를 확인하세요."
+                            ]),
+                # dbc.PopoverBody("특정 유저 군집에 리랭킹을 적용할 수 있습니다."),
+                # dbc.PopoverBody("유저 수가 많을 수록 리랭킹 진행 시간이 늘어납니다."),
+                # dbc.PopoverBody("자세한 사항은 FAQ를 확인하세요."),
             ],
             target=f"popover_rerank_option",
             trigger='hover',
@@ -354,7 +368,8 @@ choose_rerank = html.Div(
                     {"label": "Serendipity(PMI)", "value": "serendipity(pmi)"},
                     {"label": "Serendipity(Jaccard)", "value": "serendipity(jac)"},
                     {"label": "Novelty", "value": "novelty"},
-                    ]
+                    ],
+                placeholder='목적함수를 선택하세요',
             ),
         ),
         html.Div(
@@ -441,6 +456,7 @@ def show_exp_choice(exp_name, exp_id):
 @callback(
     Output("show_user_or_item", "options"),
     Output("show_user_or_item", "value"),
+    Output("user_item_select_alert", "children"),
     # Output(progress_bar_DA, "value", ),
     # Input(first_interval, "n_intervals"),
     Input("exp_id_for_deep_analysis", "value"),
@@ -514,6 +530,7 @@ def choose_experiment(
     return (
         option,
         None,
+        dbc.Alert("유저/아이템 관점을 변경하며 사후분석을 실행해보세요")
     )
 
 
@@ -763,7 +780,7 @@ def update_graph(store1, store2):
     Input("item_reset_selection", "n_clicks"),
 )
 def item_reset_selection(value):
-    return [], [item["release_year"].min(), item["release_year"].max()]
+    return ["장르를 검색하세요"], [item["release_year"].min(), item["release_year"].max()]
 
 
 # 초기화 버튼을 누르지 않더라도 위에서 값을 바꾸면 다시 run 누를 수 있도록 수정
