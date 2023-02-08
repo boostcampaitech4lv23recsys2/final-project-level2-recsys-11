@@ -1026,8 +1026,10 @@ def user_reset_selection(value):
     Input("user_reset_selection", "n_clicks"),
     Input("users_selected_by_option", "data"),
     Input("users_selected_by_embed", "data"),
+    Input("rerank_alpha", "value"),
+    Input("rerank_obj", "value"),
 )
-def user_reset_selection(val1,val2,val3):
+def user_reset_selection(val1,val2,val3,val4,val5):
     return 0
 
 
@@ -1057,7 +1059,7 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
             "ID": id["username"],
             "dataset_name": dataset,
             "exp_id": exp_id,
-            "n_candidates": 50,  # 추후 고객이 지정할 수 있도록 하면 좋을 듯.
+            "n_candidates": 100,  # 추후 고객이 지정할 수 있도록 하면 좋을 듯.
             "objective_fn": obj,
             "alpha": alpha,
             "user_ids": user_lst,
