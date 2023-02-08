@@ -1089,39 +1089,42 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
 
         # 첫번째 - 지표 변화
         sub = diff_metric.loc["rerank"] - diff_metric.loc["origin"]
+        # sub = ((diff_metric.loc["rerank"] - diff_metric.loc["origin"]) / diff_metric.loc["origin"]) *100
 
         # print(len(tmp.loc["1", "pred_item"][:10]))
         # 두번째 - 아이템 포스터
-        origin_item = set()
-        rerank_item = set()
-        profile_item = set()
+        # origin_item_set = set()
+        # rerank_item_set = set()
+        profile_item_Counter = Counter()
+        origin_item_Counter = Counter()
+        rerank_item_Counter = Counter()
+
         for i in user_lst:
-            origin_item |= set(tmp.loc[i, "pred_item"][:10])
-            rerank_item |= set(tmp.loc[i, "reranked_item"])
-            profile_item |= set(tmp.loc[i, "user_profile"])
-        new_item = rerank_item - origin_item
-        # print(new_item)
-        pop = (
-            item.loc[list(origin_item)]
-            .sort_values(by=["len"], ascending=False)
-            .head(10)
-            .index
+            profile_item_Counter += Counter(tmp.loc[i, "user_profile"])
+            origin_item_Counter += Counter(tmp.loc[i, "pred_item"][:10])
+            rerank_item_Counter += Counter(tmp.loc[i, "reranked_item"])
+
+        new_item = set(rerank_item_Counter.keys()) - set(origin_item_Counter.keys())
+
+        origin_item_Counter = dict(
+            sorted(origin_item_Counter.items(), key=lambda x: x[1], reverse=True)
         )
+        rerank_item_Counter = dict(
+            sorted(rerank_item_Counter.items(), key=lambda x: x[1], reverse=True)
+        )
+        pop = list(origin_item_Counter.keys())[:10]
         pop_lst = [make_card(item) for item in pop]
-        rer = (
-            item.loc[list(rerank_item)]
-            .sort_values(by=["len"], ascending=False)
-            .head(10)
-            .index
-        )
+
+        rer = list(rerank_item_Counter.keys())[:10]
         rer_lst = [make_card(item) for item in rer]
         new = (
             item.loc[list(new_item)]
             .sort_values(by=["len"], ascending=False)
             .head(10)
             .index
-        )
+        ) # 새로운 아이템들을 추천순위별로 정렬한다는 뜻
         new_lst = [make_card(item) for item in new]
+
         def get_metric_list(metric, i, is_incremental):
             if is_incremental:
                 color = "#7286D3"
@@ -1194,7 +1197,7 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
                 html.Hr(className='mb-0'),
                 dcc.Graph(
                     figure=daf.plot_usergroup_genre(
-                        item, origin_item, rerank_item, profile_item, tmp
+                        item, set(origin_item_Counter.keys()), set(rerank_item_Counter.keys()) , set(profile_item_Counter.keys()), tmp
                     )
                 ),
             ],
