@@ -201,13 +201,14 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                     multi=True,
                     id="selected_occupation",
                     placeholder="직업군을 검색하세요 (0-20)",
+                    style={'width':'100%', 'font-size' : '85%', 'display':'inline-block'}
                 ),
             ]
         )
         option_wrong = html.Div(
             children=[
                 dbc.Checklist(
-                    options=["모델이 맞춘 유저만 보기"], id="selected_wrong", inline=True, switch=True,
+                    options=["모델이 맞춘 유저만 보기"], style={'font-size' : '85%'}, id="selected_wrong", inline=True, switch=True,
                 ),
             ]
         )
