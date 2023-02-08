@@ -139,7 +139,7 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                 dcc.Dropdown(
                     options=uniq_genre,
                     id="selected_genre",
-                    placeholder="장르를 검색하세요",
+                    # placeholder="장르를 검색하세요",
                 ),
                 html.H6("년도", className="my-2"),
                 dcc.RangeSlider(
@@ -841,7 +841,7 @@ def update_graph(store1, store2):
     Input("item_reset_selection", "n_clicks"),
 )
 def item_reset_selection(value):
-    return "장르를 검색하세요", [item["release_year"].min(), item["release_year"].max()]
+    return [], [item["release_year"].min(), item["release_year"].max()] #"장르를 검색하세요"
 
 
 # 초기화 버튼을 누르지 않더라도 위에서 값을 바꾸면 다시 run 누를 수 있도록 수정
