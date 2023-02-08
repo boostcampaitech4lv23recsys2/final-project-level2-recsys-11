@@ -77,8 +77,8 @@ problem_intro = html.Div([
 ])
 layout = html.Div([
     dbc.NavbarSimple([
-        dbc.NavItem(dcc.Link(dbc.Button("시작하기!", className=" fs-6 mt-1", color="light"),href="/login"),),
-        ], brand=gct.BRAND_LOGO, brand_style={"margin-left":'45%', 'font-size':"2rem", 'color':'#FFFAF0'}
+        dbc.NavItem(dcc.Link(dbc.Button("시작하기!", className=" fs-6 mt-1",style={'margin-right':'20%','width':'25rem'}, color="light"),href="/login"),),
+        ], brand=gct.BRAND_LOGO, brand_style={"margin-left":'47%', 'font-size':"2rem", 'color':'#FFFAF0'}
         , color="primary", class_name="home-navbar", sticky="top", fluid=True),
     html.Div([
         html.Div([
