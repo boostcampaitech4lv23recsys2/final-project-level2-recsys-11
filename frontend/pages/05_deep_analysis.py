@@ -139,7 +139,7 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                 dcc.Dropdown(
                     options=uniq_genre,
                     id="selected_genre",
-                    placeholder="장르를 검색하세요",
+                    # placeholder="장르를 검색하세요",
                 ),
                 html.H6("년도", className="my-2"),
                 dcc.RangeSlider(
@@ -207,7 +207,7 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
         option_wrong = html.Div(
             children=[
                 dbc.Checklist(
-                    options=["틀린 유저만 보기"], id="selected_wrong", inline=True, switch=True
+                    options=["모델이 맞춘 유저만 보기"], id="selected_wrong", inline=True, switch=True,
                 ),
             ]
         )
@@ -240,8 +240,8 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                                     className="mb-3",
                                     style={"margin-bottom": "1rem"},
                                 ),
-                                dbc.Popover(
-                                    "유저/아이템 사이드 정보를 활용하여 원하는 조건을 선택해보세요.",
+                                dbc.Tooltip(
+                                    f"{kind} 사이드 정보를 활용하여 원하는 조건을 선택해보세요.",
                                     target="popover_option",
                                     trigger="hover",
                                     placement="top-start",
@@ -254,12 +254,6 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                                     color="secondary",
                                     className="text-body",
                                     style={"width": "100%"},
-                                ),
-                                dbc.Popover(
-                                    "언제든지 선택한 조건을 초기화할 수 있습니다.",
-                                    target=f"{kind}_reset_selection",
-                                    trigger="hover",
-                                    placement="left",
                                 ),
                                 dcc.Store(
                                     id=f"{kind}s_selected_by_option",
@@ -296,7 +290,7 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                                     [
                                         dbc.PopoverHeader("임베딩 그래프"),
                                         dbc.PopoverBody(
-                                            "유저/아이템 벡터를 PCA, TSNE로 차원 축소하여 나타낸 그래프입니다."
+                                            f"{kind} 벡터를 PCA, TSNE로 차원 축소하여 나타낸 그래프입니다."
                                         ),
                                         dbc.PopoverBody(
                                             "plotly의 Lasso Selction, Box Selction을 이용해 범위 지정을 할 수 있습니다."
@@ -308,7 +302,7 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                                     ],
                                     target=f"popover_embedding",
                                     trigger="hover",
-                                    placement="top",
+                                    placement="right",
                                 ),
                                 html.Br(),
                                 dcc.Graph(
@@ -326,19 +320,19 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                                     html.H4(
                                         [
                                             f"선택된 {pretty_value[kind]}들의 분포",
-                                            html.Span(
-                                                " �",
-                                                id="popover_info",
-                                                style={"font-size": "25px"},
-                                            ),
+                                            # html.Span(
+                                            #     " �",
+                                            #     id="popover_info",
+                                            #     style={"font-size": "25px"},
+                                            # ),
                                         ]
                                     ),
-                                    dbc.Popover(
-                                        "선택된 조건을 만족하는 유저/아이템들의 사이드 정보가 표시됩니다.",
-                                        target=f"popover_info",
-                                        trigger="hover",
-                                        placement="top",
-                                    ),
+                                    # dbc.Popover(
+                                    #     "선택된 조건을 만족하는 유저/아이템들의 사이드 정보가 표시됩니다.",
+                                    #     target=f"popover_info",
+                                    #     trigger="hover",
+                                    #     placement="top",
+                                    # ),
                                     html.Div(
                                         id=f"{kind}_side_graph",
                                     ),
@@ -368,9 +362,10 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
             ),
             dbc.Modal(
                 [
-                    dbc.ModalHeader(dbc.ModalTitle("웁스! 경고!")),
-                    dbc.ModalBody("다음 두 가지를 확인해주세요!"),
-                    dbc.ModalBody("1. 리랭킹 옵션을 선택했는가? 2. 유저를 3000명 이하로 선택했는가?"),
+                    dbc.ModalHeader(dbc.ModalTitle("경고!")),
+                    dbc.ModalBody("다음 두 가지를 확인해주세요."),
+                    dbc.ModalBody("1. 리랭킹 옵션을 선택했나요?"),
+                    dbc.ModalBody("2. 유저를 3000명 이하로 선택했나요? (서버 자원이 부족합니다..ㅠㅠ)"),
                     dbc.ModalFooter(
                         dbc.Button("닫기", id="close", className="ms-auto", n_clicks=0)
                     ),
@@ -421,7 +416,7 @@ choose_rerank = html.Div(
             trigger="hover",
             placement="top",
         ),
-        html.H6("목적 함수 선택"),
+        html.H6(["목적 함수 선택", html.Sup("*")]),
         html.Div(
             dcc.Dropdown(
                 id="rerank_obj",
@@ -437,7 +432,7 @@ choose_rerank = html.Div(
         ),
         html.Div(
             [
-                html.H6("Reranking 파라미터"),
+                html.H6(["Reranking 파라미터", html.Sup("*")]),
                 dcc.Slider(
                     min=0,
                     max=1,
@@ -846,7 +841,7 @@ def update_graph(store1, store2):
     Input("item_reset_selection", "n_clicks"),
 )
 def item_reset_selection(value):
-    return "장르를 검색하세요", [item["release_year"].min(), item["release_year"].max()]
+    return [], [item["release_year"].min(), item["release_year"].max()] #"장르를 검색하세요"
 
 
 # 초기화 버튼을 누르지 않더라도 위에서 값을 바꾸면 다시 run 누를 수 있도록 수정
@@ -971,7 +966,7 @@ def save_users_selected_by_option(age, gender, occupation, wrong):
     if occupation:
         user_lst = user_lst[user_lst["occupation"].isin(occupation)]
     if wrong:
-        user_lst = user_lst[user_lst["recall"] <= 0.5]
+        user_lst = user_lst[user_lst["recall"] >= 0.5]
     return user_lst.index.to_list()
 
 
@@ -1263,17 +1258,17 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
                 html.H3(
                     [
                         "리랭킹 후 지표 변화",
-                        html.Span(
-                            " �", id="popover_metric", style={"font-size": "25px"}
-                        ),
+                        # html.Span(
+                        #     " �", id="popover_metric", style={"font-size": "25px"}
+                        # ),
                     ]
                 ),
-                dbc.Popover(
-                    "리랭킹을 통해 지표는 이렇게 변화합니다.",
-                    target="popover_metric",
-                    trigger="hover",
-                    placement="left",
-                ),
+                # dbc.Popover(
+                #     "리랭킹을 통해 지표는 이렇게 변화합니다.",
+                #     target="popover_metric",
+                #     trigger="hover",
+                #     placement="left",
+                # ),
                 html.H5("증가한 지표"),
                 html.Div(
                     children=[
@@ -1320,7 +1315,7 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
         )
         item_side = dbc.Row(
             children=[
-                html.H3("리랭킹 관련한 장르 분포", className="mt-5 mb-2"),
+                html.H3("리랭킹 전후 장르 분포", className="mt-5 mb-2"),
                 html.Hr(className="mb-0"),
                 dcc.Graph(
                     figure=daf.plot_usergroup_genre(

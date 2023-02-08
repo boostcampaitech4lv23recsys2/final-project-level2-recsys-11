@@ -296,10 +296,10 @@ def plot_usergroup_genre(item, origin_item, rerank_item, profile_item, tmp):
             [{"type": "domain"}, {"type": "domain"}],
         ],
         subplot_titles=(
-            "전체 아이템",
-            "선택한 유저",
-            "추천된 아이템",
-            "Reranking 된 아이템",
+            "전체 아이템의 장르 구성 비율",
+            "선택한 유저의 시청 장르 구성 비율",
+            "추천된 아이템의 장르 구성 비율",
+            "Reranking 된 아이템의 장르 구성 비율",
         ),
     )
     fig.add_trace(
