@@ -44,9 +44,12 @@ def make_card(element):
                         html.H6(tmp["movie_title"], className="mt-0"),
                         html.P(f'({tmp["release_year"]})', className="my-1"),
                         html.Hr(className="my-1"),
-                        html.P(
-                            "장르: " + ", ".join((tmp["genre"]).split()), className="my-1"
-                        ),
+                        html.Div([
+                            dbc.Badge(
+                            genre, className="my-1 me-1", color="info", style={"font-size":5}
+                        ) for genre in tmp["genre"].split()
+                        ]),
+
                         html.P(
                             f'인기도: {round(tmp["item_pop"] * 100, 3)}%', className="mt-1 mb-0"
                         ),
@@ -1166,7 +1169,7 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
                 html.Div(
                     children=[
                         get_metric_list(metric, i, is_incremental=True)
-                        for metric, i in zip(sub.index, sub) if i>=0
+                        for metric, i in zip(sub.index, sub) if i>0
                     ],
                     className="hstack gap-1"
                 ),
