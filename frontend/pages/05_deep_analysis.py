@@ -98,6 +98,8 @@ header_user_or_item = html.Div(
                     inputClassName="btn-check",
                     labelClassName="btn btn-outline-primary",
                     labelCheckedClassName="active",
+                    style={'width':'100%'},
+                    labelStyle={'width':'100%'}
                 ),
                 dbc.Popover(
                     "아이템과 유저를 선택하여 심층 분석을 진행할 수 있습니다.",
@@ -233,7 +235,7 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                                     children="초기화",
                                     color="secondary",
                                     className='text-body',
-                                    style={'width':'12rem'}
+                                    style={'width':'100%'}
                                 ),
                                 dbc.Popover(
                                     "언제든지 선택한 집단을 초기화할 수 있습니다.",
