@@ -762,9 +762,16 @@ def update_graph(store1, store2):
             raise PreventUpdate
         tmp = item.loc[store2]
 
-    year = px.histogram(tmp, x="release_year")
+    year = px.histogram(
+        tmp,
+        x="release_year",
+        title="개봉 년도 분포",
+    )
     year.update_layout(
-        template='ggplot2'
+        template='ggplot2',
+        xaxis_title_text='개봉 년도', # xaxis label
+        yaxis_title_text='영화 개수', # yaxis label
+        bargap=0.1
         )
     genre_counter = Counter()
     for i in tmp["genre"]:
@@ -772,7 +779,7 @@ def update_graph(store1, store2):
     genre_counter = dict(
         sorted(genre_counter.items(), key=lambda x: x[1], reverse=True)
     )
-    genre_fig = daf.plot_info_counter(genre_counter, "genre")
+    genre_fig = daf.plot_info_counter(genre_counter, "장르")
     return (dcc.Graph(figure=year), dcc.Graph(figure=genre_fig))
 
 
@@ -1030,9 +1037,9 @@ def update_graph(store1):
 def update_graph(store1, store2):
     if ctx.triggered_id == "users_selected_by_option":
         tmp = user.loc[store1]
-        age = daf.plot_info_counter(Counter(tmp["age"]), "Age")
-        gender = daf.plot_info_counter(Counter(tmp["gender"]), "Gender")
-        occupation = daf.plot_info_counter(Counter(tmp["occupation"]), "Occupation")
+        age = daf.plot_info_counter(Counter(tmp["age"]), "나이")
+        gender = daf.plot_info_counter(Counter(tmp["gender"]), "성별")
+        occupation = daf.plot_info_counter(Counter(tmp["occupation"]), "직업군")
         return (
             dcc.Graph(figure=age),
             dcc.Graph(figure=gender),
@@ -1043,9 +1050,9 @@ def update_graph(store1, store2):
             raise PreventUpdate
         tmp = user.loc[store2]
         # tmp = tmp[tmp["selected"] == "Selected"]
-        age = daf.plot_info_counter(Counter(tmp["age"]), "Age")
-        gender = daf.plot_info_counter(Counter(tmp["gender"]), "Gender")
-        occupation = daf.plot_info_counter(Counter(tmp["occupation"]), "Occupation")
+        age = daf.plot_info_counter(Counter(tmp["age"]), "나이")
+        gender = daf.plot_info_counter(Counter(tmp["gender"]), "성별")
+        occupation = daf.plot_info_counter(Counter(tmp["occupation"]), "직업군")
         return (
             dcc.Graph(figure=age),
             dcc.Graph(figure=gender),
