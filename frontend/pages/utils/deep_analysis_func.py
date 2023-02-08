@@ -296,17 +296,17 @@ def plot_usergroup_genre(item, origin_item, rerank_item, profile_item, tmp):
             [{"type": "domain"}, {"type": "domain"}],
         ],
         subplot_titles=(
-            "total item",
-            "profile",
-            "reccomend list",
-            "rerank list",
+            "전체 아이템의 장르 구성 비율",
+            "선택한 유저의 시청 장르 구성 비율",
+            "추천된 아이템의 장르 구성 비율",
+            "Reranking 된 아이템의 장르 구성 비율",
         ),
     )
     fig.add_trace(
         go.Pie(
             labels=total_item_genre_labels,
             values=total_item_genre_values,
-            name="total item genre",
+            name="",
             pull=[0.07] + [0] * (len(total_item_genre_values) - 1),
         ),  # textinfo='label+percent', pull=[0.2]+[0]*(len(total_item_genre_values)-1)
         1,
@@ -316,7 +316,7 @@ def plot_usergroup_genre(item, origin_item, rerank_item, profile_item, tmp):
         go.Pie(
             labels=user_profile_labels,
             values=user_profile_values,
-            name="user profile genre",
+            name="",
             pull=[0.07] + [0] * (len(user_profile_values) - 1),
         ),  # textinfo='label+percent', pull=[0.2]+[0]*(len(user_profile_values)-1)
         1,
@@ -326,7 +326,7 @@ def plot_usergroup_genre(item, origin_item, rerank_item, profile_item, tmp):
         go.Pie(
             labels=user_rec_labels,
             values=user_rec_values,
-            name="user Rec list genre",
+            name="",
             pull=[0.07] + [0] * (len(user_rec_values) - 1),
         ),  # textinfo='label+percent', pull=[0.2]+[0]*(len(user_rec_values)-1)
         2,
@@ -336,7 +336,7 @@ def plot_usergroup_genre(item, origin_item, rerank_item, profile_item, tmp):
         go.Pie(
             labels=user_rerank_labels,
             values=user_rerank_values,
-            name="user rerank",
+            name="",
             pull=[0.07] + [0] * (len(user_rerank_values) - 1),
         ),  # textinfo='label+percent', pull=[0.2]+[0]*(len(user_rerank_values)-1)
         2,
@@ -346,7 +346,7 @@ def plot_usergroup_genre(item, origin_item, rerank_item, profile_item, tmp):
     fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
 
     fig.add_annotation(
-        text=f"Total users num in this group : {len(tmp)}",
+        text=f"현재 선택된 유저 수 : {len(tmp)} 명",
         x=0.5,
         y=0.5,
         font_size=20,
@@ -370,25 +370,31 @@ def plot_info_counter(Counter_profile: Counter, info_name: str, k: int = 10):
     info_name: 그래프에 출력될 문자열
     k: 파이 차트로 보여줄 원소 갯수. 너무 많으면 보기 안 좋기에 적당히 설정
     """
+    # print(Counter_profile)
+    # print(dict(sorted(Counter_profile.items(), key=lambda x: x[1], reverse=True)))
+    Counter_profile = dict(sorted(Counter_profile.items(), key=lambda x: x[1], reverse=True))
     Counter_profile_labels = list(Counter_profile.keys())[:k]
     Counter_profile_values = list(Counter_profile.values())[:k]
-    fig = make_subplots(
-        rows=1,
-        cols=1,
-        specs=[[{"type": "domain"}]],
-        subplot_titles=(f"{info_name} ratio(profile)"),
-    )
+    # fig = make_subplots(
+    #     rows=1,
+    #     cols=1,
+    #     specs=[[{"type": "domain"}]],
+    #     subplot_titles=(f"{info_name}"),
+    # )
+    fig = go.Figure()
     fig.add_trace(
         go.Pie(
             labels=Counter_profile_labels,
             values=Counter_profile_values,
-            name=f"{info_name}(profile)",
+            name='',
+            # name=f"{info_name}(profile)",
             pull=[0.07] + [0] * (len(Counter_profile_values) - 1),
         ),  # textinfo='label+percent', pull=[0.2]+[0]*(len(user_rec_values)-1)
-        1,
-        1,
+        # 1,
+        # 1,
     )
     fig.update_layout(
+        title=f'{info_name}',
         template='ggplot2'
         )
     fig.update_traces(hole=0.3, hoverinfo="label+percent+name")

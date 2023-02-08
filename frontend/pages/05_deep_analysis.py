@@ -10,6 +10,7 @@ from dash.exceptions import PreventUpdate
 
 # import feffery_antd_components as fac
 from .utils import global_component as gct
+from .utils.global_component import pretty_metric
 from .utils import deep_analysis_func as daf
 from collections import Counter
 from plotly.subplots import make_subplots
@@ -43,11 +44,20 @@ def make_card(element):
                         html.H6(tmp["movie_title"], className="mt-0"),
                         html.P(f'({tmp["release_year"]})', className="my-1"),
                         html.Hr(className="my-1"),
-                        html.P(
-                            "장르: " + ", ".join((tmp["genre"]).split()), className="my-1"
+                        html.Div(
+                            [
+                                dbc.Badge(
+                                    genre,
+                                    className="my-1 me-1",
+                                    color="info",
+                                    style={"font-size": 5},
+                                )
+                                for genre in tmp["genre"].split()
+                            ]
                         ),
                         html.P(
-                            f'인기도: {round(tmp["item_pop"] * 100, 3)}%', className="my-1"
+                            f'인기도: {round(tmp["item_pop"] * 100, 3)}%',
+                            className="mt-1 mb-0",
                         ),
                     ],
                 ),
@@ -71,7 +81,8 @@ header_exp = html.Div(
                 html.H3("실험 선택", className="mt-3"),
                 dcc.Dropdown(
                     id="exp_id_for_deep_analysis",
-                    options=["exp1"],
+                    options=[],
+                    placeholder="사후분석 실행할 실험을 선택하세요",
                     className="w-25 my-3",
                 ),
             ]
@@ -97,10 +108,19 @@ header_user_or_item = html.Div(
                     inputClassName="btn-check",
                     labelClassName="btn btn-outline-primary",
                     labelCheckedClassName="active",
+                    style={"width": "100%"},
+                    labelStyle={"width": "100%"},
                 ),
+                html.Div(id="user_item_select_alert")
+                # dbc.Popover(
+                #     "유저/아이템 관점을 선택하여 심층 분석을 진행할 수 있습니다.",
+                #     target='show_user_or_item',
+                #     trigger='hover',
+                #     placement='bottom'
+                # )
                 # dbc.Button(id=f"{kind}_run", children="RUN", className="ms-auto w-100"),
             ],
-            className="radio-group mb-3",
+            className="radio-group mb-3 mt-0",
         ),
         # first_interval:=dcc.Interval(interval=15*1000, n_intervals=0)
     ]
@@ -119,6 +139,7 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                 dcc.Dropdown(
                     options=uniq_genre,
                     id="selected_genre",
+                    # placeholder="장르를 검색하세요",
                 ),
                 html.H6("년도", className="my-2"),
                 dcc.RangeSlider(
@@ -146,18 +167,31 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
             children=[
                 html.H6("연령대", className=""),
                 dbc.Checklist(
-                    options=sorted(user["age"].unique()), id="selected_age", inline=True
+                    options=sorted(user["age"].unique()),
+                    id="selected_age",
+                    inline=True,
+                    label_checked_style={"color": "red"},
+                    input_checked_style={
+                        "backgroundColor": "#fa7268",
+                        "borderColor": "#ea6258",
+                    },
                 ),
             ]
         )
         option_gender = html.Div(
             children=[
                 html.H6("성별"),
-                dcc.Dropdown(
-                    options=["M", "F"],
+                dbc.Checklist(
                     id="selected_gender",
+                    options=["M", "F"],
+                    inline=True,
+                    label_checked_style={"color": "red"},
+                    input_checked_style={
+                        "backgroundColor": "#fa7268",
+                        "borderColor": "#ea6258",
+                    },
                 ),
-            ]
+            ],
         )
         option_occupation = html.Div(
             children=[
@@ -166,14 +200,14 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                     options=sorted(user["occupation"].unique()),
                     multi=True,
                     id="selected_occupation",
+                    placeholder="직업군을 검색하세요 (0-20)",
                 ),
             ]
         )
         option_wrong = html.Div(
             children=[
-                dcc.Checklist(
-                    options=["틀린 유저들만(0.5 기준으로)"],
-                    id="selected_wrong",
+                dbc.Checklist(
+                    options=["모델이 맞춘 유저만 보기"], id="selected_wrong", inline=True, switch=True,
                 ),
             ]
         )
@@ -183,7 +217,9 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                 option_gender,
                 option_occupation,
                 option_wrong,
-            ]
+                choose_rerank,
+            ],
+            className="vstack gap-3 mb-0",
         )
     return html.Div(
         [
@@ -193,16 +229,31 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                         html.Div(
                             children=[
                                 html.H4(
-                                    "사이드 정보",
+                                    [
+                                        f"{pretty_value[kind]} 정보",
+                                        html.Span(
+                                            " �",
+                                            id="popover_option",
+                                            style={"font-size": "25px"},
+                                        ),
+                                    ],
                                     className="mb-3",
                                     style={"margin-bottom": "1rem"},
+                                ),
+                                dbc.Tooltip(
+                                    f"{kind} 사이드 정보를 활용하여 원하는 조건을 선택해보세요.",
+                                    target="popover_option",
+                                    trigger="hover",
+                                    placement="top-start",
                                 ),
                                 input_list,
                                 html.H6(id=f"n_{kind}s"),
                                 dbc.Button(
                                     id=f"{kind}_reset_selection",
                                     children="초기화",
-                                    color="primary",
+                                    color="secondary",
+                                    className="text-body",
+                                    style={"width": "100%"},
                                 ),
                                 dcc.Store(
                                     id=f"{kind}s_selected_by_option",
@@ -220,12 +271,39 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                             # className='form-style'
                         ),
                         width=2,
-                        # className="h-1",
+                        className="border-end border-2",
                     ),
                     dbc.Col(
                         html.Div(
                             children=[
-                                html.H4(f"{pretty_value[kind]} 2차원 임베딩"),
+                                html.H4(
+                                    [
+                                        f"{pretty_value[kind]} 차원 축소 그래프",
+                                        html.Span(
+                                            " �",
+                                            id="popover_embedding",
+                                            style={"font-size": "25px"},
+                                        ),
+                                    ]
+                                ),
+                                dbc.Popover(
+                                    [
+                                        dbc.PopoverHeader("임베딩 그래프"),
+                                        dbc.PopoverBody(
+                                            f"{kind} 벡터를 PCA, TSNE로 차원 축소하여 나타낸 그래프입니다."
+                                        ),
+                                        dbc.PopoverBody(
+                                            "plotly의 Lasso Selction, Box Selction을 이용해 범위 지정을 할 수 있습니다."
+                                        ),
+                                        dbc.PopoverBody("좌측에서 선택된 아이템에 대해서만 선택됩니다."),
+                                        dbc.PopoverBody(
+                                            "임베딩 그래프에서 선택한 후 다시 좌측으로 넘어갈 경우 임베딩 그래프에서의 범위 지정은 초기화 됩니다."
+                                        ),
+                                    ],
+                                    target=f"popover_embedding",
+                                    trigger="hover",
+                                    placement="right",
+                                ),
                                 html.Br(),
                                 dcc.Graph(
                                     id=f"{kind}_emb_graph", style={"margin-top": 0}
@@ -233,19 +311,35 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                             ],
                         ),
                         width=6,
+                        className="border-end border-2",
                     ),
                     dbc.Col(
                         [
                             html.Div(
                                 children=[
-                                    html.H4("사이드인포"),
+                                    html.H4(
+                                        [
+                                            f"선택된 {pretty_value[kind]}들의 분포",
+                                            # html.Span(
+                                            #     " �",
+                                            #     id="popover_info",
+                                            #     style={"font-size": "25px"},
+                                            # ),
+                                        ]
+                                    ),
+                                    # dbc.Popover(
+                                    #     "선택된 조건을 만족하는 유저/아이템들의 사이드 정보가 표시됩니다.",
+                                    #     target=f"popover_info",
+                                    #     trigger="hover",
+                                    #     placement="top",
+                                    # ),
                                     html.Div(
                                         id=f"{kind}_side_graph",
-                                        
                                     ),
                                 ],
                                 # className="h-50",
-                            style={"overflow": "scroll", "height":500})
+                                style={"overflow": "scroll", "height": 660},
+                            )
                         ],
                         # style={"overflow": "scrolly", "height": "10px"},
                     ),
@@ -257,7 +351,27 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                 id=f"{kind}_run",
                 children="RUN",
                 className="w-100",
+                # color="success"
                 # style={"margin-top": "-3rem"},
+            ),
+            dbc.Popover(
+                "유저/아이템들을 결정했다면, 이 버튼을 눌러 더욱 심층적인 분석을 진행하세요!",
+                target=f"{kind}_run",
+                trigger="hover",
+                placement="top",
+            ),
+            dbc.Modal(
+                [
+                    dbc.ModalHeader(dbc.ModalTitle("경고!")),
+                    dbc.ModalBody("다음 두 가지를 확인해주세요."),
+                    dbc.ModalBody("1. 리랭킹 옵션을 선택했나요?"),
+                    dbc.ModalBody("2. 유저를 3000명 이하로 선택했나요? (서버 자원이 부족합니다..ㅠㅠ)"),
+                    dbc.ModalFooter(
+                        dbc.Button("닫기", id="close", className="ms-auto", n_clicks=0)
+                    ),
+                ],
+                id="warn_invalid_input",
+                is_open=False,
             ),
         ],
         # className="hstack",
@@ -266,7 +380,81 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
 
 item_top = html.Div(
     id="item_top_poster",
-    children=[html.P("골라야 볼 수 있습니다.")],
+    children=[],
+)
+
+choose_rerank = html.Div(
+    [
+        html.Hr(),
+        html.H4(
+            [
+                "리랭킹 옵션",
+                html.Span(
+                    " �", id="popover_rerank_option", style={"font-size": "25px"}
+                ),
+            ]
+        ),
+        dbc.Popover(
+            [
+                dbc.PopoverHeader("리랭킹 옵션"),
+                dbc.PopoverBody(
+                    [
+                        "리랭킹에 사용될 파라미터를 선택합니다.",
+                        html.Br(),
+                        "특정 유저 군집에 리랭킹을 적용할 수 있습니다.",
+                        html.Br(),
+                        "유저 수가 많을 수록 리랭킹 진행 시간이 늘어납니다.",
+                        html.Br(),
+                        "자세한 사항은 FAQ를 확인하세요.",
+                    ]
+                ),
+                # dbc.PopoverBody("특정 유저 군집에 리랭킹을 적용할 수 있습니다."),
+                # dbc.PopoverBody("유저 수가 많을 수록 리랭킹 진행 시간이 늘어납니다."),
+                # dbc.PopoverBody("자세한 사항은 FAQ를 확인하세요."),
+            ],
+            target=f"popover_rerank_option",
+            trigger="hover",
+            placement="top",
+        ),
+        html.H6(["목적 함수 선택", html.Sup("*")]),
+        html.Div(
+            dcc.Dropdown(
+                id="rerank_obj",
+                options=[
+                    {"label": "Diversity(Cosine)", "value": "diversity(cos)"},
+                    {"label": "Diversity(Jaccard)", "value": "diversity(jac)"},
+                    {"label": "Serendipity(PMI)", "value": "serendipity(pmi)"},
+                    {"label": "Serendipity(Jaccard)", "value": "serendipity(jac)"},
+                    {"label": "Novelty", "value": "novelty"},
+                ],
+                placeholder="목적함수를 선택하세요",
+            ),
+        ),
+        html.Div(
+            [
+                html.H6(["Reranking 파라미터", html.Sup("*")]),
+                dcc.Slider(
+                    min=0,
+                    max=1,
+                    value=0.5,
+                    step=0.1,
+                    marks=None,
+                    tooltip={"placement": "bottom", "always_visible": True},
+                    id="rerank_alpha",
+                    className="my-2 ps-2",
+                ),
+                # dcc.Input(
+                #     id="rerank_alpha",
+                #     type="number",
+                #     placeholder="Type alpha value",
+                #     min=0,
+                #     max=1,
+                #     step=0.1,
+                # ),
+            ]
+        ),
+    ],
+    className="vstack gap-3 mt-1",
 )
 
 
@@ -326,6 +514,7 @@ def show_exp_choice(exp_name, exp_id):
 @callback(
     Output("show_user_or_item", "options"),
     Output("show_user_or_item", "value"),
+    Output("user_item_select_alert", "children"),
     # Output(progress_bar_DA, "value", ),
     # Input(first_interval, "n_intervals"),
     Input("exp_id_for_deep_analysis", "value"),
@@ -346,7 +535,7 @@ def choose_experiment(
     global uniq_genre
 
     params = {"ID": vip["username"], "dataset_name": dataset_name, "exp_id": exp}
-    # params = {"ID": 'mkdir', "dataset_name": 'ml-1m', "exp_id": 1}
+    # params = {"ID": 'mkdir', "dataset_name": 'ml-1m', "exp_id": 140}
     # print(params)
     user = requests.get(gct.API_URL + "/frontend/user_info", params=params).json()
     # print(user)
@@ -392,14 +581,11 @@ def choose_experiment(
     uniq_genre = [*uniq_genre]
 
     option = [
-        {"label": "item", "value": "item"},
-        {"label": "user", "value": "user"},
+        {"label": "유저", "value": "user"},
+        {"label": "아이템", "value": "item"},
     ]
     # print(item.describe())
-    return (
-        option,
-        None,
-    )
+    return (option, None, dbc.Alert("유저/아이템 관점을 변경하며 사후분석을 실행해보세요"))
 
 
 # @callback(
@@ -475,12 +661,13 @@ def display_overall(val, exp_id):
             user_selection = html.Div(
                 children=[
                     get_input_options(user=user, kind="user"),
+                    html.Div(id="rerank_box"),
                 ]
             )
             return [
                 user_selection,
-                html.Div(id="rerank_box"),
-                html.Div(id="user_deep_analysis"),
+                # html.Div(id="rerank_box"),
+                dbc.Spinner(html.Div(id="user_deep_analysis")),
             ]
 
 
@@ -515,17 +702,14 @@ def save_items_selected_by_option(genre, year):
     State("items_selected_by_option", "data"),
 )
 def save_items_selected_by_embed(emb, data_from_option):
-    if emb is None:
-        raise PreventUpdate
-    option_len = len(data_from_option)
-    if option_len == len(item):
+    if (emb is None) or (not emb["points"]):
         raise PreventUpdate
     item_idx = []
     for i in emb["points"]:
         if i["curveNumber"] == 0:
             item_idx.append(i["pointNumber"])
     item_lst = item.iloc[item_idx]
-    if option_len != len(item):
+    if len(data_from_option) != len(item):
         # 옵션으로 그림을 그리면 두번에 걸쳐서 그림을 넣기 때문에 아이템 순서가 달라진다.
         item_lst = selected_item.iloc[item_idx]
 
@@ -543,11 +727,11 @@ def save_items_selected_by_embed(emb, data_from_option):
     Input("items_selected_by_embed", "data"),
     Input("items_selected_by_option", "data"),
 )
-def prepare_analysis(val1, val2):
+def prepare_analysis(trigger_embed, trigger_option):
     if ctx.triggered_id == "items_selected_by_embed":
-        return val1, f"selected items: {len(val1)}"
+        return trigger_embed, f"선택된 아이템 수: {len(trigger_embed)}"
     else:
-        return val2, f"selected items: {len(val2)}"
+        return trigger_option, f"선택된 아이템 수: {len(trigger_option)}"
 
 
 # 최근에 저장된 store 기준으로 임베딩 그래프를 그림
@@ -571,7 +755,7 @@ def update_graph(store1):
             y=selected_item["ys"],
             name="selected       ",
             mode="markers",
-            marker_color="green",
+            marker=dict(color="green", opacity=0.8),
         )
     )
     fig.add_trace(
@@ -579,18 +763,19 @@ def update_graph(store1):
             x=Notselected_item["xs"],
             y=Notselected_item["ys"],
             name="Not selected",
-            marker_color="red",
+            mode="markers",
+            marker=dict(color="red", opacity=0.02),
         )
     )
     fig.add_trace(go.Scatter(x=[0], y=[0], name=" ", marker_color="white"))
 
-    fig.update_traces(mode="markers", opacity=0.6)
+    # fig.update_traces(mode="markers") #, opacity=0.6
     fig.update_layout(
         # title="Item embedding plot",
         yaxis_zeroline=True,
         xaxis_zeroline=False,
         margin={},
-        template='ggplot2',
+        template="ggplot2",
     )
     return fig
 
@@ -609,35 +794,44 @@ def update_graph(store1, store2):
             raise PreventUpdate
         tmp = item.loc[store2]
 
-    year = px.histogram(tmp, x="release_year")
+    year = px.histogram(
+        tmp,
+        x="release_year",
+        title="개봉 년도 분포",
+    )
     year.update_layout(
-        template='ggplot2'
-        )
+        template="ggplot2",
+        xaxis_title_text="개봉 년도",  # xaxis label
+        yaxis_title_text="영화 개수",  # yaxis label
+        bargap=0.1,
+    )
     genre_counter = Counter()
     for i in tmp["genre"]:
         genre_counter += Counter(i.split())
     genre_counter = dict(
         sorted(genre_counter.items(), key=lambda x: x[1], reverse=True)
     )
-    genre_fig = daf.plot_info_counter(genre_counter, "genre")
+    genre_fig = daf.plot_info_counter(genre_counter, "장르")
     return (dcc.Graph(figure=year), dcc.Graph(figure=genre_fig))
 
 
 # 임베딩 그래프에서 선택할 시 옵션 비활성화, 초기화 눌렀을 때만 다시 활성화
-@callback(
-    Output("selected_genre", "disabled"),
-    Output("selected_year", "disabled"),
-    Input("item_reset_selection", "n_clicks"),
-    Input("item_emb_graph", "selectedData"),
-    State("items_selected_by_option", "data"),
-    prevent_initial_call=True,
-)
-def disable_options(able, disable, option):
-    # print(ctx.triggered_id)
-    if ctx.triggered_id == "item_reset_selection" or (len(option) == len(item)):
-        return False, False
-    else:
-        return True, True
+# @callback(
+#     Output("selected_genre", "disabled"),
+#     Output("selected_year", "disabled"),
+#     Input("item_reset_selection", "n_clicks"),
+#     Input("item_emb_graph", "selectedData"),
+#     State("items_selected_by_option", "data"),
+#     prevent_initial_call=True,
+# )
+# def disable_options(able, disable, option):
+#     # if ctx.triggered_id == "item_reset_selection" or (len(option) == len(item)):
+#     if ctx.triggered_id == "item_reset_selection":
+#         if not disable['points']:
+#             pass
+#         return False, False
+#     else:
+#         return True, True
 
 
 # 초기화 버튼 누를 때 선택 초기화
@@ -647,7 +841,7 @@ def disable_options(able, disable, option):
     Input("item_reset_selection", "n_clicks"),
 )
 def item_reset_selection(value):
-    return [], [item["release_year"].min(), item["release_year"].max()]
+    return [], [item["release_year"].min(), item["release_year"].max()] #"장르를 검색하세요"
 
 
 # 초기화 버튼을 누르지 않더라도 위에서 값을 바꾸면 다시 run 누를 수 있도록 수정
@@ -682,22 +876,22 @@ def draw_item_top(value, data):
         rec = item.loc[data].sort_values(by=["len"], ascending=False).head(10).index
         rec_lst = [make_card(item) for item in rec]  # 보여줄 카드 갯수 지정 가능
         children = [
-            html.H3("선택한 아이템 인기도 top 10", className="mb-3"),
+            html.H3("선택한 아이템 인기도 Top 10", className="mt-4 mb-3"),
             dbc.Row(
                 children=pop_lst,
                 className="g-0 d-flex flex-row flex-nowrap overflow-auto",
                 style={
                     # "overflow": "scroll",
-                    "height": 547
+                    "height": 548
                 },
             ),
-            html.H3("선택한 아이템 추천횟수 top 10", className="mt-5 mb-3"),
+            html.H3("선택한 아이템 추천횟수 Top 10", className="mt-5 mb-3"),
             dbc.Row(
                 children=rec_lst,
                 className="d-flex flex-row flex-nowrap overflow-auto",
                 style={
                     # "overflow": "scroll",
-                    "height": 547
+                    "height": 548
                 },
             ),
             html.Br(),
@@ -738,6 +932,7 @@ def draw_item_related_users(value, data):
 
         children = [
             html.H3("아이템을 시청한 유저들 vs. 아이템을 추천받은 유저들", className="mt-4 mb-3"),
+            html.Hr(),
             html.Div(
                 [
                     age,
@@ -767,11 +962,11 @@ def save_users_selected_by_option(age, gender, occupation, wrong):
     if age:
         user_lst = user_lst[user_lst["age"].isin(age)]
     if gender:
-        user_lst = user_lst[user_lst["gender"] == gender]
+        user_lst = user_lst[user_lst["gender"].isin(gender)]
     if occupation:
         user_lst = user_lst[user_lst["occupation"].isin(occupation)]
     if wrong:
-        user_lst = user_lst[user_lst["recall"] <= 0.5]
+        user_lst = user_lst[user_lst["recall"] >= 0.5]
     return user_lst.index.to_list()
 
 
@@ -782,9 +977,8 @@ def save_users_selected_by_option(age, gender, occupation, wrong):
     State("users_selected_by_option", "data"),
 )
 def save_users_selected_by_embed(emb, data_from_option):
-    if emb is None:
+    if (emb is None) or (not emb["points"]):
         raise PreventUpdate
-
     user_idx = []
     for i in emb["points"]:
         if i["curveNumber"] == 0:
@@ -810,9 +1004,9 @@ def save_users_selected_by_embed(emb, data_from_option):
 )
 def prepare_analysis(val1, val2):
     if ctx.triggered_id == "users_selected_by_option":
-        return val1, f"selected users: {len(val1)}"
+        return val1, f"선택된 유저 수: {len(val1)}"
     else:
-        return val2, f"selected users: {len(val2)}"
+        return val2, f"선택된 유저 수: {len(val2)}"
 
 
 # 최근에 저장된 store 기준으로 유저 임베딩 그래프를 그림
@@ -835,7 +1029,7 @@ def update_graph(store1):
             y=selected_user["ys"],
             name="selected       ",
             mode="markers",
-            marker_color="green",
+            marker=dict(color="green", opacity=0.8),
         )
     )
     fig.add_trace(
@@ -843,18 +1037,19 @@ def update_graph(store1):
             x=Notselected_user["xs"],
             y=Notselected_user["ys"],
             name="Not selected",
-            marker_color="red",
+            mode="markers",
+            marker=dict(color="red", opacity=0.02),
         )
     )
     fig.add_trace(go.Scatter(x=[0], y=[0], name=" ", marker_color="white"))
 
-    fig.update_traces(mode="markers", opacity=0.6)
+    # fig.update_traces(mode="markers", opacity=0.6)
     fig.update_layout(
         # title="user embedding plot",
         yaxis_zeroline=True,
         xaxis_zeroline=False,
         margin={},
-        template='ggplot2'
+        template="ggplot2",
     )
     return fig
 
@@ -868,9 +1063,9 @@ def update_graph(store1):
 def update_graph(store1, store2):
     if ctx.triggered_id == "users_selected_by_option":
         tmp = user.loc[store1]
-        age = daf.plot_info_counter(Counter(tmp["age"]), "Age")
-        gender = daf.plot_info_counter(Counter(tmp["gender"]), "Gender")
-        occupation = daf.plot_info_counter(Counter(tmp["occupation"]), "Occupation")
+        age = daf.plot_info_counter(Counter(tmp["age"]), "나이")
+        gender = daf.plot_info_counter(Counter(tmp["gender"]), "성별")
+        occupation = daf.plot_info_counter(Counter(tmp["occupation"]), "직업군")
         return (
             dcc.Graph(figure=age),
             dcc.Graph(figure=gender),
@@ -881,9 +1076,9 @@ def update_graph(store1, store2):
             raise PreventUpdate
         tmp = user.loc[store2]
         # tmp = tmp[tmp["selected"] == "Selected"]
-        age = daf.plot_info_counter(Counter(tmp["age"]), "Age")
-        gender = daf.plot_info_counter(Counter(tmp["gender"]), "Gender")
-        occupation = daf.plot_info_counter(Counter(tmp["occupation"]), "Occupation")
+        age = daf.plot_info_counter(Counter(tmp["age"]), "나이")
+        gender = daf.plot_info_counter(Counter(tmp["gender"]), "성별")
+        occupation = daf.plot_info_counter(Counter(tmp["occupation"]), "직업군")
         return (
             dcc.Graph(figure=age),
             dcc.Graph(figure=gender),
@@ -897,91 +1092,57 @@ def update_graph(store1, store2):
     Output("selected_gender", "value"),
     Output("selected_occupation", "value"),
     Output("selected_wrong", "value"),
-    Output("user_run", "n_clicks"),
+    Output("rerank_alpha", "value"),
+    Output("rerank_obj", "value"),
     Input("user_reset_selection", "n_clicks"),
 )
-def item_reset_selection(value):
-    return [], [], [], [], 0
+def user_reset_selection(value):
+    return [], [], [], [], 0, 0
 
 
-#### run 실행 시 실행될 함수들 #####
-
-# 최종 store가 업데이트됐을 때 리랭킹 선택지 등장
+# 초기화 버튼을 누르지 않더라도 위에서 값을 바꾸면 다시 run 누를 수 있도록 수정
 @callback(
-    Output("rerank_box", "children"),
+    Output("user_run", "n_clicks"),
+    Input("user_reset_selection", "n_clicks"),
+    Input("users_selected_by_option", "data"),
+    Input("users_selected_by_embed", "data"),
+    Input("rerank_alpha", "value"),
+    Input("rerank_obj", "value"),
+)
+def user_reset_selection(val1, val2, val3, val4, val5):
+    return 0
+
+
+######################### 리랭킹 진행 ##############################
+######################### 리랭킹 진행 ##############################
+######################### 리랭킹 진행 ##############################
+
+
+# 리랭킹 옵션 입력 없을 시, 유저 수가 너무 많을 시 경고
+@callback(
+    Output("warn_invalid_input", "is_open"),
     Input("user_run", "n_clicks"),
+    Input("close", "n_clicks"),
+    State("warn_invalid_input", "is_open"),
+    State("rerank_obj", "value"),
+    State("users_for_analysis", "data"),
     prevent_initial_call=True,
 )
-def prepare_rerank(value):
-    if value != 1:
+def warning_model(n1, n2, is_open, rerank, n_user):
+    if not n1:
         raise PreventUpdate
-    else:
-        tmp = [
-            html.P("Reranking Options"),
-            dcc.Markdown(
-                """$$\\alpha \\cdot rel(i) + (1 - \\alpha) \\cdot obj(i)$$
-                """,
-                mathjax=True,
-            ),
-            html.Br(),
-            html.Div(
-                dbc.RadioItems(
-                    id="rerank_obj",
-                    inputClassName="btn-check",
-                    labelClassName="btn btn-outline-primary",
-                    labelCheckedClassName="active",
-                    options=[
-                        {"label": "Diversity(Cosine)", "value": "diversity(cos)"},
-                        {"label": "Diversity(Jaccard)", "value": "diversity(jac)"},
-                        {"label": "Serendipity(PMI)", "value": "serendipity(pmi)"},
-                        {"label": "Serendipity(Jaccard)", "value": "serendipity(jac)"},
-                        {"label": "Novelty", "value": "novelty"},
-                    ],
-                    inline=True,
-                ),
-            ),
-            html.Div(
-                [
-                    dcc.Input(
-                        id="rerank_alpha",
-                        type="number",
-                        placeholder="Type alpha value",
-                        min=0,
-                        max=1,
-                        step=0.1,
-                    ),
-                ]
-            ),
-            html.Div(
-                [
-                    dbc.Button(id="rerank_reset", children="리랭킹 초기화"),
-                    dbc.Button(id="rerank_run", children="Rerank"),
-                ]
-            ),
-        ]
-        return tmp
+    if rerank and (len(n_user) < 3000):
+        raise PreventUpdate
+    if n1 or n2:
+        return not is_open
+    return is_open
 
-
-# 초기화 버튼 누를 때 선택 초기화
-@callback(
-    Output("rerank_obj", "value"),
-    Output("rerank_alpha", "value"),
-    Output("rerank_run", "n_clicks"),
-    Input("rerank_reset", "n_clicks"),
-)
-def item_reset_selection(value):
-    return [], None, 0
-
-
-######################### 리랭킹 진행 ##############################
-######################### 리랭킹 진행 ##############################
-######################### 리랭킹 진행 ##############################
 
 # 백엔드에 리랭킹 계산 요청하고 받은 것으로 바로 모든 그림을 그려냄
 # 그리고 통째로 리턴
 @callback(
     Output("user_deep_analysis", "children"),
-    Input("rerank_run", "n_clicks"),  #  선택하기 전까지 비활성화도 필요
+    Input("user_run", "n_clicks"),  #  선택하기 전까지 비활성화도 필요
     State("users_for_analysis", "data"),
     State("rerank_obj", "value"),
     State("rerank_alpha", "value"),
@@ -991,6 +1152,8 @@ def item_reset_selection(value):
     prevent_initial_call=True,
 )
 def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
+    if (not obj) or (len(user_lst) > 3000):
+        raise PreventUpdate
     if value != 1:
         raise PreventUpdate
     else:
@@ -999,7 +1162,7 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
             "ID": id["username"],
             "dataset_name": dataset,
             "exp_id": exp_id,
-            "n_candidates": 50,  # 추후 고객이 지정할 수 있도록 하면 좋을 듯.
+            "n_candidates": 100,  # 추후 고객이 지정할 수 있도록 하면 좋을 듯.
             "objective_fn": obj,
             "alpha": alpha,
             "user_ids": user_lst,
@@ -1029,73 +1192,142 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
 
         # 첫번째 - 지표 변화
         sub = diff_metric.loc["rerank"] - diff_metric.loc["origin"]
+        # sub = ((diff_metric.loc["rerank"] - diff_metric.loc["origin"]) / diff_metric.loc["origin"]) *100
 
         # print(len(tmp.loc["1", "pred_item"][:10]))
         # 두번째 - 아이템 포스터
-        origin_item = set()
-        rerank_item = set()
-        profile_item = set()
+        # origin_item_set = set()
+        # rerank_item_set = set()
+        profile_item_Counter = Counter()
+        origin_item_Counter = Counter()
+        rerank_item_Counter = Counter()
+
         for i in user_lst:
-            origin_item |= set(tmp.loc[i, "pred_item"][:10])
-            rerank_item |= set(tmp.loc[i, "reranked_item"])
-            profile_item |= set(tmp.loc[i, "user_profile"])
-        new_item = rerank_item - origin_item
-        # print(new_item)
-        pop = (
-            item.loc[list(origin_item)]
-            .sort_values(by=["len"], ascending=False)
-            .head(10)
-            .index
+            profile_item_Counter += Counter(tmp.loc[i, "user_profile"])
+            origin_item_Counter += Counter(tmp.loc[i, "pred_item"][:10])
+            rerank_item_Counter += Counter(tmp.loc[i, "reranked_item"])
+
+        new_item = set(rerank_item_Counter.keys()) - set(origin_item_Counter.keys())
+
+        origin_item_Counter = dict(
+            sorted(origin_item_Counter.items(), key=lambda x: x[1], reverse=True)
         )
+        rerank_item_Counter = dict(
+            sorted(rerank_item_Counter.items(), key=lambda x: x[1], reverse=True)
+        )
+        pop = list(origin_item_Counter.keys())[:10]
         pop_lst = [make_card(item) for item in pop]
-        rer = (
-            item.loc[list(rerank_item)]
-            .sort_values(by=["len"], ascending=False)
-            .head(10)
-            .index
-        )
+
+        rer = list(rerank_item_Counter.keys())[:10]
         rer_lst = [make_card(item) for item in rer]
         new = (
             item.loc[list(new_item)]
             .sort_values(by=["len"], ascending=False)
             .head(10)
             .index
-        )
+        )  # 새로운 아이템들을 추천순위별로 정렬한다는 뜻
         new_lst = [make_card(item) for item in new]
+
+        def get_metric_list(metric, i, is_incremental):
+            if is_incremental:
+                color = "#7286D3"
+                plus = "+"
+            else:
+                color = "#CD0404"
+                plus = ""
+            return dbc.Card(
+                [
+                    dbc.CardHeader(
+                        html.H6(f"{pretty_metric[metric]}"),
+                    ),
+                    dbc.CardBody(
+                        [
+                            html.H6(
+                                f"{plus}{round(i,2)}",
+                                className="card-title",
+                                style={"color": color},
+                            ),
+                        ]
+                    ),
+                ],
+                style={"width": "12rem"},
+            )
 
         indicator = dbc.Row(
             children=[
-                html.H3("리랭킹 후 지표 변화"),
+                html.H3(
+                    [
+                        "리랭킹 후 지표 변화",
+                        # html.Span(
+                        #     " �", id="popover_metric", style={"font-size": "25px"}
+                        # ),
+                    ]
+                ),
+                # dbc.Popover(
+                #     "리랭킹을 통해 지표는 이렇게 변화합니다.",
+                #     target="popover_metric",
+                #     trigger="hover",
+                #     placement="left",
+                # ),
+                html.H5("증가한 지표"),
                 html.Div(
                     children=[
-                        dbc.Badge(
-                            children=[html.P(metric), html.P(round(i, 4))],
-                            color="primary" if i < 0 else "danger",
-                        )
+                        get_metric_list(metric, i, is_incremental=True)
                         for metric, i in zip(sub.index, sub)
+                        if i > 0
                     ],
+                    className="hstack gap-1",
+                ),
+                html.H5("감소한 지표"),
+                html.Div(
+                    children=[
+                        get_metric_list(metric, i, is_incremental=False)
+                        for metric, i in zip(sub.index, sub)
+                        if i < 0
+                    ],
+                    className="hstack gap-1",
                 ),
             ],
+            className="gap-3 my-3",
         )
         item_poster = html.Div(
             children=[
-                html.H3("리랭킹 전 많이 추천된 아이템 top 10"),
-                dbc.Row(children=pop_lst, style={"overflow": "scroll", "height": 500}),
-                html.H3("리랭킹 후 많이 추천된 아이템 top 10"),
-                dbc.Row(children=rer_lst, style={"overflow": "scroll", "height": 500}),
-                html.H3("기존에 추천되지 않은 아이템 top 10"),
-                dbc.Row(children=new_lst, style={"overflow": "scroll", "height": 500}),
+                html.H3("리랭킹 전 많이 추천된 아이템 Top 10", className="mt-5 mb-3"),
+                dbc.Row(
+                    children=pop_lst,
+                    className="d-flex flex-row flex-nowrap overflow-auto",
+                    style={"height": 548},
+                ),
+                html.H3("리랭킹 후 많이 추천된 아이템 Top 10", className="mt-5 mb-3"),
+                dbc.Row(
+                    children=rer_lst,
+                    className="d-flex flex-row flex-nowrap overflow-auto",
+                    style={"height": 548},
+                ),
+                html.H3("기존에 추천되지 않은 아이템 Top 10", className="mt-5 mb-3"),
+                dbc.Row(
+                    children=new_lst,
+                    className="d-flex flex-row flex-nowrap overflow-auto",
+                    style={"height": 548},
+                ),
             ],
+            className="gap-3 mb-3",
         )
         item_side = dbc.Row(
             children=[
-                html.H3("리랭킹 관련한 장르 분포"),
+                html.H3("리랭킹 전후 장르 분포", className="mt-5 mb-2"),
+                html.Hr(className="mb-0"),
                 dcc.Graph(
                     figure=daf.plot_usergroup_genre(
-                        item, origin_item, rerank_item, profile_item, tmp
+                        item,
+                        set(origin_item_Counter.keys()),
+                        set(rerank_item_Counter.keys()),
+                        set(profile_item_Counter.keys()),
+                        tmp,
                     )
                 ),
             ],
+            # className=""
         )
         children = [indicator, item_poster, item_side]
 
