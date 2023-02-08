@@ -41,7 +41,7 @@ async def get_df(ID: str, dataset_name: str):
     return row
 
 
-@alru_cache(maxsize=30)
+@alru_cache(maxsize=10)
 async def get_exp(exp_id: int):
     connection = get_db_inst()
 
@@ -53,7 +53,7 @@ async def get_exp(exp_id: int):
     return row
 
 
-@alru_cache(maxsize=30)
+@alru_cache(maxsize=5)
 async def inter_to_profile(key_hash: str, group_by: str, col: str) -> pd.DataFrame:
     train_inter = await get_from_s3(key_hash)
 
@@ -90,7 +90,7 @@ async def check_token(token: str) -> Dict:
             result = await cur.fetchone()
     return result
 
-@alru_cache(maxsize=5)
+@alru_cache(maxsize=10)
 async def get_total_reranked(ID: str, dataset_name: str, exp_names: Tuple[str]):
     placeholders = ", ".join(["%s"] * len(exp_names))
     connection = get_db_inst()

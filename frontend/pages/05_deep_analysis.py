@@ -99,6 +99,12 @@ header_user_or_item = html.Div(
                     labelClassName="btn btn-outline-primary",
                     labelCheckedClassName="active",
                 ),
+                dbc.Popover(
+                    "아이템과 유저를 선택하여 심층 분석을 진행할 수 있습니다.",
+                    target='show_user_or_item',
+                    trigger='hover',
+                    placement='left'
+                )
                 # dbc.Button(id=f"{kind}_run", children="RUN", className="ms-auto w-100"),
             ],
             className="radio-group mb-3 mt-0",
@@ -198,10 +204,18 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                     dbc.Col(
                         html.Div(
                             children=[
-                                html.H4(
+                                html.H4([
                                     f"{pretty_value[kind]} 정보",
+                                    html.Span(" �", id="popover_option", style={'font-size': "25px"})
+                                ],
                                     className="mb-3",
                                     style={"margin-bottom": "1rem"},
+                                ),
+                                dbc.Popover(
+                                    "사이드 정보를 활용하여 원하는 집단을 선택해보세요.",
+                                    target='popover_option',
+                                    trigger='hover',
+                                    placement='top-start'
                                 ),
                                 input_list,
                                 html.H6(id=f"n_{kind}s"),
@@ -209,6 +223,12 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                                     id=f"{kind}_reset_selection",
                                     children="초기화",
                                     color="primary",
+                                ),
+                                dbc.Popover(
+                                    "언제든지 선택한 집단을 초기화할 수 있습니다.",
+                                    target=f"{kind}_reset_selection",
+                                    trigger='hover',
+                                    placement='left'
                                 ),
                                 dcc.Store(
                                     id=f"{kind}s_selected_by_option",
@@ -231,7 +251,22 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                     dbc.Col(
                         html.Div(
                             children=[
-                                html.H4(f"{pretty_value[kind]} 차원 축소 그래프"),
+                                html.H4([
+                                    f"{pretty_value[kind]} 차원 축소 그래프",
+                                    html.Span(" �", id="popover_embedding", style={'font-size': "25px"})
+                                    ]),
+                                dbc.Popover(
+                                    [
+                                        dbc.PopoverHeader("임베딩 그래프"),
+                                        dbc.PopoverBody("PCA로 축소한 그래프를 TSNE로 나타낸 그래프입니다."),
+                                        dbc.PopoverBody("범위 지정을 할 수 있습니다."),
+                                        dbc.PopoverBody("좌측에서 선택된 아이템에 대해서만 선택됩니다."),
+                                        dbc.PopoverBody("임베딩 그래프에서 선택한 후 다시 좌측으로 넘어갈 경우 임베딩 그래프에서의 범위 지정은 초기화됩니다."),
+                                    ],
+                                    target=f"popover_embedding",
+                                    trigger='hover',
+                                    placement='top'
+                                ),
                                 html.Br(),
                                 dcc.Graph(
                                     id=f"{kind}_emb_graph", style={"margin-top": 0}
@@ -245,7 +280,16 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                         [
                             html.Div(
                                 children=[
-                                    html.H4(f"선택된 {pretty_value[kind]}들의 분포"),
+                                    html.H4([
+                                        f"선택된 {pretty_value[kind]}들의 분포",
+                                        html.Span(" �", id="popover_info", style={'font-size': "25px"})
+                                        ]),
+                                    dbc.Popover(
+                                        "선택된 아이템들의 사이드 정보가 표시됩니다.",
+                                        target=f"popover_info",
+                                        trigger='hover',
+                                        placement='top'
+                                    ),
                                     html.Div(
                                         id=f"{kind}_side_graph",
 
@@ -267,6 +311,12 @@ def get_input_options(year_min=None, year_max=None, user=None, kind: str = "user
                 # color="success"
                 # style={"margin-top": "-3rem"},
             ),
+            dbc.Popover(
+                "아이템들을 정했다면, 이 버튼을 눌러 더욱 심층적인 분석을 진행하세요!",
+                target=f"{kind}_run",
+                trigger='hover',
+                placement='top'
+            ),
         ],
         # className="hstack",
     )
@@ -280,7 +330,19 @@ item_top = html.Div(
 choose_rerank = html.Div(
     [
         html.Hr(),
-        html.H4("리랭킹 조건"),
+        html.H4([
+            "리랭킹 조건",
+            html.Span(" �", id="popover_rerank_option", style={'font-size': "25px"})
+        ]),
+        dbc.Popover(
+            [
+                dbc.PopoverHeader("리랭킹 공식"),
+                dbc.PopoverBody("리랭킹에 사용될 파라미터를 선택합니다."),
+            ],
+            target=f"popover_rerank_option",
+            trigger='hover',
+            placement='top'
+        ),
         html.H6("목적 함수 선택"),
         html.Div(
             # TODO: radio to dropdown
@@ -594,14 +656,12 @@ def save_items_selected_by_embed(emb, data_from_option):
     Output("n_items", "children"),
     Input("items_selected_by_embed", "data"),
     Input("items_selected_by_option", "data"),
-    State("items_selected_by_embed", "data"),
-    State("items_selected_by_option", "data"),
 )
-def prepare_analysis(trigger_embed, trigger_option, state_embed, state_option):
+def prepare_analysis(trigger_embed, trigger_option):
     if ctx.triggered_id == "items_selected_by_embed":
-        return val1, f"선택된 아이템 수: {len(val1)}"
+        return trigger_embed, f"선택된 아이템 수: {len(trigger_embed)}"
     else:
-        return val2, f"선택된 아이템 수: {len(val2)}"
+        return trigger_option, f"선택된 아이템 수: {len(trigger_option)}"
 
 
 # 최근에 저장된 store 기준으로 임베딩 그래프를 그림
@@ -824,7 +884,7 @@ def save_users_selected_by_option(age, gender, occupation, wrong):
     if age:
         user_lst = user_lst[user_lst["age"].isin(age)]
     if gender:
-        user_lst = user_lst[user_lst["gender"] == gender]
+        user_lst = user_lst[user_lst["gender"].isin(gender)]
     if occupation:
         user_lst = user_lst[user_lst["occupation"].isin(occupation)]
     if wrong:
@@ -966,8 +1026,10 @@ def user_reset_selection(value):
     Input("user_reset_selection", "n_clicks"),
     Input("users_selected_by_option", "data"),
     Input("users_selected_by_embed", "data"),
+    Input("rerank_alpha", "value"),
+    Input("rerank_obj", "value"),
 )
-def user_reset_selection(val1,val2,val3):
+def user_reset_selection(val1,val2,val3,val4,val5):
     return 0
 
 
@@ -997,7 +1059,7 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
             "ID": id["username"],
             "dataset_name": dataset,
             "exp_id": exp_id,
-            "n_candidates": 50,  # 추후 고객이 지정할 수 있도록 하면 좋을 듯.
+            "n_candidates": 100,  # 추후 고객이 지정할 수 있도록 하면 좋을 듯.
             "objective_fn": obj,
             "alpha": alpha,
             "user_ids": user_lst,
@@ -1079,13 +1141,22 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
                         )
         indicator = dbc.Row(
             children=[
-                    
-                html.H3("리랭킹 후 지표 변화"),
+
+                html.H3([
+                    "리랭킹 후 지표 변화",
+                    html.Span(" �", id="popover_metric", style={'font-size': "25px"})
+                ]),
+                dbc.Popover(
+                    "리랭킹을 통해 지표는 이렇게 변화합니다.",
+                    target='popover_metric',
+                    trigger='hover',
+                    placement='left'
+                ),
                 html.H5("증가한 지표"),
                 html.Div(
                     children=[
                         get_metric_list(metric, i, is_incremental=True)
-                        for metric, i in zip(sub.index, sub) if i>=0 
+                        for metric, i in zip(sub.index, sub) if i>=0
                     ],
                     className="hstack gap-1"
                 ),
@@ -1093,7 +1164,7 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
                     html.Div(
                     children=[
                         get_metric_list(metric, i, is_incremental=False)
-                        for metric, i in zip(sub.index, sub) if i<0 
+                        for metric, i in zip(sub.index, sub) if i<0
                     ],
                     className="hstack gap-1"
                 ),
@@ -1103,15 +1174,15 @@ def draw_rerank(value, user_lst, obj, alpha, exp_id, id, dataset):
         item_poster = html.Div(
             children=[
                 html.H3("리랭킹 전 많이 추천된 아이템 top 10", className="mt-5 mb-3"),
-                dbc.Row(children=pop_lst, 
+                dbc.Row(children=pop_lst,
                         className= 'd-flex flex-row flex-nowrap overflow-auto',
                         style={"height": 548}),
                 html.H3("리랭킹 후 많이 추천된 아이템 top 10", className="mt-5 mb-3"),
-                dbc.Row(children=rer_lst, 
+                dbc.Row(children=rer_lst,
                         className= 'd-flex flex-row flex-nowrap overflow-auto',
                         style={"height": 548}),
                 html.H3("기존에 추천되지 않은 아이템 top 10", className="mt-5 mb-3"),
-                dbc.Row(children=new_lst, 
+                dbc.Row(children=new_lst,
                         className= 'd-flex flex-row flex-nowrap overflow-auto',
                         style={"height": 548}),
             ],

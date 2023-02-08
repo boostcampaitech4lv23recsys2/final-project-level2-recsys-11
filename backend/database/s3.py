@@ -36,7 +36,7 @@ async def send_to_s3(data: Dict, key_name: str) -> str:
 
 
 
-@alru_cache(maxsize=100)
+@alru_cache(maxsize=30)
 async def get_from_s3(
     key_hash: str,
 ) -> Dict:  # key_hash = key_name.encode('utf-8') + json
