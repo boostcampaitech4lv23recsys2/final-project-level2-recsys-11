@@ -702,7 +702,10 @@ def update_graph(store1):
             y=selected_item["ys"],
             name="selected       ",
             mode="markers",
-            marker_color="green",
+            marker=dict(
+                color="green",
+                opacity=0.8
+            )
         )
     )
     fig.add_trace(
@@ -710,12 +713,16 @@ def update_graph(store1):
             x=Notselected_item["xs"],
             y=Notselected_item["ys"],
             name="Not selected",
-            marker_color="red",
+            mode="markers",
+            marker=dict(
+                color="red",
+                opacity=0.02
+            )
         )
     )
     fig.add_trace(go.Scatter(x=[0], y=[0], name=" ", marker_color="white"))
 
-    fig.update_traces(mode="markers", opacity=0.6)
+    # fig.update_traces(mode="markers") #, opacity=0.6
     fig.update_layout(
         # title="Item embedding plot",
         yaxis_zeroline=True,
@@ -780,7 +787,7 @@ def update_graph(store1, store2):
     Input("item_reset_selection", "n_clicks"),
 )
 def item_reset_selection(value):
-    return ["장르를 검색하세요"], [item["release_year"].min(), item["release_year"].max()]
+    return "장르를 검색하세요", [item["release_year"].min(), item["release_year"].max()]
 
 
 # 초기화 버튼을 누르지 않더라도 위에서 값을 바꾸면 다시 run 누를 수 있도록 수정
@@ -968,7 +975,10 @@ def update_graph(store1):
             y=selected_user["ys"],
             name="selected       ",
             mode="markers",
-            marker_color="green",
+            marker=dict(
+                color="green",
+                opacity=0.8
+            )
         )
     )
     fig.add_trace(
@@ -976,12 +986,16 @@ def update_graph(store1):
             x=Notselected_user["xs"],
             y=Notselected_user["ys"],
             name="Not selected",
-            marker_color="red",
+            mode="markers",
+            marker=dict(
+                color="red",
+                opacity=0.02
+            )
         )
     )
     fig.add_trace(go.Scatter(x=[0], y=[0], name=" ", marker_color="white"))
 
-    fig.update_traces(mode="markers", opacity=0.6)
+    # fig.update_traces(mode="markers", opacity=0.6)
     fig.update_layout(
         # title="user embedding plot",
         yaxis_zeroline=True,
