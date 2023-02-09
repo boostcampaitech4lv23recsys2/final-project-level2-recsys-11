@@ -69,37 +69,29 @@ Web4Rec.upload_experiment(
 
 ###### 1.실험비교
 
-![Compare Table, Model vs Model 페이지](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/8ce5f46b-38bc-4f7d-b41d-dc2370943092/Untitled.png)
-![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/d452b16e-e040-460b-b8f0-f6010cd1a9bc/Untitled.png)
-
 - 웹페이지에서는 실험들을 각각의 하이퍼파라미터, 정량 / 정성 지표 값들과 함께 하나의 테이블 (Compare Table)과 다양한 그래프로 비교할 수 있습니다 (Model vs. Model).
 - 각 테이블과 그래프는 모두 **interactive**하게 살펴볼 수 있습니다. ([**Plotly](https://plotly.com/python/plotly-fundamentals/), [AgGrid](https://www.ag-grid.com/)**)
     - 사용자가 자신에게 맞게 세부적인 시각화가 가능합니다.
 
 
 ###### 2.리랭킹
-![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/eda5a372-4322-407d-a2de-6f0810170699/Untitled.png)
 
-**리랭킹 전략**
+    **리랭킹 전략**
 
 - 추천 모델의 Top K 후보군을 정성 지표를 활용해 기존 ranking에 변화를 주는 기법입니다.
 - 사용자는 리랭킹 기법을 통해 추천 모델의 정확도와 정성 지표의 트레이드 오프를 고려한 추천을 제공할 수 있습니다.
 - 이는 추천의 질을 높임으로써 정확도만을 최적화하는 모델의 한계를 보완할 수 있습니다.
 
 ###### 3. 사후 분석
-![Screen Shot 2023-02-08 at 20.54.23.png](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/5fc3074c-1a42-45b6-aac3-dd7d64341896/Screen_Shot_2023-02-08_at_20.54.23.png)
 
-**설명 가능한 추천**
+    **설명 가능한 추천**
 
 - 모델의 추천 결과를 직관적으로 해석할 수 있는 다양한 시각화를 제공합니다.
 - 사이드 정보 혹은 2차원으로 축소된 임베딩 그래프를 통해 원하는 유저 / 아이템 군집을 선택하여 분석을 진행할 수 있습니다.
 - 선택된 유저 / 아이템 군집에 대한 다양한 시각화를 통해 추천 이유와 관련된 직관적인 분석이 가능합니다.
     - E.g. 한 아이템에 대해 상호작용 이력이 있는 유저와 해당 아이템을 추천받은 유저 간의 사이드 정보 시각화
 
-![Screen Shot 2023-02-08 at 21.04.33.png](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/6cf0e516-dda1-4654-a1b3-797b7e1b3f19/Screen_Shot_2023-02-08_at_21.04.33.png)
-![Screen Shot 2023-02-08 at 21.05.48.png](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/634d7e83-a106-4cfa-b3b2-6cb694ffc12d/Screen_Shot_2023-02-08_at_21.05.48.png)
-
-**리랭킹을 통한 심화 분석**
+    **리랭킹을 통한 심화 분석**
 
 - 원하는 유저 군집을 선택한 후 커스터마이징한 리랭킹을 진행할 수 있습니다.
 - 기존 추천리스트와 리랭킹을 통해 나온 추천리스트 간 비교를 통해 효과적인 리랭킹 전략을 구상할 수 있습니다.
