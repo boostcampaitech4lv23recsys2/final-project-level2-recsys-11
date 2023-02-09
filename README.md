@@ -4,9 +4,14 @@ Web4rec은 추천 시스템의 모델 평가 및 분석을 돕는 실험 관리 
 
 사용자는 자신의 실험 결과를 Web4Rec 라이브러리를 통해 웹페이지에 업로드 할 수 있고, 웹페이지에서 더 좋은 추천 결과를 찾아낼 수 있도록 다각적 분석을 제공 합니다. 
 
-이 프로젝트는 실제 서비스 환경에서 더욱 다양하고 질 좋은 추천 서비스를 제공하기 위해 추천 엔진을 개선하고 싶은 머신러닝 / 딥러닝 엔지니어들 사용할 수 있도록 만들어졌습니다. 
+이 프로젝트는 실제 서비스 환경에서 더욱 다양하고 질 좋은 추천 서비스를 제공하기 위해 추천 엔진을 개선하고 싶은 머신러닝 / 딥러닝 엔지니어들 사용할 수 있도록 만들어졌습니다.
+
+![image](https://user-images.githubusercontent.com/67850665/217743179-edc8c461-d087-403b-a623-f08e3410b064.png)
+
 
 [Web4Rec (Demo Page)](http://101.101.216.84:30002/)
+
+![image](https://user-images.githubusercontent.com/67850665/217743460-d171db7a-92be-4bca-b2e2-5c854a3b354a.png)
 
 
 #### 유의할 점
@@ -73,7 +78,9 @@ Web4Rec.upload_experiment(
 - 각 테이블과 그래프는 모두 **interactive**하게 살펴볼 수 있습니다. ([**Plotly](https://plotly.com/python/plotly-fundamentals/), [AgGrid](https://www.ag-grid.com/)**)
     - 사용자가 자신에게 맞게 세부적인 시각화가 가능합니다.
 
+![image](https://user-images.githubusercontent.com/67850665/217743556-14050e4c-e88b-49e3-9808-7f6aa31e89fa.png)
 
+![image](https://user-images.githubusercontent.com/67850665/217743616-25de35af-1dab-4108-98c1-78affed541d1.png)
 
 **2.리랭킹**
 
