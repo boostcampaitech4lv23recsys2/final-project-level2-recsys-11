@@ -249,13 +249,13 @@ def display_output(selected_dropdown: str, data) -> str:  #
 
     tmp_df = pd.DataFrame(data).set_index("experiment_name")
     exp_hype = tmp_df.loc[selected_dropdown, "hyperparameters"]
-    exp_hype = exp_hype[1:-1]
-    exp_hype = exp_hype.replace('"', "")
-    exp_hype = exp_hype.split(",")
-    # TODO: 마크다운으로 리턴
-
-    exp_hype = "<br>".join(exp_hype)
-    return exp_hype
+    exp_hype = eval(exp_hype)
+    seq = ""
+    #한 파라미터씩 완성하기. []는 들어가면 안 되기에 수정
+    #라이브러리 단에서 이후 발생할 예외는 라이브러리 단에서 수정하는 게 좋을 수도
+    for i in exp_hype:
+        seq += str(i) + " : " + str(exp_hype[i]).replace("[","").replace("]","") + "<br>"
+    return seq
 
 
 ### selected_exp의 experiment_name을 저장
