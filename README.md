@@ -2,6 +2,8 @@
 ![image](https://user-images.githubusercontent.com/67850665/217753482-803d8c8f-df2b-47c8-bc50-328b601cf93d.png)
 <img src="https://img.shields.io/badge/python-3776AB?style=for-the-badge&logo=python&logoColor=white"><img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white"><img src="https://img.shields.io/badge/Dash-3F4F75?style=for-the-badge&logo=plotly&logoColor=white"><img src="https://img.shields.io/badge/pytorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white"><img src="https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white"><img src="https://img.shields.io/badge/jira-0052CC?style=for-the-badge&logo=jira&logoColor=white"><img src="https://img.shields.io/badge/RDS-527FFF?style=for-the-badge&logo=amazonrds&logoColor=white"><img src="https://img.shields.io/badge/S3-569A31?style=for-the-badge&logo=amazons3&logoColor=white">
 
+[**Web4Rec 이용하기 (Demo Page)**](http://101.101.218.250:30002/)
+
 ## Introduction
 
 추천시스템에서는 정답 라벨을 맞추도록 학습한 추천 모델은 고객에게 인기있는(구매 이력이 많은) 아이템만을 추천한다는 한계가 있습니다.
@@ -87,7 +89,7 @@ Web4Rec 정의하는 정량 / 정성 지표와 차이점
 
 ## Web4Rec 웹페이지 기능 소개
 
-[**Web4Rec 이용하기 (Demo Page)**](http://101.101.216.84:30002/)
+
 
 ![https://user-images.githubusercontent.com/67850665/217743460-d171db7a-92be-4bca-b2e2-5c854a3b354a.png](https://user-images.githubusercontent.com/67850665/217743460-d171db7a-92be-4bca-b2e2-5c854a3b354a.png)
 
