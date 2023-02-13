@@ -47,7 +47,7 @@ async def add_user(ID: str, password:str, connection=Depends(get_db_dep)):
 
 # @router.get("/check_dataset", status_code=201)
 # async def check_dataset(ID: str, connection=Depends(get_db_dep)) -> List:
-@router.get("/check_datasets", status_code=201)
+@router.get("/check_datasets", status_code=200)
 async def check_datasets(token: str, connection=Depends(get_db_dep)) -> List:
     # 토큰으로 아이디를 찾는다.
     user_info = await check_token(token) 
@@ -75,7 +75,7 @@ async def delete_dataset(ID:str, dataset_name: str, connection=Depends(get_db_de
     return {'message': f"Dataset:{dataset_name} (User: {ID}) has been DELETED"}
 
 
-@router.post("/upload_dataset", status_code=202)
+@router.post("/upload_dataset", status_code=201)
 async def upload_dataset(dataset: Dataset,
                          connection = Depends(get_db_dep)) -> str:
 

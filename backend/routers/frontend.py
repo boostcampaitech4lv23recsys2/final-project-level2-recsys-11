@@ -7,6 +7,8 @@ from starlette import status
 from schemas.user import UserCreate
 from typing import Dict, Tuple, List
 
+import random
+
 import pandas as pd
 import numpy as np
 from functools import reduce
@@ -268,7 +270,7 @@ async def rerank_users(
 
     need_items = list(
         set(np.array(base_pred_items["pred_items"].values.tolist()).flatten().tolist())
-    )
+    ) # 필요한 아이템들 -> 이 아이템들만 있으면 일단 오케이
     need_users = user_ids
 
     train_interaction = await s3_to_pd(key_hash=df_row["train_interaction"])
@@ -283,9 +285,9 @@ async def rerank_users(
 
     for _, row in prediction_matrix_before.iterrows():
         if row["user_id"] in need_users:
-            prediction_matrix.loc[row["user_id"], row["pred_items"]] = row[
-                "pred_scores"
-            ]
+            prediction_matrix.loc[row["user_id"], row["pred_items"]] = row["pred_scores"]
+    
+
 
     train_interaction = await s3_to_pd(key_hash=df_row["train_interaction"])
     # encoding
@@ -299,10 +301,10 @@ async def rerank_users(
     idx2uid = {k: v for k, v in enumerate(pred_users)}
     idx2iid = {k: v for k, v in enumerate(pred_items)}
 
-    train_interaction = train_interaction[
-        train_interaction["user_id"].isin(pred_users)
-    ]  # 이게 문제
-    train_interaction = train_interaction[train_interaction["item_id"].isin(pred_items)]
+    # train_interaction = train_interaction[
+    #     train_interaction["user_id"].isin(pred_users)
+    # # ]  # 이게 문제
+    # train_interaction = train_interaction[train_interaction["item_id"].isin(pred_items)]
     train_interaction["user_idx"] = train_interaction["user_id"].map(uid2idx)
     train_interaction["item_idx"] = train_interaction["item_id"].map(iid2idx)
 
@@ -335,27 +337,18 @@ async def rerank_users(
     ground_truth["user_idx"] = ground_truth["user_id"].map(uid2idx)
     ground_truth["item_idx"] = ground_truth["item_id"].map(iid2idx)
 
-    actuals = ground_truth.groupby("user_idx")["item_idx"].apply(list)
+    actuals_before = ground_truth.groupby("user_idx")["item_idx"].apply(list) # 두 인코딩 완료된 놈
 
-    actuals = [
-        items
-        for user, items in actuals.iteritems()
-        if user in [uid2idx[nu] for nu in need_users]
-    ]
+    candidates = {}
+    for _, row in base_pred_items.iterrows():
+        user = row['user_id']
+        if user in need_users:
+            pred_items = row['pred_items']
+            candidates[uid2idx[user]] = list(map(lambda item: iid2idx[item], pred_items))[:n_candidates]
+    candidates = pd.Series(candidates)
 
-    # candidates = np.argsort(-pred_mat, axis=1)[[uid2idx[nu] for nu in need_users]][ :n_candidates]
-    # print(actuals)
-
-    candidates = np.array(
-        [
-            [iid2idx[item] for item in items]
-            for i, (user_id, items) in base_pred_items.iterrows()
-            if user_id in need_users
-        ]
-    )
-
-    candidates = candidates[:, :n_candidates]
-
+    actuals = actuals_before[list(map(lambda u: uid2idx[u], need_users))]
+    
     # basic
     metrices, _ = await get_total_information(
         predicts=candidates,
@@ -378,6 +371,7 @@ async def rerank_users(
         dist_mat = jac_dist
 
     objective_fn = objective_fn if objective_fn == "novelty" else objective_fn[:-5]
+
     rerank_predicts = await get_total_reranks(
         mode=objective_fn,
         candidates=candidates,
@@ -388,6 +382,8 @@ async def rerank_users(
         alpha=alpha,
         k=10,
     )
+
+
 
     rerank_metrices, _ = await get_total_information(
         predicts=rerank_predicts,
@@ -402,18 +398,26 @@ async def rerank_users(
         k=10,
     )
 
+
+
     # rerank predicts decode
-    decode_re_predicts = np.vectorize(lambda x: idx2iid[x])(rerank_predicts)
-    decode_re_pred_items = pd.Series(
-        {i: v.tolist() for i, v in enumerate(decode_re_predicts)}
-    )
-    decode_re_pred_items.index = need_users
-    decode_re_pred_items_df = pd.DataFrame(decode_re_pred_items, columns=["pred_items"])
+    rerank_predicts = rerank_predicts.apply(lambda preds: list(map(lambda i: idx2iid[i], preds)))
+    rerank_predicts.index = rerank_predicts.index.map(idx2uid)
+
+    # decode_re_predicts = np.vectorize(lambda x: idx2iid[x])(rerank_predicts)
+    # decode_re_pred_items = pd.Series(
+    #     {i: v.tolist() for i, v in enumerate(decode_re_predicts)}
+    # )
+    # decode_re_pred_items.index = need_users
+    decode_re_pred_items_df = pd.DataFrame(rerank_predicts, columns=["pred_items"])
 
     decode_re_pred_items_df = decode_re_pred_items_df.reset_index()
     decode_re_pred_items_df = decode_re_pred_items_df.rename(
         columns={"index": "user_id"}
     )
+
+    print(base_pred_items[base_pred_items['user_id'].isin(need_users)])
+    print(decode_re_pred_items_df)
 
     met = pd.concat([metrices, rerank_metrices], axis=1).T
     met.index = ["origin", "rerank"]
