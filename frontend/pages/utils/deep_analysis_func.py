@@ -296,10 +296,10 @@ def plot_usergroup_genre(item, origin_item, rerank_item, profile_item, tmp):
             [{"type": "domain"}, {"type": "domain"}],
         ],
         subplot_titles=(
-            "전체 아이템",
-            "선택한 유저",
-            "추천된 아이템",
-            "Reranking 된 아이템",
+            "전체 아이템의 장르 구성 비율",
+            "선택한 유저의 시청 장르 구성 비율",
+            "추천된 아이템의 장르 구성 비율",
+            "Reranking 된 아이템의 장르 구성 비율",
         ),
     )
     fig.add_trace(
@@ -370,14 +370,18 @@ def plot_info_counter(Counter_profile: Counter, info_name: str, k: int = 10):
     info_name: 그래프에 출력될 문자열
     k: 파이 차트로 보여줄 원소 갯수. 너무 많으면 보기 안 좋기에 적당히 설정
     """
+    # print(Counter_profile)
+    # print(dict(sorted(Counter_profile.items(), key=lambda x: x[1], reverse=True)))
+    Counter_profile = dict(sorted(Counter_profile.items(), key=lambda x: x[1], reverse=True))
     Counter_profile_labels = list(Counter_profile.keys())[:k]
     Counter_profile_values = list(Counter_profile.values())[:k]
-    fig = make_subplots(
-        rows=1,
-        cols=1,
-        specs=[[{"type": "domain"}]],
-        subplot_titles=(f"{info_name}"),
-    )
+    # fig = make_subplots(
+    #     rows=1,
+    #     cols=1,
+    #     specs=[[{"type": "domain"}]],
+    #     subplot_titles=(f"{info_name}"),
+    # )
+    fig = go.Figure()
     fig.add_trace(
         go.Pie(
             labels=Counter_profile_labels,
@@ -386,10 +390,11 @@ def plot_info_counter(Counter_profile: Counter, info_name: str, k: int = 10):
             # name=f"{info_name}(profile)",
             pull=[0.07] + [0] * (len(Counter_profile_values) - 1),
         ),  # textinfo='label+percent', pull=[0.2]+[0]*(len(user_rec_values)-1)
-        1,
-        1,
+        # 1,
+        # 1,
     )
     fig.update_layout(
+        title=f'{info_name}',
         template='ggplot2'
         )
     fig.update_traces(hole=0.3, hoverinfo="label+percent+name")
