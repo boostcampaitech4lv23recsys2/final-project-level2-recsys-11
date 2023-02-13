@@ -130,3 +130,10 @@ Web4Rec 정의하는 정량 / 정성 지표와 차이점
 
 - 원하는 유저 군집을 선택한 후 커스터마이징한 리랭킹을 진행할 수 있습니다.
 - 기존 추천리스트와 리랭킹을 통해 나온 추천리스트 간 비교를 통해 효과적인 리랭킹 전략을 구상할 수 있습니다.
+
+---
+### 팀원 소개
+| [<img src="https://github.com/soso6079.png" width="100px">](https://github.com/soso6079) | [<img src="https://github.com/Zerotay.png" width="100px">](https://github.com/Zerotay) | [<img src="https://github.com/mbaek01.png" width="100px">](https://github.com/mbaek01) | [<img src="https://github.com/p-idx.png?v=4" width="100px">](https://github.com/p-idx) | [<img src="https://github.com/sj970806.png?v=4" width="100px">](https://github.com/sj970806) |  
+| :---: | :---: | :---: | :---: | :---: |  
+| [강수헌](https://github.com/soso6079) | [김동건](https://github.com/Zerotay) | [백승렬](https://github.com/mbaek01) | [양성훈](https://github.com/p-idx) | [유상준](https://github.com/sj970806) |
+|  역할  |  역할  |  역할  |  역할  |  역할  |
