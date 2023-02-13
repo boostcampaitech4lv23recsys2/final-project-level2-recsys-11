@@ -76,16 +76,17 @@ def create_user(n_click, username, password1, password2):
     password2=pwd_context.hash(password2, salt=salt_value)
     
     data={'ID':username, 'password1':password1, 'password2': password2,}
-    response = requests.post(f'{gct.API_URL}/user/create_user', json=data)
+    response = requests.post(f'{gct.API_URL}/user/user_info', json=data)
     
     if response.status_code == 422:
-        return dbc.Alert("Password doesn't match. Please check agian.", color="primary"),
+        return dbc.Alert("비밀번호가 일치하지 않습니다. 다시 확인해주세요.", color="primary"),
 
     elif response.status_code == 200:
-        return dcc.Location(pathname='/', id='mvsm')
+        return dbc.Alert(f"(보안 주의!) 업로드용 토큰: {response.json()['api_token']}", color='dark')
+        # return dcc.Location(pathname='/', id='mvsm')
     
     elif response.status_code == 409:
-        return dbc.Alert("Already exist ID.", color="primary"),
+        return dbc.Alert("ID가 이미 존재합니다.", color="primary"),
     
 
 @callback(

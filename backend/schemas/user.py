@@ -1,9 +1,12 @@
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, Field
+
+from uuid import UUID, uuid4
 
 class UserCreate(BaseModel):
     ID: str
     password1: str
     password2: str
+    api_token: UUID = Field(default_factory=uuid4)
 
     @validator('ID', 'password1', 'password2')
     def not_empty(cls, v):
