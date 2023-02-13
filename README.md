@@ -135,5 +135,5 @@ Web4Rec 정의하는 정량 / 정성 지표와 차이점
 ### 팀원 소개
 | [<img src="https://github.com/soso6079.png" width="100px">](https://github.com/soso6079) | [<img src="https://github.com/Zerotay.png" width="100px">](https://github.com/Zerotay) | [<img src="https://github.com/mbaek01.png" width="100px">](https://github.com/mbaek01) | [<img src="https://github.com/p-idx.png?v=4" width="100px">](https://github.com/p-idx) | [<img src="https://github.com/sj970806.png?v=4" width="100px">](https://github.com/sj970806) |  
 | :---: | :---: | :---: | :---: | :---: |  
-| [강수헌](https://github.com/soso6079) | [김동건](https://github.com/Zerotay) | [백승렬](https://github.com/mbaek01) | [양성훈](https://github.com/p-idx) | [유상준](https://github.com/sj970806) |
-|  역할  |  역할  |  역할  |  역할  |  역할  |
+| [강수헌](https://github.com/soso6079)  | [김동건](https://github.com/Zerotay) | [백승렬](https://github.com/mbaek01) | [양성훈](https://github.com/p-idx) | [유상준](https://github.com/sj970806) |
+|  - 서브 PM <br>- 프론트엔드 리더<br>- 백엔드<br> <img width=120/>|  - 리서처 <br>- 핵심 지표 정의 및 구현<br>- 데이터 사후 분석<br>- 프론트엔드<br> <img width=120/>  |  - 백엔드 리더<br>- 데이터베이스<br>- 프론트엔드<br> <img width=120/> |  - PM<br> - 라이브러리 구현<br> - 목업 모델링<br> - 데이터베이스<br><img width=120/>  |  - 리서처<br>- 핵심 지표 정의 및 구현<br>- 데이터 시각화<br>- 프론트엔드<br><img width=120/>  |
