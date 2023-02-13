@@ -12,12 +12,12 @@ async def get_total_reranks(
     distance_mat,
     user_profile,
     item_popularity,
-    alpha=0.5,
+    alpha,
     k=10
 ):
 
     if 'diversity' in mode:
-        return Rerank.diverity(
+        return Rerank.diversity(
             candidates=candidates,
             prediction_mat=prediction_mat,
             distance_mat=distance_mat,
@@ -44,34 +44,37 @@ async def get_total_reranks(
 
 
 class Rerank:
-    def diverity(candidates, prediction_mat, distance_mat, alpha, k):
-        reranks = []
-        for uidx, candidate in tqdm(enumerate(candidates), total=len(candidates), desc='[W4R] '):
+    def diversity(candidates: pd.Series, prediction_mat, distance_mat, alpha, k):
+        reranks = {}
+        for uidx, candidate in tqdm(candidates.items(), total=len(candidates), desc='[W4R] '):
             rerank = [candidate[0]]
-            temp_candidate = deepcopy(candidate[1:])
-            while len(rerank) < 10:
+            temp_candidate = np.array(candidate[1:])
+            while len(rerank) < k:
                 obj_scores = distance_mat[temp_candidate][:, rerank].sum(axis=1)
                 scores = alpha * prediction_mat[uidx, temp_candidate] + (1 - alpha) * (obj_scores / len(rerank))
+                # print(prediction_mat[uidx, temp_candidate])
                 temp_candidate = temp_candidate[np.argsort(-scores)]
                 rerank.append(temp_candidate[0])
                 temp_candidate = temp_candidate[1:]
-            reranks.append(rerank)
-        return np.array(reranks)
+            reranks[uidx] = rerank
+        return pd.Series(reranks)
 
 
-    def serendipity(candidates, prediction_mat, user_profile, distance_mat, alpha, k):
-        reranks = []
-        for uidx, (candidate, profile) in tqdm(enumerate(zip(candidates, user_profile)), total=len(candidates), desc='[W4R] '):
-            obj_scores = distance_mat[candidate, :][:, profile].min(axis=1)
+    def serendipity(candidates: pd.Series, user_profile: pd.Series, prediction_mat, distance_mat, alpha, k, n_profiles=100):
+        reranks = {}
+        for uidx, candidate in tqdm(candidates.items(), total=len(candidates), desc='[W4R] '):
+            obj_scores = distance_mat[candidate, :][:, user_profile[uidx][:n_profiles]].min(axis=1)
             scores = alpha * prediction_mat[uidx, candidate] + (1 - alpha) * obj_scores
-            reranks.append(candidate[np.argsort(-scores)][:k])
-        return np.array(reranks)
+            candidate = np.array(candidate)
+            reranks[uidx] = candidate[np.argsort(-scores)][:k]
+        return pd.Series(reranks)
 
 
-    def novelty(candidates, prediction_mat, item_popularity, alpha, k):
-        reranks = []
-        for uidx, candidate in tqdm(enumerate(candidates), total=len(candidates), desc='[W4R] '):
+    def novelty(candidates: pd.Series, item_popularity, prediction_mat, alpha, k):
+        reranks = {}
+        for uidx, candidate in tqdm(candidates.items(), total=len(candidates), desc='[W4R] '):
             obj_scores = -np.log10(item_popularity[candidate])
             scores = alpha * prediction_mat[uidx, candidate] + (1 - alpha) * obj_scores
-            reranks.append(candidate[np.argsort(-scores)][:k])
-        return np.array(reranks)
+            candidate = np.array(candidate)
+            reranks[uidx] = candidate[np.argsort(-scores)][:k]
+        return pd.Series(reranks)

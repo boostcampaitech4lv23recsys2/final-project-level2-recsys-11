@@ -94,9 +94,10 @@ def main(args):
 
     total_pred_rating_mat = X @ B
 
-    # scores[train_data['user_idx'].values, train_data['item_idx'].values] = 0.0
+    total_pred_rating_mat2 = total_pred_rating_mat.copy()
+    total_pred_rating_mat2[train_data['user_idx'].values, train_data['item_idx'].values] = 0.0
 
-    preds = np.argsort(-total_pred_rating_mat, axis=1)
+    preds = np.argsort(-total_pred_rating_mat2, axis=1)
 
     preds = np.vectorize(lambda x: idx2item[x])(preds)
     get_full_sort_score(valid_answers, preds)
@@ -107,9 +108,6 @@ def main(args):
     target_items = train_ratings['item_id'].unique()
     item_indices = list(map(lambda i: item2idx[i], target_items))
     
-    # print(user_indices)
-    # print(item_indices)
-    
     scores = total_pred_rating_mat[user_indices, :][:, item_indices]
 
     # Web4rec - Experiment Process
@@ -119,8 +117,7 @@ def main(args):
         data=scores
     )
 
-    # print(prediction_matrix)
-
+    print(prediction_matrix)
     Web4Rec.upload_expermient(
         experiment_name=args.exp_name,
         hyper_parameters={

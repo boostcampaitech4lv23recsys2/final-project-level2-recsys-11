@@ -46,7 +46,7 @@ def get_total_reranks(
 class Rerank:
     def diverity(candidates, prediction_mat, distance_mat, alpha, k):
         reranks = []
-        for uidx, candidate in tqdm(enumerate(candidates), total=len(candidates), desc='[W4R] '):
+        for uidx, candidate in tqdm(enumerate(candidates), total=len(candidates), desc='[W4R]'):
             rerank = [candidate[0]]
             temp_candidate = deepcopy(candidate[1:])
             while len(rerank) < 10:
@@ -61,7 +61,7 @@ class Rerank:
 
     def serendipity(candidates, prediction_mat, user_profile, distance_mat, alpha, k):
         reranks = []
-        for uidx, (candidate, profile) in tqdm(enumerate(zip(candidates, user_profile)), total=len(candidates), desc='[W4R] '):
+        for uidx, (candidate, profile) in tqdm(enumerate(zip(candidates, user_profile)), total=len(candidates), desc='[W4R]'):
             obj_scores = distance_mat[candidate, :][:, profile].min(axis=1)
             scores = alpha * prediction_mat[uidx, candidate] + (1 - alpha) * obj_scores
             reranks.append(candidate[np.argsort(-scores)][:k])
@@ -70,7 +70,7 @@ class Rerank:
 
     def novelty(candidates, prediction_mat, item_popularity, alpha, k):
         reranks = []
-        for uidx, candidate in tqdm(enumerate(candidates), total=len(candidates), desc='[W4R] '):
+        for uidx, candidate in tqdm(enumerate(candidates), total=len(candidates), desc='[W4R]'):
             obj_scores = -np.log10(item_popularity[candidate])
             scores = alpha * prediction_mat[uidx, candidate] + (1 - alpha) * obj_scores
             reranks.append(candidate[np.argsort(-scores)][:k])
