@@ -11,7 +11,7 @@ from cruds.database import check_token
 from schemas.data import Dataset, CoreDataset, Experiment
 
 
-router = APIRouter()
+router = APIRouter(prefix='/web4rec-lib')
 
 # DATASETS = {} # 유저별 데이터셋 in-memory에 따로 저장`    `
 
