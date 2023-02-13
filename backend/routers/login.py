@@ -13,14 +13,14 @@ from jose import jwt, JWTError
 from cruds.database import check_user, check_password
 from database.rds import get_db_inst, get_db_dep
 
-router = APIRouter()  
+router = APIRouter(prefix='/user')  
 
 login_config = get_login_settings().dict()
 ACCESS_TOKEN_EXPIRE_MINUTES = login_config['ACCESS_TOKEN_EXPIRE_MINUTES']
 SECRET_KEY = login_config['SECRET_KEY']
 ALGORITHM = login_config['ALGORITHM']
 
-@router.post("/create_user",)
+@router.post("/user_info")
 async def create_user(_user_create: UserCreate, connection=Depends(get_db_dep)):
 
     # 이미 있는 아이디인지 확인
@@ -33,11 +33,13 @@ async def create_user(_user_create: UserCreate, connection=Depends(get_db_dep)):
         async with connection as conn:
             async with conn.cursor() as cur:
                 curr_time = datetime.now()
-                query = "INSERT INTO Users (ID, password, access_time) VALUES (%s, %s, %s)"
-                await cur.execute(query, (_user_create.ID, _user_create.password1, curr_time))
+                query = "INSERT INTO Users (ID, password, access_time, token) VALUES (%s, %s, %s, %s)"
+                await cur.execute(query, (_user_create.ID, _user_create.password1, curr_time, _user_create.api_token))
             await conn.commit()
 
-        return {'message': f"User: {_user_create.ID} has been ADDED"}
+        return _user_create
+        # return {'message': f"User: {_user_create.ID} has been ADDED"}
+
 
 @router.post("/login", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(),
