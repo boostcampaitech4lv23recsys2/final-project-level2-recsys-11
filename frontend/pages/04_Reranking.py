@@ -10,7 +10,6 @@ import plotly.figure_factory as ff
 import dash_bootstrap_components as dbc
 
 from dash import html, dcc, callback, Input, Output, State, MATCH, ALL
-from dash_bootstrap_templates import load_figure_template
 from dash.exceptions import PreventUpdate
 from .utils import global_component as gct
 

@@ -4,7 +4,9 @@ from pydantic import BaseSettings
 import requests
 from dash.exceptions import PreventUpdate
 
-env_path = '/opt/ml/final-project-level2-recsys-11/backend/login.env'
+env_path = '../../../backend/login.env'
+env_path = '/Users/suheon/PycharmProjects/Web4Rec/backend/login.env'
+
 
 pretty_metric = {
     "recall": "Recall",

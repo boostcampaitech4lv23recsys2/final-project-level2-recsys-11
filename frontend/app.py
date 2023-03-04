@@ -4,7 +4,6 @@ import os
 import dash
 from dash import Dash, dcc, html, Input, Output
 import dash_bootstrap_components as dbc
-from dash_bootstrap_templates import load_figure_template
 from dash.exceptions import PreventUpdate
 
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
