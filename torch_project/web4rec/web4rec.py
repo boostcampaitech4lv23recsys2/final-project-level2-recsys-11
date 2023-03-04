@@ -23,10 +23,12 @@ np.set_printoptions(suppress=True, precision=3)
 
 class Web4Rec:
     # for log in
-    __server_url: str = 'http://127.0.0.1:30004/web4rec-lib' 
+    __server_url: str = 'http://49.50.162.87:30001/web4rec-lib' 
     __token: str = None # user_id -> ID #
     __ID: str = None
 
+    color = '\033[92m'
+    reset_color = '\033[0m'
     dataset: Web4RecDataset = None
     # __password: str = None
 
@@ -42,7 +44,7 @@ class Web4Rec:
             if response is None:
                 raise W4RException('token error.')
 
-            print(f"[W4R] login: ID[{response['ID']}] log in success.")
+            print(Web4Rec.color + f"[W4R] login: ID [{response['ID']}] log in success." + Web4Rec.reset_color)
             Web4Rec.__token = token
             Web4Rec.__ID = response['ID']
 
@@ -57,7 +59,7 @@ class Web4Rec:
         ).json()
 
         if dataset.dataset_name not in [dataset['dataset_name'] for dataset in response]:
-            print(f"[W4R] upload_dataset: '{dataset.dataset_name}' doesn't exist in your account. uploading..")
+            print(Web4Rec.color + f"[W4R] upload_dataset: '{dataset.dataset_name}' doesn't exist in your account. uploading.." + Web4Rec.reset_color)
         
             body = {
                 'ID': Web4Rec.__ID, # str
@@ -74,10 +76,10 @@ class Web4Rec:
                 json=body
             ).json()
 
-            print(f'[W4R] upload_dataset: time: {response} upload complete.')
+            print(Web4Rec.color + f'[W4R] upload_dataset: time: {response} upload complete.' + Web4Rec.reset_color)
 
         else:
-            print(f'[W4R] upload_dataset: {dataset.dataset_name} exists.')
+            print(Web4Rec.color + f'[W4R] upload_dataset: {dataset.dataset_name} exists.' + Web4Rec.reset_color)
 
         Web4Rec.dataset = dataset
 
@@ -86,10 +88,11 @@ class Web4Rec:
         experiment_name: str,
         hyper_parameters: Dict[str, str],
         prediction_matrix: pd.DataFrame = None,
+        alpha=0.5,
         n_candidates=100,
         k=10,
     ):
-        print(f'[W4R] upload experiment...')
+        # print(Web4Rec.color + f'[W4R] upload experiment...' + Web4Rec.reset_color)
         if Web4Rec.dataset is None:
             raise W4RException('[W4R] upload_experiment: You should register Web4RecDataset object first.')
 
@@ -238,12 +241,12 @@ class Web4Rec:
         ).json()
 
         # reranks -
-        print('[W4R] upload experiment: reranking... ')
+        # print(Web4Rec.color + '[W4R] upload experiment: reranking... ')
         for rerank_name in ['diversity(cos)', 'serendipity(pmi)', 'novelty', 'diversity(jac)', 'serendipity(jac)']:
             if rerank_name in ['diversity(jac)', 'serendipity(jac)']:
                 if jac_dist is None:
                     continue
-            print('[W4R]', rerank_name, flush=True)
+            print(Web4Rec.color + '[W4R] upload experiment: reranking', rerank_name, '...', flush=True)
             if 'cos' in rerank_name:
                 dist_mat = cos_dist
             elif 'pmi' in rerank_name:
@@ -258,7 +261,7 @@ class Web4Rec:
                 distance_mat=dist_mat,
                 user_profile=user_profile,
                 item_popularity=item_popularity,
-                alpha=0.5,
+                alpha=alpha,
                 k=k
             )
 
@@ -317,9 +320,12 @@ class Web4Rec:
                 json=body
             ).json()
 
+        print(Web4Rec.color + f'[W4R] experiment [{experiment_name + "_" + experiment_time}] upload done.' + Web4Rec.reset_color)
+
 
     
-    def __get_tsne(prediction_matrix: pd.DataFrame, dim=64):
+    def __get_tsne(prediction_matrix: pd.DataFrame, dim=50):
+        print(Web4Rec.color + f'[W4R] upload experiment: processing PCA & t-SNE...' + Web4Rec.reset_color)
         clf = TruncatedSVD(dim)
 
         user_pca = clf.fit_transform(prediction_matrix)

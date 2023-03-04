@@ -5,7 +5,6 @@ import requests
 import pandas as pd
 import numpy as np
 import plotly.express as px
-from dash_bootstrap_templates import load_figure_template
 from dash.exceptions import PreventUpdate
 
 # import feffery_antd_components as fac

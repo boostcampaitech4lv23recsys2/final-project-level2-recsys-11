@@ -70,8 +70,8 @@ class Qualitative:
 
 # metirces
 async def get_total_information(
-    predicts,
-    actuals,
+    predicts, # uidx: [] -> pd.Series
+    actuals, # uidx: [] -> pd.Series
     cos_dist,
     pmi_dist,
     user_profile,
@@ -82,7 +82,7 @@ async def get_total_information(
     k=10
 ):
     metrices = {
-        'recall': [0 for _ in range(predicts.shape[0])],
+        'recall': [0 for _ in range(predicts.shape[0])], # 오케이
         'ndcg': [0 for _ in range(predicts.shape[0])],
         'avg_precision': [0 for _ in range(predicts.shape[0])],
         'avg_popularity': [0 for _ in range(predicts.shape[0])],
@@ -94,45 +94,46 @@ async def get_total_information(
 
 
     # recall, ndcg, apk
-    for i, (predicted, actual) in enumerate(zip(predicts, actuals)):
-        metrices['recall'][i] = Quantative.recall_at_k(predicted, actual, k=k)
+    for i, uidx in enumerate(predicts.index):
+        metrices['recall'][i] = Quantative.recall_at_k(predicts[uidx], actuals[uidx], k=k)
 
-    for i, (predicted, actual) in enumerate(zip(predicts, actuals)):
-        metrices['ndcg'][i] = Quantative.ndcg_at_k(predicted, actual, k=k)
+    for i, uidx in enumerate(predicts.index):
+        metrices['ndcg'][i] = Quantative.ndcg_at_k(predicts[uidx], actuals[uidx], k=k)
         
-    for i, (predicted, actual) in enumerate(zip(predicts, actuals)):
-        metrices['avg_precision'][i] = Quantative.average_precision_at_k(predicted, actual, k=k)
+    for i, uidx in enumerate(predicts.index):
+        metrices['avg_precision'][i] = Quantative.average_precision_at_k(predicts[uidx], actuals[uidx], k=k)
 
 
     # avg_pop, tail_percentage
-    for i, predicted in enumerate(predicts):
-        metrices['avg_popularity'][i] = Quantative.average_popularity(predicted, item_popularity, k=k)
+    for i, uidx in enumerate(predicts.index):
+        metrices['avg_popularity'][i] = Quantative.average_popularity(predicts[uidx], item_popularity, k=k)
 
-    for i, predicted in enumerate(predicts):
-        metrices['tail_percentage'][i] = Quantative.tail_percentage(predicted, tail_items, k=k)
+    for i, uidx in enumerate(predicts.index):
+        metrices['tail_percentage'][i] = Quantative.tail_percentage(predicts[uidx], tail_items, k=k)
 
 
     # diversity, serendipity, novelty
-    for i, predicted in enumerate(predicts):
-        metrices['diversity_cos'][i] = Qualitative.diversity(predicted, cos_dist, k=k)
+    for i, uidx in enumerate(predicts.index):
+        metrices['diversity_cos'][i] = Qualitative.diversity(predicts[uidx], cos_dist, k=k)
 
-    for i, predicted in enumerate(predicts):
-        metrices['serendipity_pmi'][i] = Qualitative.serendipity(predicted, user_profile[i], pmi_dist, k=k)
+    for i, uidx in enumerate(predicts.index):
+        metrices['serendipity_pmi'][i] = Qualitative.serendipity(predicts[uidx], user_profile[uidx], pmi_dist, k=k)
 
-    for i, predicted in enumerate(predicts):
-        metrices['novelty'][i] = Qualitative.novelty(predicted, len(user_profile), item_popularity, k=k)
+    for i, uidx in enumerate(predicts.index):
+        metrices['novelty'][i] = Qualitative.novelty(predicts[uidx], len(user_profile), item_popularity, k=k)
 
     if jac_dist is not None:
         metrices['diversity_jac'] = [0 for _ in range(predicts.shape[0])]
         metrices['serendipity_jac'] = [0 for _ in range(predicts.shape[0])]
 
-        for i, predicted in enumerate(predicts):
-            metrices['diversity_jac'][i] = Qualitative.diversity(predicted, jac_dist, k=k)
-        for i, predicted in enumerate(predicts):
-            metrices['serendipity_jac'][i] = Qualitative.serendipity(predicted, user_profile[i], jac_dist, k=k)
+        for i, uidx in enumerate(predicts.index):
+            metrices['diversity_jac'][i] = Qualitative.diversity(predicts[uidx], jac_dist, k=k)
+        for i, uidx in enumerate(predicts.index):
+            metrices['serendipity_jac'][i] = Qualitative.serendipity(predicts[uidx], user_profile[uidx], jac_dist, k=k)
 
     metric_per_user = pd.Series(metrices)
     metrices = metric_per_user.apply(np.mean)
-    metrices['coverage'] = Quantative.coverage(predicts[:, :k].flatten(), total_items)
+    
+    metrices['coverage'] = Quantative.coverage([item for items in predicts.values for item in items[:k]], total_items)
 
     return metrices, metric_per_user
